@@ -1,0 +1,47 @@
+{
+  "name": "novalyabackend",
+  "version": "1.0.0",
+  "description": "developed by Sachin",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "dev2": "pm2 start server.js"
+  },
+  "author": "Sachin",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.7.9",
+    "axios-retry": "^4.5.0",
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.3",
+    "chargebee": "^2.24.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "crypto-js": "^4.2.0",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "forever": "^4.0.3",
+    "he": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.12.0",
+    "nodemailer": "^6.10.0",
+    "nodemon": "^3.1.9",
+    "parse-options": "^1.0.6",
+    "pm2": "^5.4.3",
+    "sequelize": "^6.32.1",
+    "simple-update-notifier": "^2.0.0"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2",
+    "winston": "^3.17.0"
+  }
+}
