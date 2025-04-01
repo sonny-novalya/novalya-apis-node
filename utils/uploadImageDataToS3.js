@@ -3,8 +3,8 @@ const { Sequelize, Novadata } = require("../Models");
 const Op = Sequelize.Op;
 
 const s3 = new AWS.S3({
-    accessKeyId: 'AKIAXYKJVEN3WTRSIGGS',
-    secretAccessKey: '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',
+    accessKeyId: '',
+    secretAccessKey: '',
     region: 'us-east-1'
 })
 
