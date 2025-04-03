@@ -815,19 +815,17 @@ async function adminAuthorizationNew(req, res, next) {
 async function checkAuthorization(req, res) {
   // Check if the authorization header is present
   if (!req.headers.authorization) {
-    res
-      .status(401)
-      .json({ status: "error", message: "Authorization header is missing." });
+    res.status(401).json({ status: "error", message: "Authorization header is missing." });
     return false;
   } else {
     const token = req.headers.authorization.split(" ")[1];
-    // console.log('req.headers---824', req.headers);
-    // console.log('req.headers.webiste---824', req.headers.website);
+    console.log('req.headers---824', req.headers);
+    console.log('req.headers.webiste---824', req.headers.website);
     var website = (req.headers.website) ? req.headers.website : 'app';
     return new Promise((resolve) => {
       
       jwt.verify(token, secretKey, async (err, user) => {
-     
+        console.log(err);
         if (err) {
           res.status(401).json({ status: "error", message: "token_expired" });
           resolve(false); // Use resolve instead of reject
