@@ -1,6 +1,7 @@
-const { FacebookProfileFeature, InstagramProfileFeature, Statistic, instataggedusers,
+const { FacebookProfileFeature, InstagramProfileFeature, instataggedusers,
     taggedusers, Sequelize 
 } = require("../../Models");
+const Statistic = db.Statistic;
 const { checkAuthorization } = require("../../helpers/functions");
 const { Op, fn, col, literal } = require("sequelize");
 const moment = require("moment");
