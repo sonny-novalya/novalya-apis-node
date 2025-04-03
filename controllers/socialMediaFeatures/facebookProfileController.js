@@ -1,5 +1,9 @@
-const { FacebookProfileFeature, Sequelize } = require("../../Models");
+const { FacebookProfileFeature, InstagramProfileFeature, Statistic, instataggedusers,
+    taggedusers, Sequelize 
+} = require("../../Models");
 const { checkAuthorization } = require("../../helpers/functions");
+const { Op, fn, col, literal } = require("sequelize");
+
 let self = {};
 self.createOrUpdateFeature = async (req, res) => {
     try {
@@ -100,6 +104,85 @@ self.getFollowersAndFollowings = async (req, res) => {
                     "An error occurred while retrieving total followers and followings.",
                 error: error.message,
             });
+    }
+};
+
+self.getDashboardSocialAccountData = async (req, res) => {
+    
+    try {
+
+        const user_id = req.authUser;
+
+        var facebookProfile = {};
+        var instagramProfile = {};
+
+        facebookProfile = await FacebookProfileFeature.findOne({ where: { user_id }});
+
+        instagramProfile = await InstagramProfileFeature.findOne({ where: { user_id } });
+
+        const startOfMonth = moment().startOf("month").toDate();
+        const endOfMonth = moment().endOf("month").toDate();
+
+        const statistics = await Statistic.findAll({
+            where: {
+                user_id: user_id,
+                created_at: {
+                [Op.between]: [startOfMonth, endOfMonth],
+                },
+            },
+            attributes: [
+                [fn("SUM", literal("CASE WHEN type IN ('fb_prospection', 'birthday', 'requests') THEN message_count ELSE 0 END")), "fbMessageLimit"],
+                [fn("SUM", literal("CASE WHEN type = 'ig_prospection' THEN message_count ELSE 0 END")), "igMessageLimit"],
+                [fn("SUM", literal("CASE WHEN type IN ('fb_crm', 'ig_crm') THEN message_count ELSE 0 END")), "tagsLimit"],
+                [fn("SUM", literal("CASE WHEN type IN ('ig_ai', 'fb_ai') THEN message_count ELSE 0 END")), "aiLimits"],
+            ],
+            raw: true, 
+        });
+
+        const totalFbContact = await taggedusers.count({
+            where: {
+                    user_id: user_id,
+                    createdAt: {
+                    [Op.between]: [startOfMonth, endOfMonth],
+                },
+            },
+        });
+
+        const totalInstaContact = await instataggedusers.count({
+            where: {
+                    user_id: user_id,
+                    createdAt: {
+                    [Op.between]: [startOfMonth, endOfMonth],
+                },
+            },
+        });
+
+        const totalContactLimit = totalFbContact + totalInstaContact;
+
+        const limit_response = {
+            fbMessageLimit: statistics[0]?.fbMessageLimit || 0,
+            igMessageLimit: statistics[0]?.igMessageLimit || 0,
+            tagsLimit: statistics[0]?.tagsLimit || 0,
+            aiLimits: statistics[0]?.aiLimits || 0,
+            totalContactLimit,
+        };
+
+        return res.status(200).json({
+            status: "success",
+            data: {
+                facebook_data: facebookProfile,
+                instagram_data: instagramProfile,
+                limit_data: limit_response,
+            },
+            message: "data get successfully.",
+        });
+        
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            message: "some went wrong",
+            error: error.message,
+        });
     }
 };
 

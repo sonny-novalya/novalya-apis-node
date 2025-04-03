@@ -17,6 +17,11 @@ const routes = [
     handler: facebookProfileController.getFollowersAndFollowings,
   },
   {
+    method: "post",
+    path: "/dashboard-social-accounts-data",
+    handler: facebookProfileController.getDashboardSocialAccountData,
+  },
+  {
     method: "get",
     path: "/single",
     handler: facebookProfileController.getSingle,
