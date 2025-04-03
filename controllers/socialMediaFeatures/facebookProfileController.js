@@ -1,6 +1,7 @@
 const { FacebookProfileFeature, InstagramProfileFeature, instataggedusers,
     taggedusers, Sequelize 
 } = require("../../Models");
+const db = require("../../Models/crm");
 const Statistic = db.Statistic;
 const { checkAuthorization } = require("../../helpers/functions");
 const { Op, fn, col, literal } = require("sequelize");
