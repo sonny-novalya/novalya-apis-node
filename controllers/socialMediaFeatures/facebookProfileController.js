@@ -178,6 +178,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
         });
         
     } catch (error) {
+        console.log('error-181', error);
         return res.status(500).json({
             status: "error",
             message: "some went wrong",
