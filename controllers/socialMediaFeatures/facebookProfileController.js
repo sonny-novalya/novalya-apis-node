@@ -183,7 +183,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
                 facebook_data: facebookProfile,
                 instagram_data: instagramProfile,
                 limit_data: limit_response,
-                app_config: (userSelectResult) ? userSelectResult: {},
+                app_config: (userSelectResult) ? userSelectResult[0]: {},
             },
             message: "data get successfully.",
         });
