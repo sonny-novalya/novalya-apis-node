@@ -172,7 +172,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
             totalContactLimit,
         };
 
-        const userSelectQuery = `SELECT * from account_settings`;
+        const userSelectQuery = `SELECT * from account_settings limit 1`;
 
         const userSelectParams = [];
         const userSelectResult = await Qry(userSelectQuery, userSelectParams);
@@ -183,7 +183,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
                 facebook_data: facebookProfile,
                 instagram_data: instagramProfile,
                 limit_data: limit_response,
-                app_config: userSelectResult,
+                app_config: (userSelectResult) ? userSelectResult: {},
             },
             message: "data get successfully.",
         });
