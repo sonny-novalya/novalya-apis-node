@@ -7,6 +7,7 @@ const router = express.Router();
 const routes = [
     { method: 'post', path: '/user-add', handler: Novadata.createUnfollow },
     { method: 'get', path: '/all', handler: Novadata.getAllUnfollow },
+    { method: 'get', path: '/get-fb-friends-with-tags', handler: Novadata.getFbFriendsWithTags },
     { method: 'post', path: '/save-whitelist', handler: Novadata.saveWhitelist },
     { method: 'post', path: '/remove-whitelist', handler: Novadata.removeWhitelist },
 
