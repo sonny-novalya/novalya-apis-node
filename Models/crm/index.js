@@ -53,6 +53,10 @@ db.Category = require("../Category")(sequelize, DataTypes);
 db.MessageVariant = require("../MessageVariant")(sequelize, DataTypes);
 db.Message = require("../Message")(sequelize, DataTypes);
 
+db.CategoryTemplate = require("../CategoryTemplate")(sequelize, DataTypes);
+db.MessageVariantTemplate = require("../MessageVariantTemplate")(sequelize, DataTypes);
+db.MessageTemplate = require("../MessageTemplate")(sequelize, DataTypes);
+
 // Establish 1 to Many Relation
 db.tag.hasMany(db.campaign, { foreignKey: "group_id" }); // Use "tag_id" as the foreign key in campaign
 db.instatag.hasMany(db.instagramCampaign, { foreignKey: "group_id" }); // Use "tag_id" as the foreign key in campaign
@@ -109,6 +113,10 @@ db.InstaSection.belongsToMany(db.InstaMessageData, {
 db.Message.associate(db);
 db.MessageVariant.associate(db);
 db.Category.associate(db);
+
+db.MessageTemplate.associate(db);
+db.MessageVariantTemplate.associate(db);
+db.CategoryTemplate.associate(db);
 
 
 // Sync the models with the database
