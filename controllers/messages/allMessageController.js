@@ -108,7 +108,7 @@ exports.createMessages = async (req, res) => {
 };
 
 // Get all messages with their variants
-exports.getAllMessages = async (req, res) => {
+exports.getAllMessagesOld = async (req, res) => {
   try {
 
     const user_id = req.authUser;
@@ -193,6 +193,70 @@ exports.getAllMessages = async (req, res) => {
     return Response.resWith422(res, error.message);
   }
 };
+
+exports.getAllMessages = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { visibility_type, page = 1, limit = 10, search } = req.body;
+
+    const offset = (page - 1) * limit;
+
+    const categoryInfo = await Category.findOne({
+      where: { user_id, name: "My message" }
+    });
+
+    if (!categoryInfo) {
+      return Response.resWith202(res, { messages: [], total: 0, page, limit });
+    }
+
+    let whereClause = {
+      user_id,
+      category_id: categoryInfo.id
+    };
+
+    // Search condition
+    if (search) {
+      whereClause.message = { [Op.iLike]: `%${search}%` }; 
+    }
+
+    // Handle visibility_type
+    if (visibility_type) {
+      const visibilityTypes = JSON.parse(visibility_type);
+      const conditions = visibilityTypes
+        .map(type => `JSON_CONTAINS(visibility_type, '"${type}"')`)
+        .join(' OR ');
+      whereClause.visibility_type = sequelize.literal(`(${conditions})`);
+    }
+
+    const { rows: messages, count: total } = await Message.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: db.Category,
+          as: "category",
+        },
+        {
+          model: db.MessageVariant,
+          as: "variants",
+        }
+      ],
+      limit,
+      offset,
+      distinct: true,
+    });
+
+    return Response.resWith202(res, {
+      messages,
+      total,
+      page,
+      limit
+    });
+  } catch (error) {
+    console.error("try-catch-error:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
 
 exports.getTemplateMessages = async (req, res) => {
   try {
