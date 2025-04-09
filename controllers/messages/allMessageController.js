@@ -310,10 +310,10 @@ exports.getTemplateMessagesData = async (req, res) => {
       raw: true,
     });
 
-    console.log("categoryInfo--336:", categoryInfo);
+    // console.log("categoryInfo--336:", categoryInfo);
     
     const categoryIds = categoryInfo.map(cat => cat.id);
-    console.log("categoryIds--336:", categoryIds);
+    // console.log("categoryIds--336:", categoryIds);
 
     if (!categoryIds.length) {
       return Response.resWith202(res, []);
@@ -337,7 +337,7 @@ exports.getTemplateMessagesData = async (req, res) => {
       ],
     });
 
-    console.log("messages--336:", messages);
+    // console.log("messages--336:", messages);
     return Response.resWith202(res, messages);
 
   } catch (error) {
