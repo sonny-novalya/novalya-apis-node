@@ -302,9 +302,10 @@ exports.getTemplateMessages = async (req, res) => {
 exports.getTemplateMessagesData = async (req, res) => {
   try {
     const user_id = req.authUser;
+    const user_id_new = 0;
 
     const categoryInfo = await CategoryTemplate.findAll({
-      where: { user_id: 0 },
+      where: { user_id: user_id_new },
       attributes: ['id'],
       raw: true,
     });
@@ -320,7 +321,7 @@ exports.getTemplateMessagesData = async (req, res) => {
 
     const messages = await MessageTemplate.findAll({
       where: {
-        user_id,
+        user_id_new,
         category_id: { [Op.in]: categoryIds }
       },
       include: [
