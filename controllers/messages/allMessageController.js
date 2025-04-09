@@ -321,7 +321,7 @@ exports.getTemplateMessagesData = async (req, res) => {
 
     const messages = await MessageTemplate.findAll({
       where: {
-        user_id_new,
+        user_id: user_id_new,
         category_id: { [Op.in]: categoryIds }
       },
       include: [
