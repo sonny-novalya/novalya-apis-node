@@ -299,6 +299,50 @@ exports.getTemplateMessages = async (req, res) => {
   }
 }
 
+exports.getTemplateMessagesData = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+
+    const categoryInfo = await CategoryTemplate.findAll({
+      where: { user_id: 0 },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    const categoryIds = categoryInfo.map(cat => cat.id);
+
+    if (!categoryIds.length) {
+      return Response.resWith202(res, []);
+    }
+
+    const messages = await MessageTemplate.findAll({
+      where: {
+        user_id,
+        category_id: { [Op.in]: categoryIds }
+      },
+      include: [
+        {
+          model: db.CategoryTemplate,
+          as: "category",
+          attributes: ['id', 'name'], 
+        },
+        {
+          model: db.MessageVariantTemplate,
+          as: "variants",
+        },
+      ],
+    });
+
+    console.error("messages--336:", messages);
+    return Response.resWith202(res, messages);
+
+  } catch (error) {
+    console.error("try-catch-error:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
+
 // Update a message and its variants
 exports.updateMessageOld = async (req, res) => {
   try {
