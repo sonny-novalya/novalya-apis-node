@@ -22,6 +22,8 @@ const routes = [
     { method: "delete", path: "/delete-category-to-message", handler: messageController.deleteCategoryAndMessages},
     { method: "post", path: "/set-favorite-message", handler: messageController.setFavoriteMessage},
     { method: "get", path: "/get-template-messages", handler: messageController.getTemplateMessages},
+
+    // sachin rana
     { method: "post", path: "/get-templates-data", handler: messageController.getTemplateMessagesData}
 
 ];
