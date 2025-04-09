@@ -13,10 +13,36 @@ const {
   Lost,
 } = require("../../Models");
 const db = require("../../Models/crm");
+const Response = require("../../helpers/response");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
+const { getAuthUser, Qry} = require("../../helpers/functions");
 const taggedusers = db.taggedusers;
+const taggedUser = db.instataggedusers;
 const Op = Sequelize.Op;
 let self = {};
+
+
+taggedUser.belongsTo(db.instatag, {
+  foreignKey: 'is_primary',  // Reference to the `id` of the `tags` table
+  as: 'tag',  // Alias for association
+});
+
+Novadata.hasOne(db.taggedusers, {
+  foreignKey: 'fb_user_id',   // Ensuring correct key reference
+  sourceKey: 'fbId',
+  as: 'taggedusers',
+});
+
+// taggedusers belongs to a tag (fixing the incorrect foreign key)
+db.taggedusers.belongsTo(db.tag, {
+  foreignKey: 'is_primary',  // Correct reference to the `id` field of the `tags` table
+  as: 'tag',
+});
+
+db.taggedusers.belongsTo(db.tag, {
+  foreignKey: 'tag_id',  // Correct reference to the `id` field of the `tags` table
+  as: 'assignTag',
+});
 
 self.createUnfollow = async (req, res) => {
   try {
@@ -273,6 +299,94 @@ self.getAllUnfollow = async (req, res) => {
   }
 };
 
+self.getFbFriendsWithTags = async (req, res) => {
+  try {
+
+    const user_id = req.authUser;
+    if (!user_id) {
+      return res.status(401).json({ status: "error", message: "Unauthorized" });
+    }
+
+    // Extract pagination and sorting
+    const { page = 1, limit = 25, sort = "DESC", field = "id", search} = req.query;
+    const offset = (page - 1) * limit;
+    const limitValue = parseInt(limit, 10);
+    let plan_pkg = null;
+
+    // Validate pagination
+    if (page < 1 || limitValue < 1) {
+      return res.status(400).json({ status: "error", message: "Invalid page or limit" });
+    }
+
+    // Validate sorting fields
+    const validFields = ["id", "name", "createdAt"];
+    const orderField = validFields.includes(field) ? field : "id";
+    const orderSort = (sort === "ASC" || sort === "DESC") ? [orderField, sort] : ["id", "DESC"];
+    const whereOptions = user_id ? { user_id: user_id } : {};
+
+    if (search) {
+      whereOptions[Op.or] = [
+        { user_name: { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    const totalCount = await Novadata.count({ where: whereOptions });
+    // Fetch count and records
+    const rows = await Novadata.findAll({
+      where: whereOptions,
+      offset: offset,
+      limit: limitValue,
+      order: [orderSort],
+      include: [
+        {
+          model: db.taggedusers,
+          as: 'taggedusers',
+          attributes: ["tag_id"],
+          required: false, // LEFT JOIN
+          include: [
+            {
+              model: db.tag,
+              as: 'assignTag',
+              attributes: ['id', 'name', 'custom_color'],
+            },
+          ],
+          where: {
+            fb_user_id: Sequelize.col("Novadata.fbId"), // Ensure fb_user_id matches Novadata.fbId
+            user_id: user_id,
+          },
+        },
+      ],
+      group: ['Novadata.fbId', 'taggedusers.is_primary'],
+    });
+
+    if(page == 1){
+      const userSelectQuery = `SELECT plan_pkg FROM usersdata WHERE id = ?`;
+
+      const userSelectParams = [user_id];
+      const userSelectResult = await Qry(userSelectQuery, userSelectParams);
+      plan_pkg = userSelectResult[0].plan_pkg;
+
+    }
+
+    // Return response
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      {
+        data: rows,
+        plan_pkg: plan_pkg,
+        totalCount: totalCount,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / limitValue)
+      }
+    );
+
+  } catch (error) {
+    return Response.resWith422(res, error.message);
+
+  }
+};
+
 self.getFbNovaData = async (req, res)=>{
   try{
     const user_id = req.authUser;
@@ -324,36 +438,75 @@ self.getFbNovaData = async (req, res)=>{
 self.getAllWhitelist = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { page = 1, limit = 50, orderBy = "desc" } = req.query;
+    const { page = 1, limit = 50, orderBy = "desc", search} = req.query;
     const offset = (page - 1) * limit;
     const whereOptions = user_id ? { user_id: user_id } : {};
+
+    if (search) {
+      whereOptions[Op.or] = [
+        { user_name: { [Op.like]: `%${search}%` } }
+      ];
+    }
+
     const fetchParams = {
       where: whereOptions,
       order: [["id", orderBy === "desc" ? "DESC" : "ASC"]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
     };
 
+    const totalWhitelist = await Whitelist.count({ where: whereOptions });
     const groups = await Whitelist.findAll(fetchParams);
-    res.status(200).json({ status: "success", data: groups });
+  
+    return Response.resWith202(res,
+      "whitelist success",
+      {
+        data: groups,
+        totalCount: totalWhitelist,
+        totalPages: Math.ceil(totalWhitelist / limit),
+        currentPage: page,
+      }
+    );
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 
 self.getAllUnfriendlist = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { page = 1, limit = 50, orderBy = "desc" } = req.query;
+    const { page = 1, limit = 50, orderBy = "desc", search} = req.query;
     const offset = (page - 1) * limit;
     const whereOptions = user_id ? { user_id: user_id } : {};
+
+    if (search) {
+      whereOptions[Op.or] = [
+        { user_name: { [Op.like]: `%${search}%` } },
+        { lived: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
     const fetchParams = {
       where: whereOptions,
       order: [["id", orderBy === "desc" ? "DESC" : "ASC"]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
     };
 
+    const totalUnfriends = await Unfriend.count({ where: whereOptions });
     const groups = await Unfriend.findAll(fetchParams);
-    res.status(200).json({ status: "success", data: groups });
+
+    return Response.resWith202(
+      res, "Opration completed",
+      {
+        data: groups,
+        totalCount: totalUnfriends,
+        totalPages: Math.ceil(totalUnfriends / limit),
+        currentPage: page,
+      }
+    );
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -378,18 +531,37 @@ self.getAllLostlist = async (req, res) => {
 self.getAllDeactivated = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { page = 1, limit = 50, orderBy = "desc" } = req.query;
+    const { page = 1, limit = 50, orderBy = "desc", search } = req.query;
     const offset = (page - 1) * limit;
     const whereOptions = user_id ? { user_id: user_id } : {};
+
+    if (search) {
+      whereOptions[Op.or] = [
+        { user_name: { [Op.like]: `%${search}%` } }
+      ];
+    }
+    
     const fetchParams = {
       where: whereOptions,
       order: [["id", orderBy === "desc" ? "DESC" : "ASC"]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
     };
 
+    const totalGroups = await Deactivated.count({ where: whereOptions });
     const groups = await Deactivated.findAll(fetchParams);
-    res.status(200).json({ status: "success", data: groups });
+    // res.status(200).json({ status: "success", data: groups });
+    return Response.resWith202(res,
+      "Deactivate success", 
+      {
+        data: groups,
+        totalCount: totalGroups,
+        totalPages: Math.ceil(totalGroups / limit),
+        currentPage: page,
+      }
+    );
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -480,13 +652,13 @@ self.removeWhitelist = async (req, res) => {
       },
     })
       .then((rowsDeleted) => {
-        res.status(200).json({ status: "success", message: "Record deleted" });
+        return Response.resWith202(res, "Record deleted", {});
       })
       .catch((error) => {
-        res.status(500).json({ status: "error", message: error });
+        return Response.resWith422(res, error.message);
       });
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -510,6 +682,7 @@ self.saveUnfriendlist = async (req, res) => {
       has_conversection,
       tier,
       messages,
+      mutual_friend
     } = req.body;
     const result = await Unfriend.create({
       user_id,
@@ -527,11 +700,12 @@ self.saveUnfriendlist = async (req, res) => {
       tier,
       has_conversection,
       messages,
+      mutual_friend
     });
     await Novadata.destroy({ where: { id: id } }); // Delete existing types
-    res.status(200).json({ status: "success", message: "record created" });
+    return Response.resWith202(res, "record created", {});
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -607,6 +781,7 @@ self.saveWhitelist = async (req, res) => {
                     user_name: record.user_name,
                     gender: record.gender,
                     profile: record.profile,
+                    mutual_friends: record.mutual_friend,
                     image: record.image,
                     lived: record.lived,
                     friendship_age: record.friendship_age,
@@ -618,22 +793,18 @@ self.saveWhitelist = async (req, res) => {
                   });
                 }
               } catch (error) {
-                res
-                  .status(500)
-                  .json({ status: "error", message: "error occured" });
+                return Response.resWith422(res, error.message);
               }
             });
           }
         }
-        res
-          .status(200)
-          .json({ status: "success", message: "User whitelisted" });
+        return Response.resWith202(res, "User whitelisted", {});
       })
       .catch((error) => {
-        res.status(500).json({ status: "error", message: "error occured" });
+        return Response.resWith422(res, error.message);
       });
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 

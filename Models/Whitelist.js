@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     user_name: DataTypes.TEXT,
     gender: DataTypes.TEXT,
     profile: DataTypes.TEXT,
+    mutual_friends: DataTypes.INTEGER,
     image: DataTypes.TEXT,
     lived: DataTypes.TEXT,
     friendship_age: DataTypes.TEXT,
