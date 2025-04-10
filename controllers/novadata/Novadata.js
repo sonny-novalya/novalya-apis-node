@@ -7,6 +7,7 @@ const {
   Sequelize,
   Prospects,
   Novadata,
+  InstaEndCursor,
   Whitelist,
   Unfriend,
   Deactivated,
@@ -304,7 +305,7 @@ self.getFbFriendsWithTags = async (req, res) => {
 
     const user_id = req.authUser;
     if (!user_id) {
-      return res.status(401).json({ status: "error", message: "Unauthorized" });
+      return Response.resWith422(res, "Unauthorized");
     }
 
     // Extract pagination and sorting
@@ -393,7 +394,7 @@ self.getFbNovaData = async (req, res)=>{
     const {selected_users} = req.body
 
     if (!user_id) {
-      return res.status(401).json({ status: "error", message: "Unauthorized" });
+      return Response.resWith422(res, "Unauthorized");
     }
 
     if(selected_users.length > 0){
@@ -424,14 +425,15 @@ self.getFbNovaData = async (req, res)=>{
       }));
 
       // Send response
-      res.status(200).json({ status: "success", data: finalResult });
+      // res.status(200).json({ status: "success", data: finalResult });
+      return Response.resWith202(res, "success", finalResult);
 
     }else{
-      res.status(500).json({ status: "error", message: "Please provide user id" });
+      return Response.resWith422(res, "Please provide user id");
     }
 
   }catch(error){
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 }
 
@@ -590,14 +592,14 @@ self.getUnfriendlist = async (req, res) => {
     })
       .then(async (records) => {
         if (records) {
-          res.status(200).json({ status: "success", data: records });
+          return Response.resWith202(res, "success", records);
         }
       })
       .catch((error) => {
-        res.status(500).json({ status: "error", message: error });
+        return Response.resWith422(res, error.message);
       });
   } catch (error) {
-    res.status(500).json({ status: "error", message: error });
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -803,6 +805,251 @@ self.saveWhitelist = async (req, res) => {
       .catch((error) => {
         return Response.resWith422(res, error.message);
       });
+  } catch (error) {
+    return Response.resWith422(res, error.message);
+  }
+};
+
+self.getEndCursorFacebook = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const endCursor = await InstaEndCursor.findOne({
+      where: { user_id: user_id, type: 'FB' }
+    })
+    const fbFollowersCount = await Novadata.count({
+      where: { user_id: user_id },
+    });
+
+    let data = {
+      endCursor: endCursor?.end_cursor || "",
+      totalFollowers: fbFollowersCount,
+    }
+
+    return Response.resWith202(res, "success", data);
+  } catch (error) {
+    return Response.resWith422(res, "An error occurred while fetching data.");
+  }
+}
+
+self.syncFbFriends = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const userDataArray = req.body.friends;
+    const endCursor = req.body.end_cursor;
+    const status = req.body.status;
+    const endCursorTypeFb = 'FB'
+    const folderName = "fb-novatdata-sync"
+    // await Novadata.destroy({ where: { user_id: user_id } });
+
+    let endCursorStatus = "no action";
+
+    const existingCursorFb = await InstaEndCursor.findOne({ where: { user_id: user_id, type: endCursorTypeFb } });
+
+    if (existingCursorFb) {
+      await existingCursorFb.update({ end_cursor: endCursor });
+      endCursorStatus = "updated";
+    } else {
+      await InstaEndCursor.create({
+        user_id: user_id,
+        end_cursor: endCursor,
+        type: endCursorTypeFb
+      });
+      endCursorStatus = "created";
+    }
+
+    // Use Promise.all to handle asynchronous operations for all user data
+    const results = await Promise.all(
+      userDataArray.map(async (userData) => {
+        const {
+          fb_numeric_id,
+          image,
+          name,
+          url,
+          mutual_friend
+
+        } = userData;
+
+        let imageId = `${fb_numeric_id}-${user_id}`;
+        let imageUrl = await UploadImageOnS3Bucket(image, folderName, imageId);
+        // const reactionsValue = reactions === "NA" ? null : parseInt(reactions);
+        // Deactivated.create({   <--- KEEP IT IF WE NEED TO CREATE DEACTIVATE ACC
+        // Novadata.create({
+
+        if(status == 1){ /// if 1 Save and update inn Novadata table
+          const existingRecord = await Novadata.findOne({
+            where: { user_id: user_id, fbId: fb_numeric_id }
+          })
+  
+          if (existingRecord) {
+            // Update the record
+            await existingRecord.update({
+              fbId: fb_numeric_id,
+              image: imageUrl,
+              user_name: name,
+              profile: url,
+              mutual_friend: mutual_friend
+            });
+  
+            return { status: "updated", fbId: fb_numeric_id };
+          } else {
+            // Create a new record
+            await Novadata.create({
+              user_id: user_id,
+              fbId: fb_numeric_id,
+              image: imageUrl,
+              user_name: name,
+              profile: url,
+              mutual_friend: mutual_friend
+            });
+            return { status: "created", fbId: fb_numeric_id };
+          }
+        }else{  // Save and update in Deactivate table
+          const existingRecord = await Deactivated.findOne({
+            where: { user_id: user_id, fbId: fb_numeric_id }
+          })
+  
+          if (existingRecord) {
+            // Update the record
+            await existingRecord.update({
+              fbId: fb_numeric_id,
+              image: imageUrl,
+              user_name: name,
+              profile: url,
+              mutual_friend: mutual_friend
+            });
+  
+            return { status: "updated", fbId: fb_numeric_id };
+          } else {
+            // Create a new record
+            await Deactivated.create({
+              user_id: user_id,
+              fbId: fb_numeric_id,
+              image: imageUrl,
+              user_name: name,
+              profile: url,
+              mutual_friend: mutual_friend
+            });
+            return { status: "created", fbId: fb_numeric_id };
+          }
+        }
+        
+      })
+    );
+
+    return Response.resWith202(res, "Operation completed", {endCursorStatus, results});
+  } catch (error) {
+
+    return Response.resWith422(res, error.message);
+  }
+};
+
+self.syncFbFriendsDetails = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const userDataArray = req.body;
+    // await Novadata.destroy({ where: { user_id: user_id } });
+
+    // Use Promise.all to handle asynchronous operations for all user data
+    // hometown, locale, age
+    const results = await Promise.all(
+      userDataArray.map(async (userData) => {
+        const {
+          id,
+          name,
+          birthday,
+          gender,
+          hometown,
+          location,
+          languages,
+          locale,
+          email,
+          phone,
+          age
+
+        } = userData;
+
+        const existingRecord = await Novadata.findOne({
+          where: { user_id: user_id, fbId: id }
+        })
+
+        if (existingRecord) {
+          // Update the record
+          const updatedUser = await existingRecord.update({
+            fbId: id,
+            user_name: name,
+            birthday: birthday,
+            gender: gender,
+            hometown: hometown,
+            lived: location,
+            languages: languages,
+            locale: locale,
+            email: email,
+            contact: phone,
+            age: age
+          });
+
+          return { status: "updated", user: updatedUser };
+        } else {
+
+          return { status: "User_not_found", fbId: id };
+        }
+      })
+    );
+
+    return Response.resWith202(res, "Operation completed", results);
+
+  } catch (error) { 
+
+    return Response.resWith422(res, error.message);
+  }
+};
+
+self.removeFbTagging = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+
+    if (!user_id) {
+      return Response.resWith422(res, "Unauthorized");
+    }
+
+    const {ids} = req.body
+    const result = [];
+    const allFbIds = await Novadata.findAll({
+      where: {
+        user_id: user_id,
+        id: {
+          [Op.in]: ids,
+        }
+      },
+      attributes: ['fbId']
+    })
+
+    let fbIds = []
+    allFbIds.map(data => {
+      fbIds.push(data.fbId)
+    });
+
+    taggedusers.destroy({
+      where: {
+        user_id: user_id,
+        fb_user_id: {
+          [Op.in]: fbIds,
+        },
+      },
+    })
+      .then((rowsDeleted) => {
+        return Response.resWith202(
+          res,
+          "Group removed",
+          {}
+        );
+      })
+      .catch((error) => {
+        return Response.resWith422(res, error.message);
+      });
+
+
+    
   } catch (error) {
     return Response.resWith422(res, error.message);
   }
