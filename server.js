@@ -58,7 +58,7 @@ app.use(logger('dev'));
 const encryptionKey = process.env.KEY
 
 const corsOptions = {
-  origin: ['http://app.novalya.com', 'https://app.novalya.com', 'https://dashboard.novalya.com',
+  origin: ['http://app.novalya.com', 'https://app.novalya.com', 'https://dev.novalya.com', 'https://dev.novalya.com/', 'https://dashboard.novalya.com',
     'https://admin.novalya.com', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3005',
     'https://novalyacomplete-kaid.vercel.app', 'https://novalyabackend.novalya.com', 'http://52.202.131.181:3000',
     'http://52.202.131.181:3001', 'https://chroex.novalya.com', 'https://stagingapp.novalya.com',

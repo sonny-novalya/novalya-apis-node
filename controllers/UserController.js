@@ -85,7 +85,7 @@ exports.login = async (req, res) => {
 
     if (selectUserResult.length === 0) {
       // logger.info(User ${username} invalid login);
-      res.json({
+      res.status(401).json({
         status: "error",
         message: "Invalid login details.",
       });
@@ -105,13 +105,13 @@ exports.login = async (req, res) => {
 
 
       if (!passwordMatch) {
-        res.json({
+        res.status(401).json({
           status: "error",
           message: "Invalid login details.",
         });
         return;
       } else if (user.emailstatus === "unverified") {
-        res.json({
+        res.status(401).json({
           status: "error",
           message:
             "Please verify your account first. We have sent you an email.",
@@ -123,7 +123,7 @@ exports.login = async (req, res) => {
         user.subscription_status === "payment_refunded" ||
         user.login_status === "Block"
       ) {
-        return res.json({
+        return res.status(401).json({
           status: "error",
           message:
             "You are not able to logged in. Please contact with support.",
@@ -132,7 +132,7 @@ exports.login = async (req, res) => {
 
         if (user.usertype == 'reseller') {
 
-          return res.json({
+          return res.status(401).json({
             status: "error",
             message: "Invalid User.",
           });
@@ -166,7 +166,7 @@ exports.login = async (req, res) => {
 
         if (updateLoginResult.affectedRows > 0) {
           ProcessOldMessagesFunc([userdbData.id])
-          return res.json({
+          return res.status(200).json({
             status: "success",
             message: "Login Successfully",
             token: token,
@@ -175,7 +175,7 @@ exports.login = async (req, res) => {
         }
       } else {
         console.log('350', website);
-        return res.json({
+        return res.status(401).json({
           status: "error",
           message: "Invalid User.",
         });
@@ -218,7 +218,7 @@ exports.login = async (req, res) => {
             updateLoginParams
           );
         } else {
-          res.json({
+          res.status(401).json({
             status: "error",
             message: "Invalid login details.",
           });
@@ -238,13 +238,13 @@ exports.login = async (req, res) => {
       const passwordMatch = bcrypt.compareSync(password, decryptedPassword);
 
       if (!passwordMatch) {
-        return res.json({
+        return res.status(401).json({
           status: "error",
           message: "Invalid login details.",
         });
         return;
       } else if (user.emailstatus === "unverified") {
-        return res.json({
+        return res.status(401).json({
           status: "error",
           message: "Please verify your account first. We have sent you an email.",
         });
@@ -254,7 +254,7 @@ exports.login = async (req, res) => {
         user.subscription_status === "payment_refunded" ||
         user.login_status === "Block"
       ) {
-        return res.json({
+        return res.status(401).json({
           status: "error",
           message:
             "You are not able to logged in. Please contact with support.",
@@ -293,7 +293,7 @@ exports.login = async (req, res) => {
 
         if (updateLoginResult.affectedRows > 0) {
           ProcessOldMessagesFunc([userdbData.id])
-          return res.json({
+          return res.status(200).json({
             status: "success",
             message: "Login Successfully",
             token: token,
@@ -302,7 +302,7 @@ exports.login = async (req, res) => {
         }
       } else {
         console.log('480', website);
-        return res.json({
+        return res.status(401).json({
           status: "error",
           message: "Invalid User.",
         });
@@ -310,7 +310,7 @@ exports.login = async (req, res) => {
     }
   } catch (error) {
     console.log('login-error-486', error);
-    return res.json({
+    return res.status(401).json({
       status: "error",
       message: "Server error occurred",
     });

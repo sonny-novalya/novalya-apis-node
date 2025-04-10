@@ -2,8 +2,13 @@ const { sequelize } = require("../../Models");
 const db = require("../../Models/crm");
 const { Op, fn, col, literal } = require("sequelize");
 const Category = db.Category;
+const CategoryTemplate = db.CategoryTemplate;
 const Message = db.Message;
+const MessageTemplate = db.MessageTemplate;
 const MessageVariant = db.MessageVariant;
+const MessageVariantTemplate = db.MessageVariantTemplate;
+const Response = require("../../helpers/response");
+
 
 exports.getAllCategories = async (req, res) => {
   try {
@@ -72,66 +77,21 @@ exports.deleteCategories = async (req, res) => {
   }
 };
 
-exports.createMessagesOld = async (req, res) => {
-  try {
-    const user_id = req.authUser;
-    const { name, variants } = req.body;
-    let category = await Category.findOne({
-      where: { name: "My message", user_id },
-    });
-
-    if (!category) {
-      category = await Category.create({
-        name: "My message",
-        user_id,
-        created_at: new Date(),
-      });
-    }
-
-    const message = await Message.create({
-      user_id,
-      category_id: category.id,
-      title: name,
-      created_at: new Date(),
-    });
-
-    const messageVariants = variants.map((variant) => ({
-      message_id: message.id,
-      name: variant,
-      created_at: new Date(),
-    }));
-
-    await MessageVariant.bulkCreate(messageVariants);
-
-    return res.status(201).json({ message, variants: messageVariants });
-  } catch (error) {
-    console.error("Error creating message:", error);
-    return res.status(500).json({ error: "Failed to create message", error });
-  }
-};
-
 exports.createMessages = async (req, res) => {
   try {
+
     const user_id = req.authUser;
     const { name, variants, visibility_type } = req.body;
-    let category = await Category.findOne({
+
+    const [category] = await Category.findOrCreate({
       where: { name: "My message", user_id },
     });
-
-    if (!category) {
-      category = await Category.create({
-        name: "My message",
-        user_id,
-        created_at: new Date(),
-      });
-    }
 
     const message = await Message.create({
       user_id,
       category_id: category.id,
       title: name,
       visibility_type: JSON.stringify(visibility_type),
-      created_at: new Date(),
     });
 
     const messageVariants = variants.map((variant) => ({
@@ -142,68 +102,26 @@ exports.createMessages = async (req, res) => {
 
     await MessageVariant.bulkCreate(messageVariants);
 
-    return res.status(201).json({ message, variants: messageVariants });
+    return Response.resWith202(res, message, {variants: messageVariants});
   } catch (error) {
     console.error("Error creating message:", error);
-    return res.status(500).json({ error: "Failed to create message", error });
+    
+    return Response.resWith422(res, error.message);
   }
 };
 
 // Get all messages with their variants
 exports.getAllMessagesOld = async (req, res) => {
   try {
-    const user_id = req.authUser;
-    // const messages = await Message.findAll({
-    //   where: { user_id },
-    //   include: [
-    //     {
-    //       model: db.Category,
-    //       as: "category",
-    //       // where: {user_id, title: "My message"}
-    //     },
-    //     {
-    //       model: db.MessageVariant,
-    //       as: "variants",
-    //     },
-    //   ],
-    // });
-    const categoryInfo = await Category.findOne({
-      where: {user_id, name: "My message"}
-    });
-    let messages = [];
-    if(categoryInfo) {
-      messages = await Message.findAll({
-        where: { user_id, category_id: categoryInfo.id },
-        include: [
-          {
-            model: db.Category,
-            as: "category",
-            // where: {user_id, title: "My message"}
-          },
-          {
-            model: db.MessageVariant,
-            as: "variants",
-          },
-        ],
-      });
-    }
-    return res.status(200).json(messages);
-  } catch (error) {
-    console.error("Error fetching messages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
-  }
-};
 
-// Get all messages with their variants
-exports.getAllMessages = async (req, res) => {
-  try {
     const user_id = req.authUser;
     const { visibility_type, page , limit , search } = req.body;
      let offset=0
     if(limit){
-       offset = (page - 1) * limit;
 
+       offset = (page - 1) * limit;
     }
+
     const categoryInfo = await Category.findOne({
       where: {user_id, name: "My message"}
     });
@@ -271,18 +189,83 @@ exports.getAllMessages = async (req, res) => {
       }
     
     }
-    return res.status(200).json(messages);
+    return Response.resWith202(res, messages);
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
+    console.error("try-catch-error:", error);
+    
+    return Response.resWith422(res, error.message);
   }
 };
+
+exports.getAllMessages = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { visibility_type, page = 1, limit = 10, search } = req.body;
+
+    const offset = (page - 1) * limit;
+
+    const categoryInfo = await Category.findOne({
+      where: { user_id, name: "My message" }
+    });
+
+    if (!categoryInfo) {
+      return Response.resWith202(res, { messages: [], total: 0, page, limit });
+    }
+
+    let whereClause = {
+      user_id,
+      category_id: categoryInfo.id
+    };
+
+    // Search condition
+    if (search) {
+      whereClause.message = { [Op.iLike]: `%${search}%` }; 
+    }
+
+    // Handle visibility_type
+    if (visibility_type) {
+      const visibilityTypes = JSON.parse(visibility_type);
+      const conditions = visibilityTypes
+        .map(type => `JSON_CONTAINS(visibility_type, '"${type}"')`)
+        .join(' OR ');
+      whereClause.visibility_type = sequelize.literal(`(${conditions})`);
+    }
+
+    const { rows: messages, count: total } = await Message.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: db.Category,
+          as: "category",
+        },
+        {
+          model: db.MessageVariant,
+          as: "variants",
+        }
+      ],
+      limit,
+      offset,
+      distinct: true,
+    });
+
+    return Response.resWith202(res, {
+      messages,
+      total,
+      page,
+      limit
+    });
+  } catch (error) {
+    console.error("try-catch-error:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
 
 exports.getTemplateMessages = async (req, res) => {
   try {
     const user_id = req.authUser;
     const categoryInfo = await Category.findAll({
-      where: {user_id }
+      where: {'user_id': 0}
       // where: {user_id, name: { [Op.not]: 'My message' }}
     });
     let ids = [];
@@ -308,12 +291,61 @@ exports.getTemplateMessages = async (req, res) => {
         ],
       });
     }
-    return res.status(200).json(messages);
+    return Response.resWith202(res, messages);
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
+    console.error("try-catch-error:", error);
+    
+    return Response.resWith422(res, error.message);
   }
 }
+
+exports.getTemplateMessagesData = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const user_id_new = 0;
+
+    const categoryInfo = await CategoryTemplate.findAll({
+      where: { user_id: user_id_new },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    // console.log("categoryInfo--336:", categoryInfo);
+    
+    const categoryIds = categoryInfo.map(cat => cat.id);
+    // console.log("categoryIds--336:", categoryIds);
+
+    if (!categoryIds.length) {
+      return Response.resWith202(res, []);
+    }
+
+    const messages = await MessageTemplate.findAll({
+      where: {
+        user_id: user_id_new,
+        category_id: { [Op.in]: categoryIds }
+      },
+      include: [
+        {
+          model: db.CategoryTemplate,
+          as: "category",
+          attributes: ['id', 'name'], 
+        },
+        {
+          model: db.MessageVariantTemplate,
+          as: "variants",
+        },
+      ],
+    });
+
+    // console.log("messages--336:", messages);
+    return Response.resWith202(res, messages);
+
+  } catch (error) {
+    console.error("try-catch-error:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
 
 // Update a message and its variants
 exports.updateMessageOld = async (req, res) => {
@@ -472,9 +504,9 @@ exports.getAllMessageByAllCategory = async (req, res) => {
 };
 // Helper function to create or find a category
 async function findOrCreateCategory(user_id, name) {
-  let category = await Category.findOne({ where: { name, user_id } });
+  let category = await CategoryTemplate.findOne({ where: { name, user_id } });
   if (!category) {
-    category = await Category.create({ name, user_id });
+    category = await CategoryTemplate.create({ name, user_id });
   }
   return category;
 }
@@ -486,7 +518,7 @@ async function createMessageVariants(message_id, content, language) {
     name: value,
     created_at: new Date(),
   }));
-  await MessageVariant.bulkCreate(variants);
+  await MessageVariantTemplate.bulkCreate(variants);
 }
 
 const object = [
@@ -1409,7 +1441,7 @@ const object = [
 // Function to process and save categories and messages from the provided JSON
 exports.addCategoryAndMessages = async (req, res) => {
   try {
-    const user_id = req.authUser;
+    const user_id = 0;
 
     for (const item of object) {
       // Create or find the category
@@ -1433,7 +1465,7 @@ exports.addCategoryAndMessages = async (req, res) => {
           }
         }
 
-        const exsistingMessage = await Message.findOne({
+        const exsistingMessage = await MessageTemplate.findOne({
           where: {
             title: messageTitle,
             category_id: category.id,
@@ -1445,7 +1477,7 @@ exports.addCategoryAndMessages = async (req, res) => {
           // console.log("message already exists");
           continue;
         }
-        const message = await Message.create({
+        const message = await MessageTemplate.create({
           user_id,
           category_id: category.id,
           title: messageTitle,

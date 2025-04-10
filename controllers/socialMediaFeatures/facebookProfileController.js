@@ -4,7 +4,7 @@ const db = require("../../Models/crm");
 const Statistic = db.Statistic;
 const taggedusers = db.taggedusers;
 const instataggedusers = db.instataggedusers;
-const { checkAuthorization } = require("../../helpers/functions");
+const { checkAuthorization, Qry } = require("../../helpers/functions");
 const { Op, fn, col, literal } = require("sequelize");
 const moment = require("moment");
 
@@ -172,12 +172,18 @@ self.getDashboardSocialAccountData = async (req, res) => {
             totalContactLimit,
         };
 
+        const userSelectQuery = `SELECT extension_version from account_settings limit 1`;
+
+        const userSelectParams = [];
+        const userSelectResult = await Qry(userSelectQuery, userSelectParams);
+
         return res.status(200).json({
             status: "success",
             data: {
                 facebook_data: facebookProfile,
                 instagram_data: instagramProfile,
                 limit_data: limit_response,
+                app_config: (userSelectResult) ? userSelectResult[0]: {},
             },
             message: "data get successfully.",
         });

@@ -23,6 +23,9 @@ const routes = [
     { method: "post", path: "/set-favorite-message", handler: messageController.setFavoriteMessage},
     { method: "get", path: "/get-template-messages", handler: messageController.getTemplateMessages},
 
+    // sachin rana
+    { method: "post", path: "/get-templates-data", handler: messageController.getTemplateMessagesData}
+
 ];
 
 // Loop through the routes and define them using the router
