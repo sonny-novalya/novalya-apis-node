@@ -243,6 +243,7 @@ exports.getAllMessages = async (req, res) => {
           as: "variants",
         }
       ],
+      order: [['id', 'DESC']],
       limit,
       offset,
       distinct: true,
