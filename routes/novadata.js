@@ -18,11 +18,16 @@ const routes = [
     { method: 'post', path: '/get-deactivated', handler: Novadata.getDeactivatedlist },
     { method: 'post', path: '/delete-deactivated', handler: Novadata.deleteDeactivated },
 
+    { method: 'post', path: '/sync-fb-friends', handler: Novadata.syncFbFriends },
+    { method: 'post', path: '/sync-fb-friends-details', handler: Novadata.syncFbFriendsDetails },
+    { method: 'get', path: '/get-fb-end-cursor', handler: Novadata.getEndCursorFacebook },
+
     { method: 'get', path: '/lost-all', handler: Novadata.getAllLostlist },
     { method: 'get', path: '/deactivated-all', handler: Novadata.getAllDeactivated },
     { method: 'post', path: '/user-add-new', handler: Novadata.createUnfollowNew },
 
-    { method: 'post', path: '/get-nova-data', handler: Novadata.getFbNovaData }
+    { method: 'post', path: '/get-nova-data', handler: Novadata.getFbNovaData },
+    { method: 'post', path: '/remove-fb-tagging', handler: Novadata.removeFbTagging },
     // { method: 'post', path: '/check', handler: Prospects.checkProspect }
 
 ];
