@@ -219,7 +219,7 @@ exports.getAllMessages = async (req, res) => {
 
     // Search condition
     if (search) {
-      whereClause.message = { [Op.iLike]: `%${search}%` }; 
+      whereClause.message = { [Op.like]: `%${search}%` }; 
     }
 
     // Handle visibility_type
