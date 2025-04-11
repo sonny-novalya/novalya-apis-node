@@ -219,7 +219,7 @@ exports.getAllMessages = async (req, res) => {
 
     // Search condition
     if (search) {
-      whereClause.message = { [Op.iLike]: `%${search}%` }; 
+      whereClause.title = { [Op.like]: `%${search}%` }; 
     }
 
     // Handle visibility_type
@@ -243,6 +243,7 @@ exports.getAllMessages = async (req, res) => {
           as: "variants",
         }
       ],
+      order: [['id', 'DESC']],
       limit,
       offset,
       distinct: true,
