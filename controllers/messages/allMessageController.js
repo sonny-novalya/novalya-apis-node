@@ -110,6 +110,65 @@ exports.createMessages = async (req, res) => {
   }
 };
 
+exports.createDuplicateMessages = async (req, res) => {
+  try {
+
+    const user_id = req.authUser;
+    const { message_id } = req.body;
+
+    // console.log('message_id', message_id);
+    const existingMessage = await Message.findOne({
+      where: { id: message_id },
+    });
+
+    if(!existingMessage){
+      return Response.resWith422(res, "message does not exists");
+    }
+
+    // console.log('existingMessage', existingMessage);
+
+    const { category_id, title, created_at, language, visibility_type, favorite } = existingMessage;
+
+    let visibilityTypes = (visibility_type) ? visibility_type : [];
+
+    const create_message = await Message.create({
+      user_id,
+      category_id: category_id,
+      title: title + ' (Copy)',
+      visibility_type: visibilityTypes,
+    });
+
+    var oldMessageId = message_id; 
+    const newMessageId = create_message.id;
+
+    const oldVariants = await MessageVariant.findAll({
+      where: { message_id: oldMessageId },
+    });
+
+    if (oldVariants && oldVariants.length > 0) {
+      
+      const newVariants = oldVariants.map(variant => {
+        const variantData = variant.toJSON();
+        delete variantData.id;
+        delete variantData.created_at;
+        variantData.message_id = newMessageId; 
+        return variantData;
+      });
+
+      // console.log('variantData', newVariants);
+      
+      await MessageVariant.bulkCreate(newVariants);
+    }
+
+    return Response.resWith202(res, 'duplicate message created successfully');
+  } catch (error) {
+
+    console.error("Error creating message:", error);
+    
+    return Response.resWith422(res, error.message);
+  }
+};
+
 // Get all messages with their variants
 exports.getAllMessagesOld = async (req, res) => {
   try {

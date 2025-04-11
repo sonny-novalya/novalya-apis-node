@@ -24,7 +24,8 @@ const routes = [
     { method: "get", path: "/get-template-messages", handler: messageController.getTemplateMessages},
 
     // sachin rana
-    { method: "post", path: "/get-templates-data", handler: messageController.getTemplateMessagesData}
+    { method: "post", path: "/get-templates-data", handler: messageController.getTemplateMessagesData},
+    { method: 'post', path: '/create-duplicate-message', handler: messageController.createDuplicateMessages }
 
 ];
 
