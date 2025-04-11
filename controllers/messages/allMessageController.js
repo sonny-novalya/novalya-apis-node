@@ -7,6 +7,7 @@ const Message = db.Message;
 const MessageTemplate = db.MessageTemplate;
 const MessageVariant = db.MessageVariant;
 const MessageVariantTemplate = db.MessageVariantTemplate;
+const TemplateFavorite = db.TemplateFavorite;
 const Response = require("../../helpers/response");
 
 
@@ -520,20 +521,59 @@ exports.getMessageByCategory = async (req, res) => {
 
 exports.setFavoriteMessage = async (req, res) => {
   try {
-    const { message_id, favorite } = req.body;
 
-    const message = await Message.findByPk(message_id);
-    console.log(message)
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
+    const user_id = req.authUser;
+    const { action_id, type='message' } = req.body;
+
+    if(type == 'template'){
+
+      const checkTemplate = await TemplateFavorite.findOne({
+        where: {
+          user_id: user_id,
+          template_id: action_id,     
+        },
+      });
+      
+      if (checkTemplate) {
+
+        const { id, favorite } = checkTemplate;
+
+        console.log('id', id);
+        console.log('favorite', favorite);
+
+        await TemplateFavorite.update(
+          { favorite: (favorite == 1) ? 0 : 1 },
+          {
+            where: {
+              template_id: action_id,
+              user_id: user_id,
+            },
+          }
+        );
+      } else {
+
+        await TemplateFavorite.create({user_id: user_id, template_id: action_id, favorite: 1});
+      }     
+      
+      return Response.resWith202(res, 'update success');
+    } else {
+
+      const message = await Message.findByPk(action_id);
+
+      if (!message) {
+
+        return Response.resWith422(res, 'Message not found');
+      }
+  
+      await message.update({ favorite: message.favorite == 0 ? 1 : 0 });
+      
+      return Response.resWith202(res, 'update success', message);
     }
-
-    await message.update({ favorite: message.favorite == 0 ? 1 : 0 });
-
-    return res.status(200).json(message);
+   
   } catch (error) {
     console.error("Error fetching messages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
+
+    return Response.resWith422(res, 'Failed to fetch messages');
   }
 };
 

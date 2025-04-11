@@ -20,12 +20,12 @@ const routes = [
     { method: "post", path: "/process-old-messages", handler: processOldMessageController.processOldMessages},
     { method: "post", path: "/add-category-to-message", handler: messageController.addCategoryAndMessages},
     { method: "delete", path: "/delete-category-to-message", handler: messageController.deleteCategoryAndMessages},
-    { method: "post", path: "/set-favorite-message", handler: messageController.setFavoriteMessage},
     { method: "get", path: "/get-template-messages", handler: messageController.getTemplateMessages},
-
+    
     // sachin rana
     { method: "post", path: "/get-templates-data", handler: messageController.getTemplateMessagesData},
-    { method: 'post', path: '/create-duplicate-message', handler: messageController.createDuplicateMessages }
+    { method: 'post', path: '/create-duplicate-message', handler: messageController.createDuplicateMessages },
+    { method: "post", path: "/update-favorite", handler: messageController.setFavoriteMessage},
 
 ];
 
