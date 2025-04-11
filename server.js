@@ -49,6 +49,8 @@ var foldersRouter = require("./routes/foldersRouter");
 
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
 
 const cors = require('cors');
 const path = require('path');
@@ -90,6 +92,22 @@ app.use(session({
   },
 }));
 
+
+
+// Load Swagger YAML
+try{
+  const swaggerDocument = YAML.load(path.join(__dirname, "swagger.yaml"));
+  // Serve Swagger docs
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  
+  app.use("/api-docs-test", (req, res) => {
+    console.log("swagger test")
+    res.send("Swagger test route is working");
+  });
+  console.log("Swagger loaded successfully");
+}catch(error){
+  console.log("error is: ",error)
+}
 
 
 // Serve static files from the 'public' directory

@@ -38,7 +38,10 @@
     "parse-options": "^1.0.6",
     "pm2": "^5.4.3",
     "sequelize": "^6.32.1",
-    "simple-update-notifier": "^2.0.0"
+    "simple-update-notifier": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.2",
