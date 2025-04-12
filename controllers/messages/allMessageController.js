@@ -260,7 +260,7 @@ exports.getAllMessagesOld = async (req, res) => {
 exports.getAllMessages = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { visibility_type, page = 1, limit = 10, search } = req.body;
+    const { visibility_type, page = 1, limit = 10, search, sort_by = "id", sort_order = "DESC" } = req.body;
 
     const offset = (page - 1) * limit;
 
@@ -291,6 +291,13 @@ exports.getAllMessages = async (req, res) => {
       whereClause.visibility_type = sequelize.literal(`(${conditions})`);
     }
 
+    // Validate and apply sorting
+    const validSortFields = ["title", "id"];
+    const validSortOrders = ["ASC", "DESC"];
+    const orderBy = validSortFields.includes(sort_by) ? sort_by : "id";
+    const orderDirection = validSortOrders.includes(sort_order.toUpperCase()) ? sort_order.toUpperCase() : "DESC";
+
+
     const { rows: messages, count: total } = await Message.findAndCountAll({
       where: whereClause,
       include: [
@@ -303,7 +310,7 @@ exports.getAllMessages = async (req, res) => {
           as: "variants",
         }
       ],
-      order: [['id', 'DESC']],
+      order: [[orderBy, orderDirection]],
       limit,
       offset,
       distinct: true,
@@ -394,9 +401,36 @@ exports.getTemplateMessagesData = async (req, res) => {
         {
           model: db.MessageVariantTemplate,
           as: "variants",
-        },
+        }
       ],
     });
+
+    const results = [];
+
+    for (const msg of messages) {
+      const favorite = await TemplateFavorite.findOne({
+        where: {
+          user_id: user_id,
+          template_id: msg.id,
+          favorite: 1,
+        },
+      });
+
+      msg.favorite = (favorite) ? true : false;
+
+      // results.push({
+      //   ...msg.toJSON(),
+      //   is_favorite: !!favorite,
+      // });
+    }
+
+    return Response.resWith202(res, messages);
+
+    // // Map messages to include is_favorite field
+    // const messagesWithFavorite = messages.map(msg => ({
+    //   ...msg.toJSON(),
+    //   is_favorite: !!msg.template_favorite, // match the new alias here
+    // }));
 
     // console.log("messages--336:", messages);
     return Response.resWith202(res, messages);
