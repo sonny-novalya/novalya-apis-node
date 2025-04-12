@@ -417,22 +417,8 @@ exports.getTemplateMessagesData = async (req, res) => {
       });
 
       msg.favorite = (favorite) ? true : false;
-
-      // results.push({
-      //   ...msg.toJSON(),
-      //   is_favorite: !!favorite,
-      // });
     }
 
-    return Response.resWith202(res, messages);
-
-    // // Map messages to include is_favorite field
-    // const messagesWithFavorite = messages.map(msg => ({
-    //   ...msg.toJSON(),
-    //   is_favorite: !!msg.template_favorite, // match the new alias here
-    // }));
-
-    // console.log("messages--336:", messages);
     return Response.resWith202(res, messages);
 
   } catch (error) {
