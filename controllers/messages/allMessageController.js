@@ -83,7 +83,7 @@ exports.createMessages = async (req, res) => {
   try {
 
     const user_id = req.authUser;
-    const { name, variants, visibility_type, language='English', attachment } = req.body;
+    const { name, variants, visibility_type, language='', attachment } = req.body;
     const folderName = "create-msg-library"
 
     const [category] = await Category.findOrCreate({
