@@ -5,10 +5,26 @@ let self = {};
 self.getAll = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { page = 1, limit = 50, orderBy = "desc", type = null } = req.body;
+    const {
+      page = 1,
+      limit = 50,
+      order = "desc",
+      orderBy = "id", 
+      type = null,
+      search = ""
+    } = req.body;
+
     const offset = (page - 1) * limit;
 
-    const whereOptions = user_id ? { user_id } : {};
+    const whereOptions = {
+      ...(user_id && { user_id }),
+      ...(search && {
+        name: {
+          [Op.iLike]: `%${search}%`, 
+        },
+      }),
+    };
+
     const includeOptions = type
       ? {
           model: KeywordType,
@@ -24,20 +40,22 @@ self.getAll = async (req, res) => {
     const fetchParams = {
       where: whereOptions,
       offset,
-      include: includeOptions,
-      limit: limit ? parseInt(limit) : undefined,
-      order: [["id", orderBy === "desc" ? "DESC" : "ASC"]],
+      limit: parseInt(limit),
+      include: [includeOptions],
+      order: [[orderBy, order.toUpperCase() === "DESC" ? "DESC" : "ASC"]],
     };
 
     const keywords = await Keyword.findAll(fetchParams);
 
     return Response.resWith202(res, 'success', keywords);
   } catch (error) {
-
+    
     console.log('error', error);
     return Response.resWith422(res, error.message);
   }
+
 };
+
 
 self.create = async (req, res) => {
   try {
