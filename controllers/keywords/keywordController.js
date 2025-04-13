@@ -1,5 +1,6 @@
 const { Keyword, KeywordType } = require("../../Models");
 const Response = require("../../helpers/response");
+const { Op } = require("sequelize");
 let self = {};
 
 self.getAll = async (req, res) => {
@@ -49,7 +50,7 @@ self.getAll = async (req, res) => {
 
     return Response.resWith202(res, 'success', keywords);
   } catch (error) {
-    
+
     console.log('error', error);
     return Response.resWith422(res, error.message);
   }
