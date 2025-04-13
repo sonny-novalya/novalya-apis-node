@@ -5,7 +5,7 @@ let self = {};
 self.getAll = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { page = 1, limit = 50, orderBy = "desc", type = null } = req.query;
+    const { page = 1, limit = 50, orderBy = "desc", type = null } = req.body;
     const offset = (page - 1) * limit;
 
     const whereOptions = user_id ? { user_id } : {};
