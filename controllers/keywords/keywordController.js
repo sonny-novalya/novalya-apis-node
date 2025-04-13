@@ -21,7 +21,7 @@ self.getAll = async (req, res) => {
       ...(user_id && { user_id }),
       ...(search && {
         name: {
-          [Op.iLike]: `%${search}%`, 
+          [Op.like]: `%${search}%`, 
         },
       }),
     };

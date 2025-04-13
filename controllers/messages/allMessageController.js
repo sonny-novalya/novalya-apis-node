@@ -9,6 +9,7 @@ const MessageVariant = db.MessageVariant;
 const MessageVariantTemplate = db.MessageVariantTemplate;
 const TemplateFavorite = db.TemplateFavorite;
 const Response = require("../../helpers/response");
+const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 
 
 exports.getAllCategories = async (req, res) => {
@@ -82,16 +83,25 @@ exports.createMessages = async (req, res) => {
   try {
 
     const user_id = req.authUser;
-    const { name, variants, visibility_type } = req.body;
+    const { name, variants, visibility_type, language='English', attachment } = req.body;
+    const folderName = "create-msg-library"
 
     const [category] = await Category.findOrCreate({
       where: { name: "My message", user_id },
     });
 
+    let imageUrl = null
+    if(attachment){
+      let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', "");
+      imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
+    }
+
     const message = await Message.create({
       user_id,
       category_id: category.id,
       title: name,
+      attachment: imageUrl,
+      language: language,
       visibility_type: JSON.stringify(visibility_type),
     });
 
