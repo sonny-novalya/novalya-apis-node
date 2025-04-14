@@ -10,7 +10,7 @@ info:
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
   version: 1.0.0
 servers:
-  - url: 'http://localhost:6000'
+  - url: 'http://localhost:3000'
   - url: 'https://novalyabackend.novalya.com'
   # - url: 'http://localhost:7000/admin'
   # - url: 'https://api.novalya.app/admin'
@@ -33,6 +33,11 @@ tags:
     description: friends Api
     externalDocs:
       description: Find out more about friends
+      url: ''
+  - name: Groups
+    description: groups Api
+    externalDocs:
+      description: Find out more about added groups
       url: ''
   - name: statistics
     description: statistics Api
@@ -175,6 +180,37 @@ paths:
           name: Authorization
       security:
         - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/facebook/dashboard-social-accounts-data:
+    post:
+      tags:
+        - User
+      summary: User dashboard connection
+      operationId: dashboardConnection
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get user dashboard connection
+        content:
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/dashboardConnection'
+        required: false
       responses:
         '200':
           description: data
@@ -1440,6 +1476,7 @@ paths:
           content: {}
       x-codegen-request-body-name: body
 
+
   /all/messages/api/get-template-messages:
     get:
       tags:
@@ -1500,6 +1537,35 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/createNewMessage'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/create-duplicate-message:
+    post:
+      tags:
+        - Messages
+      summary: Duplicate Messages 
+      operationId: createDuplicateMsg
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Duplicate Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createDuplicateMsg'
         required: true
       responses:
         '200':
@@ -1919,6 +1985,152 @@ paths:
           name: Authorization
       security:
         - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-fb-friends-with-tags:
+    get:
+      tags:
+        - Friends
+      summary: Get Facebook Friends with tags
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: limit of data (eg, 10,20....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sort
+          description: Write sort order
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: search
+          description: Enter search parameter
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: field
+          description: Write field
+          required: false
+          schema:
+            type: string
+      operationId: getFbFriendsWithTags
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/get-group-by-folder:
+    get:
+      tags:
+        - Groups
+      summary: Get Added Groups
+      parameters:
+        - in: query
+          name: social_type
+          description: Enter Group name like:- (fb_groups)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: id
+          description: Enter id like:- (1,2,3....)
+          required: false
+          schema:
+            type: string
+      operationId: getGroupsByFolder
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/get-prospect-folders:
+    get:
+      tags:
+        - Groups
+      summary: Get Folders
+      parameters:
+        - in: query
+          name: social_type
+          description: Enter Group name like:- (ig_followers)
+          required: false
+          schema:
+            type: string
+      operationId: getFoldersList
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/create-prospect-folder:
+    post:
+      tags:
+        - Groups
+      summary: Create Folders
+      operationId: createFolder
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Folders
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createFolder'
+        required: true
       responses:
         '200':
           description: data
@@ -4510,6 +4722,22 @@ components:
           type: string
           description: ''
           example: "male"
+
+    createFolder:
+      type: object
+      properties:
+        folder_name:
+          type: string
+          description: ''
+          example: "insta groups"
+        selectedGroups:
+          type: array
+          description: ''
+          example: ""
+        social_type:
+          type: string
+          description: ''
+          example: "ig_followers"
     
     getAllMessages:
       type: object
@@ -4542,6 +4770,14 @@ components:
           type: string
           description: ''
           example: null
+
+    createDuplicateMsg:
+      type: object
+      properties:
+        message_id:
+          type: number
+          description: ''
+          example: 28856
 
     createNewKeywords:
       type: object
@@ -4610,6 +4846,10 @@ components:
           type: string
           description: ''
           example: "get"
+
+    dashboardConnection:
+      type: object
+
 
     createFbAccount:
       type: object

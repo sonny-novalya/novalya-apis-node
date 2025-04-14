@@ -100,11 +100,6 @@ try{
   // Serve Swagger docs
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   
-  app.use("/api-docs-test", (req, res) => {
-    console.log("swagger test")
-    res.send("Swagger test route is working");
-  });
-  console.log("Swagger loaded successfully");
 }catch(error){
   console.log("error is: ",error)
 }
