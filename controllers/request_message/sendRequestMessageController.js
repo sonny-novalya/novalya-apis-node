@@ -10,6 +10,8 @@ const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
 
+const Response = require("../../helpers/response");
+
 // Create a new send request message
 self.createSendRequestMessage = async (req, res) => {
   try {
@@ -27,8 +29,7 @@ self.createSendRequestMessage = async (req, res) => {
       where: {
         user_id: user_id,
       },
-    })
-      .then(async (record) => {
+    }).then(async (record) => {
         if (record) {
           const newTargetFriendSetting = await SendRequestMessage.update(
             {
@@ -48,7 +49,7 @@ self.createSendRequestMessage = async (req, res) => {
               user_id: user_id,
             },
           }).then(async (record) => {
-            res.status(200).json({ status: "success", data: record });
+            return Response.resWith202(res, "success", record);
           });
         } else {
           const result = await SendRequestMessage.create({
@@ -60,24 +61,14 @@ self.createSendRequestMessage = async (req, res) => {
             reject_stage_id,
             accept_stage_id,
           });
-          res.status(200).json({ status: "success", data: result });
+          return Response.resWith202(res, "success", result);
         }
       })
       .catch((error) => {
-        res
-          .status(500)
-          .json({
-            status: "error",
-            message: "An error occurred while creating target setting.",
-          });
+        return Response.resWith422(res, "An error occurred while creating message");
       });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        status: "error",
-        message: "An error occurred while creating the message.",
-      });
+    return Response.resWith422(res, "An error occurred while creating message");
   }
 };
 
@@ -99,9 +90,7 @@ self.updateSendRequestMessage = async (req, res) => {
     );
 
     if (!existingSendRequestMessage) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Send request message not found" });
+      return Response.resWith422(res, "Send request message not found");
     }
 
     // Update send request message attributes
@@ -115,16 +104,10 @@ self.updateSendRequestMessage = async (req, res) => {
     // Save the updated send request message
     await existingSendRequestMessage.save();
 
-    res
-      .status(200)
-      .json({ status: "success", data: existingSendRequestMessage });
+    return Response.resWith202(res, "success", existingSendRequestMessage);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        status: "error",
-        message: "An error occurred while updating the message.",
-      });
+
+    return Response.resWith422(res, "An error occurred while updating the message.");
   }
 };
 
@@ -179,21 +162,15 @@ self.getAllSendRequestMessages = async (req, res) => {
       ],
     })
     .then((record) => {
-      res.status(200).json({ status: "success", data: record });
+      Response.resWith202(res, "success", record);
     })
     .catch((error) => {
-      console.error("Error occurred:", error);  // Log the error for debugging
-      res.status(500).json({
-        status: "error",
-        message: "An error occurred while creating target setting.",
-      });
+      console.error("Error occurred:", error); 
+      return Response.resWith422(res, "An error occurred while updating the message.");
     });
   } catch (error) {
-    console.error("Error occurred:", error);  // Log the error for debugging
-    res.status(500).json({
-      status: "error",
-      message: "An error occurred while fetching send request messages.",
-    });
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "An error occurred while updating the message.");
   }
 };
 
