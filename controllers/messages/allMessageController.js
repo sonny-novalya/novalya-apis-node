@@ -197,92 +197,6 @@ exports.createDuplicateMessages = async (req, res) => {
   }
 };
 
-// Get all messages with their variants
-exports.getAllMessagesOld = async (req, res) => {
-  try {
-
-    const user_id = req.authUser;
-    const { visibility_type, page , limit , search } = req.body;
-     let offset=0
-    if(limit){
-
-       offset = (page - 1) * limit;
-    }
-
-    const categoryInfo = await Category.findOne({
-      where: {user_id, name: "My message"}
-    });
-
-    let messages = [];
-    if(categoryInfo) {
-      let whereClause = {
-        user_id,
-        category_id: categoryInfo.id
-      };
-      
-      if (visibility_type) {
-        var visibilityType = JSON.parse(visibility_type);
-        whereClause.visibility_type = {
-          [Op.contains]: [visibility_type]
-        };
-      }
-
-      // if (visibility_type) {
-      //   const visibilityType = JSON.parse(visibility_type);
-      //   whereClause.visibility_type = sequelize.literal(`JSON_CONTAINS(visibility_type, '["${visibilityType}"]')`);
-      // }
-
-      if (visibility_type) {
-          const visibilityTypes = JSON.parse(visibility_type); 
-          const conditions = visibilityTypes
-              .map((type) => `JSON_CONTAINS(visibility_type, '"${type}"')`)
-              .join(' OR '); 
-          
-          whereClause.visibility_type = sequelize.literal(`(${conditions})`);
-      }
-      if(limit){
-        messages = await Message.findAll({
-          where: whereClause,
-          include: [
-            {
-              model: db.Category,
-              as: "category",
-              // where: {user_id, title: "My message"}
-            },
-            {
-              model: db.MessageVariant,
-              as: "variants",
-            },
-          ],
-          limit:limit,
-          offset:offset,
-        distinct: true,
-        });
-      }else{
-        messages = await Message.findAll({
-          where: whereClause,
-          include: [
-            {
-              model: db.Category,
-              as: "category",
-              // where: {user_id, title: "My message"}
-            },
-            {
-              model: db.MessageVariant,
-              as: "variants",
-            },
-          ],
-        });
-      }
-    
-    }
-    return Response.resWith202(res, messages);
-  } catch (error) {
-    console.error("try-catch-error:", error);
-    
-    return Response.resWith422(res, error.message);
-  }
-};
 
 exports.getAllMessages = async (req, res) => {
   try {
@@ -456,38 +370,9 @@ exports.getTemplateMessagesData = async (req, res) => {
 
 
 // Update a message and its variants
-exports.updateMessageOld = async (req, res) => {
-  try {
-    const { message_id, name, variants } = req.body;
-
-    const message = await Message.findByPk(message_id);
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
-    }
-
-    await message.update({ title: name });
-
-    await MessageVariant.destroy({ where: { message_id: message.id } });
-
-    const messageVariants = variants.map((variant) => ({
-      message_id: message.id,
-      name: variant,
-      created_at: new Date(),
-    }));
-
-    await MessageVariant.bulkCreate(messageVariants);
-
-    return res.status(200).json({ message, variants: messageVariants });
-  } catch (error) {
-    console.error("Error updating message:", error);
-    return res.status(500).json({ error: "Failed to update message" });
-  }
-};
-
-// Update a message and its variants
 exports.updateMessage = async (req, res) => {
   try {
-    const { message_id, name, variants, visibility_type } = req.body;
+    const { message_id, name, variants, visibility_type, attachment } = req.body;
 
     const message = await Message.findByPk(message_id);
     if (!message) {
@@ -506,7 +391,23 @@ exports.updateMessage = async (req, res) => {
 
     await MessageVariant.bulkCreate(messageVariants);
 
-    return res.status(200).json({ message, variants: messageVariants });
+    Response.resWith202(res, 'update successfully', { message, variants: messageVariants });
+
+    if (attachment && attachment == undefined && attachment != null) {
+      (async () => {
+        try {
+          let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', '');
+          const imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
+  
+          await Message.update(
+            { attachment: imageUrl },
+            { where: { id: message_id } }
+          );
+        } catch (uploadError) {
+          console.error("Error uploading image in background:", uploadError);
+        }
+      })();
+    }
   } catch (error) {
     console.error("Error updating message:", error);
     return res.status(500).json({ error: "Failed to update message" });
