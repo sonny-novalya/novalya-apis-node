@@ -90,11 +90,11 @@ exports.createMessages = async (req, res) => {
       where: { name: "My message", user_id },
     });
 
-    let imageUrl = null
-    if(attachment){
-      let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', "");
-      imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
-    }
+    // let imageUrl = null
+    // if(attachment){
+    //   let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', "");
+    //   imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
+    // }
 
     const message = await Message.create({
       user_id,
@@ -113,7 +113,24 @@ exports.createMessages = async (req, res) => {
 
     await MessageVariant.bulkCreate(messageVariants);
 
-    return Response.resWith202(res, message, {variants: messageVariants});
+    Response.resWith202(res, message, {variants: messageVariants});
+    
+    if (attachment) {
+      (async () => {
+        try {
+          let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', '');
+          const imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
+  
+          await Message.update(
+            { attachment: imageUrl },
+            { where: { id: message.id } }
+          );
+        } catch (uploadError) {
+          console.error("Error uploading image in background:", uploadError);
+        }
+      })();
+    }
+
   } catch (error) {
     console.error("Error creating message:", error);
     
