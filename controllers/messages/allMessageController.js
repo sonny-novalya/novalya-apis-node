@@ -100,7 +100,7 @@ exports.createMessages = async (req, res) => {
       user_id,
       category_id: category.id,
       title: name,
-      attachment: imageUrl,
+      // attachment: imageUrl,
       language: language,
       visibility_type: JSON.stringify(visibility_type),
     });
