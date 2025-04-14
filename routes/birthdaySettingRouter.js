@@ -5,7 +5,7 @@ const { authenticateUser } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 const routes = [
-    { method: 'get', path: '/fetch', handler: birthdaySettingController.getBirthdaySetting },
+    { method: 'post', path: '/fetch', handler: birthdaySettingController.getBirthdaySetting },
     { method: 'post', path: '/create', handler: birthdaySettingController.createBirthdaySetting }
 ];
 

@@ -1,13 +1,8 @@
-const {
-  BirthdaySetting,
-  MessageData,
-  Section,
-  Sequelize,
-  Stage,
-} = require("../../Models");
+const { BirthdaySetting, MessageData, Section, Sequelize} = require("../../Models");
 const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
+const Response = require("../../helpers/response");
 
 self.getBirthdaySetting = async (req, res) => {
   try {
@@ -36,27 +31,18 @@ self.getBirthdaySetting = async (req, res) => {
         },
       ],
     });
-    res
-      .status(201)
-      .json({
-        status: "success",
-        message: "birthday setting fetched successfully",
-        data: existingBirthdaySetting,
-      });
+    return Response.resWith202(res, "birthday setting fetched successfully", existingBirthdaySetting);
   } catch (error) {
-    res.status(500).json({ status: "error", message: "something went wrong" });
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
   }
 };
 
 self.createBirthdaySetting = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { type, time_interval, birthday_id, birthday_type, action } =
-      req.body;
-    const existingBirthdaySetting = await BirthdaySetting.findOne({
-      where: { user_id },
-    });
-    // Create a new birthday setting record in the database
+    const { type, time_interval, birthday_id, birthday_type, action } = req.body;
+    const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id }});
 
     if (existingBirthdaySetting) {
       // If it exists, update the existing record
@@ -103,17 +89,12 @@ self.createBirthdaySetting = async (req, res) => {
 
       ],
     });
-    res
-      .status(201)
-      .json({
-        status: "success",
-        message: "birthday setting created successfully",
-        data: birthdaySetting,
-      });
+    return Response.resWith202(res, "birthday setting created successfully", birthdaySetting);
+    
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Unable to create birthday setting" });
+
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
   }
 };
 
