@@ -7,7 +7,9 @@ const Message = db.Message;
 const MessageTemplate = db.MessageTemplate;
 const MessageVariant = db.MessageVariant;
 const MessageVariantTemplate = db.MessageVariantTemplate;
+const TemplateFavorite = db.TemplateFavorite;
 const Response = require("../../helpers/response");
+const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 
 
 exports.getAllCategories = async (req, res) => {
@@ -81,16 +83,25 @@ exports.createMessages = async (req, res) => {
   try {
 
     const user_id = req.authUser;
-    const { name, variants, visibility_type } = req.body;
+    const { name, variants, visibility_type, language='', attachment } = req.body;
+    const folderName = "create-msg-library"
 
     const [category] = await Category.findOrCreate({
       where: { name: "My message", user_id },
     });
 
+    let imageUrl = null
+    if(attachment){
+      let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', "");
+      imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
+    }
+
     const message = await Message.create({
       user_id,
       category_id: category.id,
       title: name,
+      attachment: imageUrl,
+      language: language,
       visibility_type: JSON.stringify(visibility_type),
     });
 
@@ -104,6 +115,65 @@ exports.createMessages = async (req, res) => {
 
     return Response.resWith202(res, message, {variants: messageVariants});
   } catch (error) {
+    console.error("Error creating message:", error);
+    
+    return Response.resWith422(res, error.message);
+  }
+};
+
+exports.createDuplicateMessages = async (req, res) => {
+  try {
+
+    const user_id = req.authUser;
+    const { message_id } = req.body;
+
+    // console.log('message_id', message_id);
+    const existingMessage = await Message.findOne({
+      where: { id: message_id },
+    });
+
+    if(!existingMessage){
+      return Response.resWith422(res, "message does not exists");
+    }
+
+    // console.log('existingMessage', existingMessage);
+
+    const { category_id, title, created_at, language, visibility_type, favorite } = existingMessage;
+
+    let visibilityTypes = (visibility_type) ? visibility_type : [];
+
+    const create_message = await Message.create({
+      user_id,
+      category_id: category_id,
+      title: title + ' (Copy)',
+      visibility_type: visibilityTypes,
+    });
+
+    var oldMessageId = message_id; 
+    const newMessageId = create_message.id;
+
+    const oldVariants = await MessageVariant.findAll({
+      where: { message_id: oldMessageId },
+    });
+
+    if (oldVariants && oldVariants.length > 0) {
+      
+      const newVariants = oldVariants.map(variant => {
+        const variantData = variant.toJSON();
+        delete variantData.id;
+        delete variantData.created_at;
+        variantData.message_id = newMessageId; 
+        return variantData;
+      });
+
+      // console.log('variantData', newVariants);
+      
+      await MessageVariant.bulkCreate(newVariants);
+    }
+
+    return Response.resWith202(res, 'duplicate message created successfully');
+  } catch (error) {
+
     console.error("Error creating message:", error);
     
     return Response.resWith422(res, error.message);
@@ -200,7 +270,7 @@ exports.getAllMessagesOld = async (req, res) => {
 exports.getAllMessages = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { visibility_type, page = 1, limit = 10, search } = req.body;
+    const { visibility_type, page = 1, limit = 10, search, sort_by = "id", sort_order = "DESC" } = req.body;
 
     const offset = (page - 1) * limit;
 
@@ -231,6 +301,13 @@ exports.getAllMessages = async (req, res) => {
       whereClause.visibility_type = sequelize.literal(`(${conditions})`);
     }
 
+    // Validate and apply sorting
+    const validSortFields = ["title", "id"];
+    const validSortOrders = ["ASC", "DESC"];
+    const orderBy = validSortFields.includes(sort_by) ? sort_by : "id";
+    const orderDirection = validSortOrders.includes(sort_order.toUpperCase()) ? sort_order.toUpperCase() : "DESC";
+
+
     const { rows: messages, count: total } = await Message.findAndCountAll({
       where: whereClause,
       include: [
@@ -243,7 +320,7 @@ exports.getAllMessages = async (req, res) => {
           as: "variants",
         }
       ],
-      order: [['id', 'DESC']],
+      order: [[orderBy, orderDirection]],
       limit,
       offset,
       distinct: true,
@@ -334,11 +411,24 @@ exports.getTemplateMessagesData = async (req, res) => {
         {
           model: db.MessageVariantTemplate,
           as: "variants",
-        },
+        }
       ],
     });
 
-    // console.log("messages--336:", messages);
+    const results = [];
+
+    for (const msg of messages) {
+      const favorite = await TemplateFavorite.findOne({
+        where: {
+          user_id: user_id,
+          template_id: msg.id,
+          favorite: 1,
+        },
+      });
+
+      msg.favorite = (favorite) ? true : false;
+    }
+
     return Response.resWith202(res, messages);
 
   } catch (error) {
@@ -461,20 +551,59 @@ exports.getMessageByCategory = async (req, res) => {
 
 exports.setFavoriteMessage = async (req, res) => {
   try {
-    const { message_id, favorite } = req.body;
 
-    const message = await Message.findByPk(message_id);
-    console.log(message)
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
+    const user_id = req.authUser;
+    const { action_id, type='message' } = req.body;
+
+    if(type == 'template'){
+
+      const checkTemplate = await TemplateFavorite.findOne({
+        where: {
+          user_id: user_id,
+          template_id: action_id,     
+        },
+      });
+      
+      if (checkTemplate) {
+
+        const { id, favorite } = checkTemplate;
+
+        console.log('id', id);
+        console.log('favorite', favorite);
+
+        await TemplateFavorite.update(
+          { favorite: (favorite == 1) ? 0 : 1 },
+          {
+            where: {
+              template_id: action_id,
+              user_id: user_id,
+            },
+          }
+        );
+      } else {
+
+        await TemplateFavorite.create({user_id: user_id, template_id: action_id, favorite: 1});
+      }     
+      
+      return Response.resWith202(res, 'update success');
+    } else {
+
+      const message = await Message.findByPk(action_id);
+
+      if (!message) {
+
+        return Response.resWith422(res, 'Message not found');
+      }
+  
+      await message.update({ favorite: message.favorite == 0 ? 1 : 0 });
+      
+      return Response.resWith202(res, 'update success', message);
     }
-
-    await message.update({ favorite: message.favorite == 0 ? 1 : 0 });
-
-    return res.status(200).json(message);
+   
   } catch (error) {
     console.error("Error fetching messages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
+
+    return Response.resWith422(res, 'Failed to fetch messages');
   }
 };
 

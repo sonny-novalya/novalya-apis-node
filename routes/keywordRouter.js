@@ -6,7 +6,7 @@ const { authenticateUser } = require('../middlewares/authMiddleware');
 // Define the route handlers and their corresponding HTTP methods
 
 const routes = [
-    { method: 'get', path: '/all', handler: keywordController.getAll },
+    { method: 'post', path: '/all', handler: keywordController.getAll },
     { method: 'post', path: '/create', handler: keywordController.create },
     { method: 'get', path: '/:keywordID', handler: keywordController.getByID },
     { method: 'post', path: '/:keywordID', handler: keywordController.update },

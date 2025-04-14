@@ -1,14 +1,31 @@
 const { Keyword, KeywordType } = require("../../Models");
-
+const Response = require("../../helpers/response");
+const { Op } = require("sequelize");
 let self = {};
 
 self.getAll = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { page = 1, limit = 50, orderBy = "desc", type = null } = req.query;
+    const {
+      page = 1,
+      limit = 50,
+      order = "desc",
+      orderBy = "id", 
+      type = null,
+      search = ""
+    } = req.body;
+
     const offset = (page - 1) * limit;
 
-    const whereOptions = user_id ? { user_id } : {};
+    const whereOptions = {
+      ...(user_id && { user_id }),
+      ...(search && {
+        name: {
+          [Op.like]: `%${search}%`, 
+        },
+      }),
+    };
+
     const includeOptions = type
       ? {
           model: KeywordType,
@@ -24,17 +41,22 @@ self.getAll = async (req, res) => {
     const fetchParams = {
       where: whereOptions,
       offset,
-      include: includeOptions,
-      limit: limit ? parseInt(limit) : undefined,
-      order: [["id", orderBy === "desc" ? "DESC" : "ASC"]],
+      limit: parseInt(limit),
+      include: [includeOptions],
+      order: [[orderBy, order.toUpperCase() === "DESC" ? "DESC" : "ASC"]],
     };
 
     const keywords = await Keyword.findAll(fetchParams);
-    res.status(200).json({ status: "success", data: keywords });
+
+    return Response.resWith202(res, 'success', keywords);
   } catch (error) {
-    res.status(500).json({ status: "error", message: error.message });
+
+    console.log('error', error);
+    return Response.resWith422(res, error.message);
   }
+
 };
+
 
 self.create = async (req, res) => {
   try {
@@ -72,13 +94,12 @@ self.create = async (req, res) => {
       },
     };
 
-    const newKeyword = await Keyword.findOne(query);
-    res.status(200).json({ status: "success", data: newKeyword });
+    // const newKeyword = await Keyword.findOne(query);
+    return Response.resWith202(res, "success");
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error,
-    });
+    
+    console.log('error', error);
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -94,17 +115,14 @@ self.getByID = async (req, res) => {
     });
 
     if (!result) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Keyword not found." });
+      return Response.resWith400(res, 'Keyword not found.');
     }
 
-    res.status(200).json({ status: "success", data: result });
+    return Response.resWith202(res, "success", result);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "An error occurred while fetching group details.",
-    });
+    
+    console.log('error', error);
+    return Response.resWith422(res, "Someting went wrong");
   }
 };
 
@@ -121,9 +139,7 @@ self.update = async (req, res) => {
     let keyword = await Keyword.findByPk(keywordID);
 
     if (!keyword) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Keyword not found." });
+      return Response.resWith400(res, 'Keyword not found.');
     }
 
     const updatedKeyword = await keyword.update({
@@ -145,9 +161,11 @@ self.update = async (req, res) => {
       },
     });
 
-    res.status(200).json({ status: "success", data: keyword });
+    return Response.resWith202(res, "success", keyword);
   } catch (error) {
-    res.status(500).json({ status: "error", message: error.message });
+
+    console.log('error', error);
+    return Response.resWith422(res, "Someting went wrong");
   }
 };
 
@@ -158,22 +176,18 @@ self.delete = async (req, res) => {
     const result = await Keyword.findByPk(keywordID);
 
     if (!result) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Keyword not found." });
+      return Response.resWith400(res, 'Keyword not found.');
     }
 
     await result.destroy();
 
     await KeywordType.destroy({ where: { keyword_id: keywordID } }); // Delete existing
-    res
-      .status(200)
-      .json({ status: "success", message: "Keyword deleted successfully." });
+
+    return Response.resWith202(res, "Keyword deleted successfully.");
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "An error occurred while deleting the Keyword.",
-    });
+    
+    console.log('error', error);
+    return Response.resWith422(res, "Someting went wrong");
   }
 };
 
@@ -190,9 +204,7 @@ self.duplicate = async (req, res) => {
     });
 
     if (!result) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Keyword not found." });
+      return Response.resWith400(res, 'Keyword not found.');
     }
 
     const newKeyword = await Keyword.create({
@@ -218,9 +230,10 @@ self.duplicate = async (req, res) => {
       }
     }
 
-    res.status(200).json({ status: "success", data: newKeyword });
+    return Response.resWith202(res, "success", newKeyword);
   } catch (error) {
-    res.status(500).json({ status: "error", message: error.message });
+    console.log('error', error);
+    return Response.resWith422(res, "Someting went wrong");
   }
 };
 

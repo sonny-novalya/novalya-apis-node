@@ -56,6 +56,7 @@ db.Message = require("../Message")(sequelize, DataTypes);
 db.CategoryTemplate = require("../CategoryTemplate")(sequelize, DataTypes);
 db.MessageVariantTemplate = require("../MessageVariantTemplate")(sequelize, DataTypes);
 db.MessageTemplate = require("../MessageTemplate")(sequelize, DataTypes);
+db.TemplateFavorite = require("../TemplateFavorite")(sequelize, DataTypes);
 
 // Establish 1 to Many Relation
 db.tag.hasMany(db.campaign, { foreignKey: "group_id" }); // Use "tag_id" as the foreign key in campaign
