@@ -10,8 +10,9 @@ info:
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
   version: 1.0.0
 servers:
-  - url: 'http://localhost:3000'
+  - url: 'http://localhost:8000'
   - url: 'https://novalyabackend.novalya.com'
+  - url: 'https://api-v2.novalya.com/'
   # - url: 'http://localhost:7000/admin'
   # - url: 'https://api.novalya.app/admin'
 tags:
@@ -682,7 +683,7 @@ paths:
       x-codegen-request-body-name: body
 
   /keywords/api/all:
-    get:
+    post:
       tags:
         - Messages
       summary: get keywords
@@ -988,7 +989,7 @@ paths:
       x-codegen-request-body-name: body
 
   /birthday/setting/api/fetch:
-    get:
+    post:
       tags:
         - Facebook-Groups-and-Tags
       summary: get birthday settings
@@ -1579,6 +1580,57 @@ paths:
           content: {}
       x-codegen-request-body-name: body
 
+  /all/messages/api/get-templates-data:
+    post:
+      tags:
+        - Messages
+      summary: Get Templates Data 
+      operationId: getTemplatesData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/update-favorite:
+    post:
+      tags:
+        - Messages
+      summary: Update Favorite Message
+      operationId: updateFavourite
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Favorite Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateFavourite'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
   /keywords/api/create:
     post:
       tags:
@@ -2050,6 +2102,206 @@ paths:
           content: {}
       x-codegen-request-body-name: body
 
+  /novadata/api/remove-fb-tagging:
+    post:
+      tags:
+        - Friends
+      summary: Remove FB Tag From webApp
+      operationId: removeFbTag
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Remove FB Tag From webApp
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/removeFbTag'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-fb-end-cursor:
+    get:
+      tags:
+        - Friends
+      summary: Get Facebook End Cursor
+      operationId: getFbEndCursor
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/sync-fb-friends:
+    post:
+      tags:
+        - Friends
+      summary: Sync FB Friends
+      operationId: syncFbFriends
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Sync FB Friends
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/syncFbFriends'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/sync-fb-friends-details:
+    post:
+      tags:
+        - Friends
+      summary: Sync FB Friends
+      operationId: syncFbFriendsDetails
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Sync FB Friends
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/syncFbFriendsDetails'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-deactivated:
+    post:
+      tags:
+        - Friends
+      summary: Get Deactivated Accounts
+      operationId: getDeactivated
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Deactivated Accounts
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/getDeactivated'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/delete-deactivated:
+    post:
+      tags:
+        - Friends
+      summary: Delete Deactivated Accounts
+      operationId: deleteDeactivated
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Delete Deactivated Accounts
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deleteDeactivated'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/remove-whitelist:
+    post:
+      tags:
+        - Friends
+      summary: Remove Whitelist Accounts
+      operationId: removeWhitelist
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Remove Whitelist Accounts
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/removeWhitelist'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
   /groups/api/get-group-by-folder:
     get:
       tags:
@@ -2283,7 +2535,7 @@ paths:
       x-codegen-request-body-name: body
 
   /request/message/api/all:
-    get:
+    post:
       tags:
         - Request
       summary: get request messages
@@ -2320,6 +2572,43 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/saveRequestMessages'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /request/message/api/{msgId}:
+    post:
+      tags:
+        - Request
+      summary: Update request messages
+      parameters:
+        - name: msgId
+          in: path
+          description: Message id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: updateRequestMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update reuest message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateRequestMessages'
         required: true
       responses:
         '200':
@@ -4639,6 +4928,34 @@ components:
           description: ''
           example: 76810
 
+    updateRequestMessages:
+      type: object
+      properties:
+        reject_group_id:
+          type: number
+          description: ''
+          example: 20663
+        accept_group_id:
+          type: number
+          description: ''
+          example: 19396
+        reject_message_id:
+          type: number
+          description: ''
+          example: 0
+        accept_message_id:
+          type: number
+          description: ''
+          example: 0
+        reject_stage_id:
+          type: number
+          description: ''
+          example: 19393
+        accept_stage_id:
+          type: number
+          description: ''
+          example: 76810
+
     tagCreate:
       type: object
       properties:
@@ -4769,7 +5086,7 @@ components:
         attachment:
           type: string
           description: ''
-          example: null
+          example: 'base 64 url comes here'
 
     createDuplicateMsg:
       type: object
@@ -4778,6 +5095,18 @@ components:
           type: number
           description: ''
           example: 28856
+
+    updateFavourite:
+      type: object
+      properties:
+        action_id:
+          type: number
+          description: ''
+          example: 10
+        type:
+          type: string
+          description: ''
+          example: 'message'
 
     createNewKeywords:
       type: object
@@ -4830,6 +5159,75 @@ components:
           type: array
           description: ''
           example: [4718426, 4718425]
+
+    removeFbTag:
+      type: object
+      properties:
+        ids:
+          type: array
+          description: ''
+          example: [4718426, 4718425]
+
+    syncFbFriends:
+      type: object
+      properties:
+        friends:
+          type: array
+          description: ''
+          example: [{"fb_numeric_id":"100083050718808", "image": "data:image/jpeg;base", "name": "Amit Panwar 23", "url": "https://www.facebook.com/techrit.sre", "mutual_friend": 0}]
+
+      
+    syncFbFriendsDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ''
+          example: "100000693107378"
+        name:
+          type: string
+          description: ''
+          example: "Sobinder Rana 12"
+        birthday:
+          type: string
+          description: ''
+          example: "07/08"
+        gender:
+          type: string
+          description: ''
+          example: "male"
+        hometown:
+          type: string
+          description: ''
+          example: "YNR"
+        languages:
+          type: string
+          description: ''
+          example: "English"
+
+    getDeactivated:
+      type: object
+      properties:
+        userIds:
+          type: array
+          description: ''
+          example: [12,56,2]
+
+    deleteDeactivated:
+      type: object
+      properties:
+        id:
+          type: number
+          description: ''
+          example: 12
+
+    removeWhitelist:
+      type: object
+      properties:
+        ids:
+          type: array
+          description: ''
+          example: [4842514, 4842512]
 
     getAllFriends:
       type: object
