@@ -5,7 +5,7 @@ const { authenticateUser } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 const routes = [
-    { method: 'get', path: '/all', handler: sendRequestMessageController.getAllSendRequestMessages },
+    { method: 'post', path: '/all', handler: sendRequestMessageController.getAllSendRequestMessages },
     { method: 'post', path: '/create', handler: sendRequestMessageController.createSendRequestMessage },
     { method: 'post', path: '/:id', handler: sendRequestMessageController.updateSendRequestMessage },
 ];
