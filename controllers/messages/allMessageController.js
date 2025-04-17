@@ -115,16 +115,21 @@ exports.createMessages = async (req, res) => {
 
     Response.resWith202(res, message, {variants: messageVariants});
     
+    // console.log('attachment--118', attachment);
+
     if (attachment) {
+      // console.log('attachment--119', attachment);
+      
       (async () => {
         try {
           let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', '');
           const imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
-  
-          await Message.update(
+
+          var updateImage = await Message.update(
             { attachment: imageUrl },
-            { where: { id: message.id } }
+            { where: { id: message.id }, hooks: false }
           );
+          // console.log('updateImage--133', updateImage);
         } catch (uploadError) {
           console.error("Error uploading image in background:", uploadError);
         }
@@ -401,7 +406,7 @@ exports.updateMessage = async (req, res) => {
   
           await Message.update(
             { attachment: imageUrl },
-            { where: { id: message_id } }
+            { where: { id: message_id }, hooks: false }
           );
         } catch (uploadError) {
           console.error("Error uploading image in background:", uploadError);
