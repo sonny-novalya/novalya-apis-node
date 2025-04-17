@@ -23,7 +23,10 @@ module.exports = (sequelize, DataTypes) => {
       title: DataTypes.TEXT,
       created_at: DataTypes.DATE,
       language: DataTypes.STRING,
-      attachment: DataTypes.TEXT,
+      attachment: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       visibility_type: DataTypes.STRING,
       favorite: {
         type: DataTypes.BOOLEAN,
