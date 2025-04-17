@@ -115,7 +115,8 @@ self.updateSendRequestMessage = async (req, res) => {
 self.getAllSendRequestMessages = async (req, res) => {
   try {
     const user_id = req.authUser;
-
+    console.log('user_id-118', user_id);
+    
     SendRequestMessage.findOne({
       where: {
         user_id: user_id,
