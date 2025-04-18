@@ -43,16 +43,18 @@ self.createBirthdaySetting = async (req, res) => {
     const user_id = req.authUser;
     const { type, time_interval, birthday_id, birthday_type, action } = req.body;
     const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id }});
-
+    console.log('existingBirthdaySetting--46', existingBirthdaySetting);
+    
     if (existingBirthdaySetting) {
       // If it exists, update the existing record
-      await existingBirthdaySetting.update({
+      var updateData = await existingBirthdaySetting.update({
         type,
         time_interval: time_interval || 1,
         birthday_id,
         birthday_type,
         action,
       });
+      console.log('updateData--46', updateData);
     } else {
       // If it doesn't exist, create a new record
       const newBirthdaySetting = await BirthdaySetting.create({
@@ -63,6 +65,7 @@ self.createBirthdaySetting = async (req, res) => {
         birthday_type,
         action,
       });
+      console.log('newBirthdaySetting--46', newBirthdaySetting);
     }
     const birthdaySetting = await BirthdaySetting.findOne({
       where: { user_id },
