@@ -23,10 +23,10 @@ module.exports = (sequelize, DataTypes) => {
       title: DataTypes.TEXT,
       created_at: DataTypes.DATE,
       language: DataTypes.STRING,
-      // attachment: {
-      //   type: DataTypes.TEXT,
-      //   allowNull: true,
-      // },
+      attachment: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       visibility_type: DataTypes.STRING,
       favorite: {
         type: DataTypes.BOOLEAN,
@@ -40,5 +40,13 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: false,
     }
   );
+
+  Message.sync({ alter: true })
+  .then(() => {
+    console.log("Message table synced (altered if needed)");
+  })
+  .catch((err) => {
+    console.error("Error syncing Message table:", err);
+  });
   return Message;
 };
