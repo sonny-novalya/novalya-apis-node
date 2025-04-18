@@ -41,12 +41,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  Message.sync({ alter: true })
-  .then(() => {
-    console.log("Message table synced (altered if needed)");
-  })
-  .catch((err) => {
-    console.error("Error syncing Message table:", err);
-  });
+  // Message.sync({ alter: true })
+  // .then(() => {
+  //   console.log("Message table synced (altered if needed)");
+  // })
+  // .catch((err) => {
+  //   console.error("Error syncing Message table:", err);
+  // });
   return Message;
 };
