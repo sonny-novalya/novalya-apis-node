@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       created_at: DataTypes.DATE,
       language: DataTypes.STRING,
       attachment: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       visibility_type: DataTypes.STRING,
