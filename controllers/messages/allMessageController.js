@@ -229,11 +229,19 @@ exports.getAllMessages = async (req, res) => {
     }
 
     // Handle visibility_type
+    // if (visibility_type) {
+    //   const visibilityTypes = visibility_type;
+    //   const conditions = visibilityTypes
+    //     .map(type => `JSON_CONTAINS(visibility_type, '"${type}"')`)
+    //     .join(' OR ');
+    //   whereClause.visibility_type = sequelize.literal(`(${conditions})`);
+    // }
+
     if (visibility_type) {
-      const visibilityTypes = JSON.parse(visibility_type);
-      const conditions = visibilityTypes
-        .map(type => `JSON_CONTAINS(visibility_type, '"${type}"')`)
-        .join(' OR ');
+      const visibilityTypes = Array.isArray(visibility_type) ? visibility_type : [visibility_type]; 
+    
+      const conditions = visibilityTypes.map(type => `JSON_CONTAINS(visibility_type, ${sequelize.escape(`"${type}"`)})`).join(' OR ');
+    
       whereClause.visibility_type = sequelize.literal(`(${conditions})`);
     }
 
