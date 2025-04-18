@@ -379,7 +379,7 @@ exports.updateMessage = async (req, res) => {
   try {
 
     const user_id = req.authUser;
-    const { message_id, name, variants, visibility_type, attachment } = req.body;
+    const { message_id, name, variants, visibility_type, attachment, is_image_delete=false } = req.body;
 
     const message = await Message.findByPk(message_id);
     if (!message) {
@@ -402,7 +402,14 @@ exports.updateMessage = async (req, res) => {
 
     Response.resWith202(res, 'update successfully');
 
-    if (attachment && attachment != undefined && attachment != null) {
+    if(is_image_delete){
+      const updatedImageNull = await Message.update(
+        { attachment: "" },
+        { where: { id: message_id }, hooks: false }
+      );
+    }
+
+    if (!is_image_delete && attachment && attachment != undefined && attachment != null) {
       (async () => {
         try {
           const folderName = "create-msg-library"
