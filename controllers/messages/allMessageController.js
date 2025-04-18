@@ -377,14 +377,18 @@ exports.getTemplateMessagesData = async (req, res) => {
 // Update a message and its variants
 exports.updateMessage = async (req, res) => {
   try {
+
+    const user_id = req.authUser;
     const { message_id, name, variants, visibility_type, attachment } = req.body;
 
     const message = await Message.findByPk(message_id);
     if (!message) {
-      return res.status(404).json({ error: "Message not found" });
+      return Response.resWith422(res, "Message not found");
     }
 
-    await message.update({ title: name, visibility_type: JSON.stringify(visibility_type) });
+    // console.log('message_id--387', message_id);
+    
+    await message.update({ title: name, visibility_type: JSON.stringify(visibility_type) }, { where: { id: message_id }, hooks: false });
 
     await MessageVariant.destroy({ where: { message_id: message.id } });
 
@@ -396,18 +400,20 @@ exports.updateMessage = async (req, res) => {
 
     await MessageVariant.bulkCreate(messageVariants);
 
-    Response.resWith202(res, 'update successfully', { message, variants: messageVariants });
+    Response.resWith202(res, 'update successfully');
 
-    if (attachment && attachment == undefined && attachment != null) {
+    if (attachment && attachment != undefined && attachment != null) {
       (async () => {
         try {
+          const folderName = "create-msg-library"
           let imageId = `${name.replace(/\s+/g, "-").toLowerCase()}-${user_id}`.replace('#', '');
           const imageUrl = await UploadImageOnS3Bucket(attachment, folderName, imageId);
-  
-          await Message.update(
+          // console.log('imageUrl--387', imageUrl);
+          const updatedVal = await Message.update(
             { attachment: imageUrl },
             { where: { id: message_id }, hooks: false }
           );
+          // console.log('updatedVal--387', updatedVal);
         } catch (uploadError) {
           console.error("Error uploading image in background:", uploadError);
         }
@@ -415,7 +421,7 @@ exports.updateMessage = async (req, res) => {
     }
   } catch (error) {
     console.error("Error updating message:", error);
-    return res.status(500).json({ error: "Failed to update message" });
+    return Response.resWith422(res, "Failed to update message");
   }
 };
 
