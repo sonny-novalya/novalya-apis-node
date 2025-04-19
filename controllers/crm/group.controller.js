@@ -4,6 +4,7 @@ const {
   getAuthUser,
   randomToken,
 } = require("../../helpers/functions");
+const Response = require("../../helpers/response");
 const { Model } = require("sequelize");
 const { Sequelize } = require("../../Models");
 const Op = Sequelize.Op;
@@ -66,11 +67,13 @@ const placetag = async (req, res) => {
         include: "stage",
       });
     }
-    res.send(createdTag);
+    return Response.resWith202(res, createdTag);
   } catch (error) {
-    res.status(500).send(error);
+    console.log('error', error);    
+    return Response.resWith422(res, error);
   }
 };
+
 const getAll = async (req, res) => {
   try {
     const query = req.query;
@@ -86,9 +89,11 @@ const getAll = async (req, res) => {
       ],
       order: [["order_num", "DESC"]],
     });
-    res.send(data);
+    return Response.resWith202(res, data);
   } catch (error) {
-    res.status(500).json({ message: error });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error);
   }
 };
 
@@ -123,7 +128,8 @@ const getOne = async (req, res) => {
     });
 
     if (!tagData) {
-      return res.status(404).json({ message: "Tag not found" });
+      
+      return Response.resWith422(res, 'Tag not found');
     }
 
     let stageData = await db.stage.findAll({
@@ -165,7 +171,8 @@ const getOne = async (req, res) => {
       duplicateStages,
     });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    console.log('error', error);    
+    return Response.resWith422(res, error);
   }
 };
 
@@ -176,7 +183,7 @@ const updateOne = async (req, res) => {
   params.user_id = authUser;
 
   const data = await tag.update(params, { where: { id: id } });
-  res.send(data);
+  return Response.resWith202(res, data);
 };
 
 const deleteOne = async (req, res) => {
@@ -199,14 +206,12 @@ const deleteOne = async (req, res) => {
     );
 
     await tag.destroy({ where: { id: id } });
-    res.json({
-      message: "tag successfully deleted",
-    });
+
+    return Response.resWith202(res, null, 'tag successfully deleted');
   } catch (error) {
-    res.json({
-      message: "tag successfully deleted",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -258,14 +263,13 @@ const limitDowngrade = async (req, res) => {
     );
   
     // Send a single response after all operations are complete
-    res.json({
-      message: "All tags successfully processed.",
-    });
+    return Response.resWith202(res, null, 'All tags successfully processed.');
+    
+    
   } catch (error) {
-    res.json({
-      message: "tag successfully deleted",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -287,8 +291,9 @@ const reorderGroup = async (req, res) => {
     await updatedGroups[i].update({ order_num: updatedGroups.length - i });
   }
 
-  res.send(updatedGroups);
+  return Response.resWith202(res, updatedGroups);
 };
+
 module.exports = {
   placetag,
   getAll,

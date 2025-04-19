@@ -88,11 +88,11 @@ router.get("/compaigns/:id", campaignController.getOne)
   .patch("/compaigns/:id", campaignController.updateOne)
   .delete("/compaigns/:id", campaignController.deleteOne);
 
-// tags
-router
-  .post("/group", groupController.placetag)
-  .get("/group", groupController.getAll)
-  .post("/reorderGroup", groupController.reorderGroup);
+// CRM
+router.post("/group", groupController.placetag);
+router.post("/facebook/get-all-groups", groupController.getAll);
+router.post("/reorderGroup", groupController.reorderGroup);
+
 router
   .get("/group/:id", groupController.getOne)
   .patch("/group/:id", groupController.updateOne)
