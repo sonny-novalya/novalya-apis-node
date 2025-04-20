@@ -1,6 +1,7 @@
 const db = require("../../Models/crm");
 const { checkAuthorization, getAuthUser } = require("../../helpers/functions");
 const taggedusers = db.taggedusers;
+const Response = require("../../helpers/response");
 
 const placetaggedUsers = async (req, res) => {
   try {
@@ -131,38 +132,41 @@ const changeUserTagGroup = async (req, res)=>{
 
 const getAll = async (req, res) => {
   try {
+
     const user_id = await getAuthUser(req, res);
-    const { type = "facebook" } = req.query;
-    const taggedusersTable =
-      type === "instagram" ? db.instataggedusers : taggedusers;
+    const { type = "facebook" } = req.body;
+
+    const taggedusersTable = type === "instagram" ? db.instataggedusers : taggedusers;
 
     const records = await taggedusersTable.findAll({
       where: {
         user_id: user_id,
       },
     });
-    res.status(200).json({
-      status: "success",
-      message: "Tagged users fetched successfully",
-      data: records,
-    });
+
+    return Response.resWith202(res, 'Tagged users fetched successfully', records);
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", error: error });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
 const getOne = async (req, res) => {
+  
   const id = req.params.id;
   const { type = "facebook" } = req.query;
 
   try {
-    const taggedusersTable =
-      type === "instagram" ? db.instataggedusers : taggedusers;
+
+    const taggedusersTable = type === "instagram" ? db.instataggedusers : taggedusers;
     const data = await taggedusersTable.findOne({ where: { id: id } });
 
-    res.json(data);
+    return Response.resWith202(res, 'success', data);
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", error: error });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -184,11 +188,11 @@ const updateOne = async (req, res) => {
       returning: true,
     });
 
-    res.json(updatedData);
+    return Response.resWith202(res, 'success', updatedData);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -233,20 +237,20 @@ const deleteOne = async (req, res) => {
     const id = req.params.id;
     const { type = "facebook" } = req.query;
 
-    const taggedusersTable =
-      type === "instagram" ? db.instataggedusers : taggedusers;
+    const taggedusersTable = type === "instagram" ? db.instataggedusers : taggedusers;
 
     const rowsDeleted = await taggedusersTable.destroy({ where: { id: id } });
 
     if (rowsDeleted === 0) {
-      return res.status(404).json({ message: "Record not found" });
+
+      return Response.resWith422(res, 'Record not found');
     }
 
-    res.json({
-      message: "Tagged user successfully deleted",
-    });
+    return Response.resWith202(res, 'Tagged user successfully deleted');
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", error: error });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 

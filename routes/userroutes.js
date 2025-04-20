@@ -111,10 +111,11 @@ router
   .delete("/instagram/group/:id", instagramGroupController.deleteOne);
 
 // tagged User
-router
-  .post("/taggeduser/", taggedUserController.placetaggedUsers)
-  .get("/taggeduser/", taggedUserController.getAll);
+router.post("/taggeduser/", taggedUserController.placetaggedUsers);
+router.post("/get-all-tagged-users", taggedUserController.getAll);
+
 router.patch("/taggeduser/multiple/", taggedUserController.updateMultiple);
+
 router
   .get("/taggeduser/:id", taggedUserController.getOne)
   .patch("/taggeduser/:id", taggedUserController.updateOne)
@@ -142,9 +143,9 @@ router
   .delete("/section/:id", sectionController.deleteOne);
 
 // note
-router
-  .post("/note/", noteController.placeNote)
-  .get("/note/", noteController.getAll);
+router.post("/note/", noteController.placeNote);
+router.post("/get-all-note", noteController.getAll);
+
 router
   .get("/note/:id", noteController.getOne)
   .get("/note/tagged_user/:fb_user_id", noteController.getByUser)

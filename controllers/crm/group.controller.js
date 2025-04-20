@@ -67,10 +67,10 @@ const placetag = async (req, res) => {
         include: "stage",
       });
     }
-    return Response.resWith202(res, createdTag);
+    return Response.resWith202(res, 'success', createdTag);
   } catch (error) {
     console.log('error', error);    
-    return Response.resWith422(res, error);
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -89,11 +89,11 @@ const getAll = async (req, res) => {
       ],
       order: [["order_num", "DESC"]],
     });
-    return Response.resWith202(res, data);
+    return Response.resWith202(res, 'success', data);
   } catch (error) {
 
     console.log('error', error);    
-    return Response.resWith422(res, error);
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -118,6 +118,7 @@ function findDuplicateStages(stageData) {
 }
 
 const getOne = async (req, res) => {
+
   const id = req.params.id;
   const authUser = await getAuthUser(req, res);
 
@@ -164,26 +165,43 @@ const getOne = async (req, res) => {
       },
     });
 
-    res.json({
-      ...tagData.toJSON(),
-      taggedUsers: taggedUsersDetails,
-      stage: stageData,
-      duplicateStages,
-    });
+    var final_response = {
+        tag_data: tagData.toJSON(),
+        taggedUsers: taggedUsersDetails,
+        stage: stageData,
+        duplicate_stage: duplicateStages
+    };
+    return Response.resWith202(res, 'success', final_response);
+    
+    // res.json({
+    //   ...tagData.toJSON(),
+    //   taggedUsers: taggedUsersDetails,
+    //   stage: stageData,
+    //   duplicateStages,
+    // });
   } catch (error) {
+
     console.log('error', error);    
-    return Response.resWith422(res, error);
+    return Response.resWith422(res, error.message);
   }
 };
 
 const updateOne = async (req, res) => {
-  const id = req.params.id;
-  const authUser = await getAuthUser(req, res);
-  let params = req.body;
-  params.user_id = authUser;
+  
+  try {
+    
+    const id = req.params.id;
+    const authUser = await getAuthUser(req, res);
+    let params = req.body;
+    params.user_id = authUser;
 
-  const data = await tag.update(params, { where: { id: id } });
-  return Response.resWith202(res, data);
+    const data = await tag.update(params, { where: { id: id } });
+    return Response.resWith202(res, 'success', data);
+  } catch (error) {
+    
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
 };
 
 const deleteOne = async (req, res) => {
