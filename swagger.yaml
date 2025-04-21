@@ -1,0 +1,6363 @@
+openapi: 3.0.2
+info:
+  title: Novalya API
+  description: This is a Novalya Api docs.
+  termsOfService: 'http://swagger.io/terms/'
+  contact:
+    email: sam.test@yopmail.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8000'
+  - url: 'https://novalyabackend.novalya.com'
+  - url: 'https://api-v2.novalya.com/'
+  # - url: 'http://localhost:7000/admin'
+  # - url: 'https://api.novalya.app/admin'
+tags:
+  # - name: Category
+  #   description: Category Api
+  #   externalDocs:
+  #     description: Find out more about category
+  - name: User
+    description: User Api
+    externalDocs:
+      description: Find out more about our auth
+      url: ''
+  - name: Messages
+    description: Messages Api
+    externalDocs:
+      description: Find out more about messages
+      url: ''
+  - name: Friends
+    description: friends Api
+    externalDocs:
+      description: Find out more about friends
+      url: ''
+  - name: Groups
+    description: groups Api
+    externalDocs:
+      description: Find out more about added groups
+      url: ''
+  - name: statistics
+    description: statistics Api
+    externalDocs:
+      description: Find out more about statistics
+      url: ''
+  - name: Facebook-Groups-and-Tags
+    description: groups Api
+    externalDocs:
+      description: Find out more about groups
+      url: ''
+  - name: Instagram-Groups-and-Tags
+    description: groups Api
+    externalDocs:
+      description: Find out more about groups
+      url: ''
+  - name: Request
+    description: Request Api
+    externalDocs:
+      description: Find out more about request
+      url: ''
+  - name: User-Extension-API
+    description: User Extension Api
+    externalDocs:
+      description: Find out more about User Extension Apis
+      url: ''
+  - name: Facebook-Extension-API
+    description: Facebook Extension Api
+    externalDocs:
+      description: Find out more about Facebook Extension Apis
+      url: ''
+  - name: Instagram-Extension-API
+    description: Facebook Extension Api
+    externalDocs:
+      description: Find out more about Facebook Extension Apis
+      url: ''
+  - name: Admin-user
+    description: Admin Api
+    externalDocs:
+      description: Find out more about our auth
+      url: ''
+  # - name: Posts
+  #   description: Posts Api
+  #   externalDocs:
+  #     description: Find out more about posts
+  #     url: ''
+  # - name: Message 
+  #   description: Message Api
+  #   externalDocs:
+  #     description: Find out more about Message
+  #     url: ''
+  # - name: Members
+  #   description: Members Api
+  #   externalDocs:
+  #     description: Find out more about Members
+  #     url: ''
+paths:
+  /user/api/login:
+    post:
+      tags:
+        - User
+      summary: User Login
+      operationId: userLogin
+      requestBody:
+        description: User Login
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/userLogin'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+  /user/api/userdata:
+    post:
+      tags:
+        - User
+      summary: User data
+      operationId: userData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/getunilevelreports:
+    post:
+      tags:
+        - User
+      summary: get uni level reports
+      operationId: getunilevelreports
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create user note
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getunilevelreports'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/facebook/follow-followers:
+    get:
+      tags:
+        - User
+      summary: User facebook connection
+      operationId: facebookConnection
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/facebook/dashboard-social-accounts-data:
+    post:
+      tags:
+        - User
+      summary: User dashboard connection
+      operationId: dashboardConnection
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get user dashboard connection
+        content:
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/dashboardConnection'
+        required: false
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/note:
+    get:
+      tags:
+        - User
+      summary: Get user notes
+      parameters:
+        - in: query
+          name: type
+          description: Type of platform (e.g., Instagram)
+          required: false
+          schema:
+            type: string
+      operationId: Get user notes
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+    post:
+      tags:
+        - User
+      summary: create user notes
+      operationId: createUserNote
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create user note
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUserNote'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/instagram/follow-followers:
+    get:
+      tags:
+        - User
+      summary: User instagram connection
+      operationId: instagramConnection
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/affiliate-customers:
+    post:
+      tags:
+        - User
+      summary: affiliate customers
+      operationId: affiliateCustomers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Messages
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/affiliateCustomers'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/uploadkycdata:
+    post:
+      tags:
+        - User
+      summary: Upload KYC Data
+      operationId: uploadKycData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Upload KYC Data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/uploadKycData'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /plan/plan-details:
+    get:
+      tags:
+        - User
+      summary: plan details 
+      operationId: planDetails
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/dashboarddata:
+    post:
+      tags:
+        - User
+      summary: Get Affiliate data
+      operationId: affiliateData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/payout:
+    post:
+      tags:
+        - User
+      summary: Get payout data
+      operationId: getPayoutData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /plan/plan-details?type=instagram:
+    get:
+      tags:
+        - User
+      summary: plan details instagram
+      operationId: planDetailsInsta
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/compaigns:
+    get:
+      tags:
+        - User
+      summary: user compaigns
+      operationId: userCompaigns
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: user compaigns create
+      operationId: userCompaignsCreate
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: user compaigns create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/userCompaignsCreate'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getadminaccountsettings:
+    get:
+      tags:
+        - User
+      summary: get admin account settings
+      operationId: getAdminAccountSettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/facebook/single?media=Facebook:
+    get:
+      tags:
+        - User
+      summary: get FB connected data
+      operationId: FbConnectedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/instagram/single?media=Instagram:
+    get:
+      tags:
+        - User
+      summary: get insta connected data
+      operationId: instaConnectedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/group:
+    get:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: get tags list
+      parameters:
+        - in: query
+          name: media
+          description: Enter Platform name like:- facebook, instagram
+          required: false
+          schema:
+            type: string
+      operationId: FbTaggesList
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/all?media=Facebook:
+    get:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: get facebook groups list
+      operationId: FbGroupList
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /target/setting/api/all?prospection_type=facebook:
+    get:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: get facebook groups settings
+      operationId: FbGroupSettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/all?media=Instagram&prospection_type=instagram:
+    get:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: get instagram groups list
+      operationId: InstaGroupList
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /target/setting/api/all?prospection_type=instagram:
+    get:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: get instagram groups settings
+      operationId: InstaGroupSettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /keywords/api/all:
+    post:
+      tags:
+        - Messages
+      summary: get keywords
+      parameters:
+        - in: query
+          name: type
+          description: Enter platform type like:- facebook, instagram
+          required: false
+          schema:
+            type: string
+      operationId: FbKeywords
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/instagram/group?media=Instagram:
+    get:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: get insta Group tags
+      operationId: instaGrpTags
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/instagram/group:
+    post:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: create insta tag
+      operationId: createInstaTag
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: createInstagramTag
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tagCreate'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/instagram/group/{tagId}:
+    patch:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: update insta tag
+      parameters:
+        - name: tagId
+          in: path
+          description: tag id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: updateInstaTag
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: updateInstagramTag
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tagUpdate'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+    delete:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: delete insta tag
+      parameters:
+        - name: tagId
+          in: path
+          description: tag id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: deleteInstaTag
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+    get:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: get insta tags
+      parameters:
+        - name: tagId
+          in: path
+          description: tag id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: instaTagsGet
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /instagram/stages/api/create:
+    post:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: create insta stages
+      operationId: createInstaStages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: create insta stages
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createInstaStages'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /instagram/stages/api/{stageId}:
+    put:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: update insta stages
+      parameters:
+        - name: stageId
+          in: path
+          description: stage id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: updateInstaStages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: update insta stages
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateStage'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /instagram/stages/api/delete/{stageId}:
+    get:
+      tags:
+        - Instagram-Groups-and-Tags
+      summary: delete insta stages
+      parameters:
+        - name: stageId
+          in: path
+          description: stage id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: deleteInstaStages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/taggeduser/{taggedUserId}:
+    delete:
+      tags:
+        - User
+      summary: delete user from stage
+      parameters:
+        - in: path
+          name: taggedUserId
+          description: tagged user id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: type
+          description: facebook or instagram ?
+          schema:
+            type: string
+      operationId: deleteFromStage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /birthday/setting/api/fetch:
+    post:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: get birthday settings
+      operationId: birthdaySettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /target/setting/api/create:
+    post:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: create facebook prospection settings
+      operationId: createFbProsSettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: FbProspectSettings
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FbProspectSettings'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /birthday/setting/api/create:
+    post:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: create birthday settings
+      operationId: createBirthdaySettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: BirthdaySettings
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createBirthdaySettings'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/group:
+    post:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: create facebook tag
+      operationId: FbTagCreate
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: create facebook tag
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tagCreate'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/group/{id}:
+    get:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: get facebook tags
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: FbTagsListGet
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+    patch:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: update facebook tag
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: FbTagUpdate
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: update facebook tag
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tagUpdate'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+    delete:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: delete facebook tag
+      parameters:
+        - name: id
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: FbTagDelete
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /stages/api/create:
+    post:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: create facebook stages
+      operationId: FbStageCreate
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: create facebook stages
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createInstaStages'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /stages/api/{stageIdFb}:
+    put:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: update facebook stages
+      parameters:
+        - name: stageIdFb
+          in: path
+          description: stage id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: updateFbStages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: update facebook stages
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateStage'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /stages/api/delete/{stageIdFb}:
+    get:
+      tags:
+        - Facebook-Groups-and-Tags
+      summary: delete facebook stages
+      parameters:
+        - name: stageIdFb
+          in: path
+          description: stage id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: deleteFbStage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /locales/en/translation.json:
+    get:
+      tags:
+        - User
+      summary: Get translation data
+      operationId: translationData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/taggedusersmove:
+    patch:
+      tags:
+        - User
+      summary: Move to another stage facebbok
+      parameters:
+        - in: query
+          name: type
+          description: Type of platform (e.g., Instagram)
+          required: false
+          schema:
+            type: string
+      operationId: moveAnotherStage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Move to another stage facebbok
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/moveAnotherStage'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/changeUserTagGroup/:
+    patch:
+      tags:
+        - User
+      summary: Move user to another group
+      parameters:
+        - in: query
+          name: type
+          description: Type of platform (e.g., Instagram)
+          required: false
+          schema:
+            type: string
+      operationId: moveAnotherGroup
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Move user to another group
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/moveAnotherGroup'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/facebook/delete:
+    delete:
+      tags:
+        - User
+      summary: Delete Facebook Account
+      operationId: deleteFbAccount
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/instagram/delete:
+    delete:
+      tags:
+        - User
+      summary: Delete Instagram Account
+      operationId: deleteInstaAccount
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/messages:
+    post:
+      tags:
+        - Messages
+      summary: Messages 
+      operationId: getAllMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Messages
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getAllMessages'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/my-message:
+    get:
+      tags:
+        - Messages
+      summary: My Messages 
+      operationId: getMyMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+
+  /all/messages/api/get-template-messages:
+    get:
+      tags:
+        - Messages
+      summary: Get Template Message
+      operationId: getTemplateMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/add-category-to-message:
+    post:
+      tags:
+        - Messages
+      summary: add category to message 
+      operationId: addCategoryToMessage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/create-messages:
+    post:
+      tags:
+        - Messages
+      summary: Create New Message 
+      operationId: createNewMessage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create New Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createNewMessage'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/create-duplicate-message:
+    post:
+      tags:
+        - Messages
+      summary: Duplicate Messages 
+      operationId: createDuplicateMsg
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Duplicate Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createDuplicateMsg'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/get-templates-data:
+    post:
+      tags:
+        - Messages
+      summary: Get Templates Data 
+      operationId: getTemplatesData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/update-favorite:
+    post:
+      tags:
+        - Messages
+      summary: Update Favorite Message
+      operationId: updateFavourite
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Favorite Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateFavourite'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /keywords/api/create:
+    post:
+      tags:
+        - Messages
+      summary: Create New Keywords 
+      operationId: createNewKeywords
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create New Keywords
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createNewKeywords'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /keywords/api/{keywordId}:
+    post:
+      tags:
+        - Messages
+      summary: Update Keywords 
+      parameters:
+        - in: path
+          name: keywordId
+          description: Enter keyword id
+          required: true
+          schema:
+            type: string
+      operationId: updateKeywords
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Keywords 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createNewKeywords'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /keywords/api/delete/{keywordId}:
+    get:
+      tags:
+        - Messages
+      summary: Delete Keywords 
+      parameters:
+        - in: path
+          name: keywordId
+          description: Enter keyword id
+          required: true
+          schema:
+            type: string
+      operationId: deleteKeywords
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /keywords/api/duplicate/{keywordId}:
+    get:
+      tags:
+        - Messages
+      summary: Duplicate Keywords 
+      parameters:
+        - in: path
+          name: keywordId
+          description: Enter keyword id
+          required: true
+          schema:
+            type: string
+      operationId: duplicateKeywords
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body 
+
+  /all/messages/api/delete-messages/{msgId}:
+    delete:
+      tags:
+        - Messages
+      summary: Delete Message
+      parameters:
+        - in: path
+          name: msgId
+          description: Enter Message Id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: messageId
+          description: Enter Message Id
+          required: true
+          schema:
+            type: string
+      operationId: deleteMessage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /all/messages/api/update-messages/{messageId}:
+    post:
+      tags:
+        - Messages
+      summary: Update Message
+      parameters:
+        - in: path
+          name: messageId
+          description: Enter Message Id (Eg, 2168, 8967)
+          required: true
+          schema:
+            type: string
+      operationId: updateMessage
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateMessage'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /extension/api/taggeduser-api:
+    post:
+      tags:
+        - Friends
+      summary: Friends
+      operationId: getAllFriends
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Friends
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getAllFriends'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/all:
+    get:
+      tags:
+        - Friends
+      summary: Friends
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: Write limit of data (10,20....)
+          required: false
+          schema:
+            type: string
+      operationId: getAllFbFriends
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/unfriend-all:
+    get:
+      tags:
+        - Friends
+      summary: Unfriend list
+      operationId: getAllUnfriends
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/deactivated-all:
+    get:
+      tags:
+        - Friends
+      summary: Deactivated list
+      operationId: getAllDeactivated
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/whitelist-all:
+    get:
+      tags:
+        - Friends
+      summary: All whitelist
+      operationId: getAllWhitelist
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/save-whitelist:
+    post:
+      tags:
+        - Friends
+      summary: save whitelist
+      operationId: saveWhitelist
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: save whitelist
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/saveWhitelist'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-insta-followers:
+    get:
+      tags:
+        - Friends
+      summary: Get Insta Friends
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: limit of data (eg, 10,20....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sort
+          description: Write sort order
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: field
+          description: Write field
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: category
+          description: Write category
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: privacy
+          description: Write privacy
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: synced
+          description: Write synced
+          required: false
+          schema:
+            type: string
+      operationId: deleteInstaStages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-fb-friends-with-tags:
+    get:
+      tags:
+        - Friends
+      summary: Get Facebook Friends with tags
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: limit of data (eg, 10,20....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sort
+          description: Write sort order
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: search
+          description: Enter search parameter
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: field
+          description: Write field
+          required: false
+          schema:
+            type: string
+      operationId: getFbFriendsWithTags
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/remove-fb-tagging:
+    post:
+      tags:
+        - Friends
+      summary: Remove FB Tag From webApp
+      operationId: removeFbTag
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Remove FB Tag From webApp
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/removeFbTag'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-fb-end-cursor:
+    get:
+      tags:
+        - Friends
+      summary: Get Facebook End Cursor
+      operationId: getFbEndCursor
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/sync-fb-friends:
+    post:
+      tags:
+        - Friends
+      summary: Sync FB Friends
+      operationId: syncFbFriends
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Sync FB Friends
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/syncFbFriends'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/sync-fb-friends-details:
+    post:
+      tags:
+        - Friends
+      summary: Sync FB Friends
+      operationId: syncFbFriendsDetails
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Sync FB Friends
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/syncFbFriendsDetails'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-deactivated:
+    post:
+      tags:
+        - Friends
+      summary: Get Deactivated Accounts
+      operationId: getDeactivated
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Deactivated Accounts
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/getDeactivated'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/delete-deactivated:
+    post:
+      tags:
+        - Friends
+      summary: Delete Deactivated Accounts
+      operationId: deleteDeactivated
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Delete Deactivated Accounts
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deleteDeactivated'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/remove-whitelist:
+    post:
+      tags:
+        - Friends
+      summary: Remove Whitelist Accounts
+      operationId: removeWhitelist
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Remove Whitelist Accounts
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/removeWhitelist'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/get-group-by-folder:
+    get:
+      tags:
+        - Groups
+      summary: Get Added Groups
+      parameters:
+        - in: query
+          name: social_type
+          description: Enter Group name like:- (fb_groups)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: id
+          description: Enter id like:- (1,2,3....)
+          required: false
+          schema:
+            type: string
+      operationId: getGroupsByFolder
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/get-prospect-folders:
+    get:
+      tags:
+        - Groups
+      summary: Get Folders
+      parameters:
+        - in: query
+          name: social_type
+          description: Enter Group name like:- (ig_followers)
+          required: false
+          schema:
+            type: string
+      operationId: getFoldersList
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/create-prospect-folder:
+    post:
+      tags:
+        - Groups
+      summary: Create Folders
+      operationId: createFolder
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Folders
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createFolder'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /statistics/api/contacts:
+    get:
+      tags:
+        - statistics
+      summary: statistics contacts 
+      operationId: statisticsContacts
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+  
+  /statistics/api/statistics?type=fb_ai:
+    get:
+      tags:
+        - statistics
+      summary: statistics facebook AI
+      operationId: statisticsFbAi
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /statistics/api/statistics?type=ig_ai:
+    get:
+      tags:
+        - statistics
+      summary: statistics instagram AI
+      operationId: statisticsInstaAi
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /statistics/api/statistics?type=fb_prospection:
+    get:
+      tags:
+        - statistics
+      summary: statistics facebook prospection
+      operationId: statisticsFbprospection
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /statistics/api/limits:
+    get:
+      tags:
+        - statistics
+      summary: statistics limits
+      operationId: statisticsLimits
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /plan/update-gender:
+    post:
+      tags:
+        - statistics
+      summary: Change comment AI gender
+      operationId: chnageGender
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Change comment AI gender
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/chnageGender'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /request/message/api/all:
+    post:
+      tags:
+        - Request
+      summary: get request messages
+      operationId: requestMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /request/message/api/create:
+    post:
+      tags:
+        - Request
+      summary: save request messages
+      operationId: saveRequestMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: save reuest message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/saveRequestMessages'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /request/message/api/{msgId}:
+    post:
+      tags:
+        - Request
+      summary: Update request messages
+      parameters:
+        - name: msgId
+          in: path
+          description: Message id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      operationId: updateRequestMessages
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update reuest message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateRequestMessages'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/tag/update-and-get-tagged-user:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: Update and Get tagged user
+      operationId: getTaggedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update and Get tagged user
+        content:
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/getTaggedUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/setting/api/get_all_prospect_members:
+    get:
+      tags:
+        - Facebook-Extension-API
+      summary: Get Prospect Members List
+      parameters:
+        - in: query
+          name: group_id
+          description: Enter Group ID
+          required: true
+          schema:
+            type: string
+      operationId: getProspectMembers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/setting/api/create_prospect_members:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: Create Prospect Member
+      operationId: createProspectMember
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Prospect Member
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createProspectMember'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/setting/api/get_birthday_members:
+    get:
+      tags:
+        - Facebook-Extension-API
+      summary: get birthday members
+      operationId: getBirthdayMembers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/setting/api/create_birthday_members:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: create birthday members
+      operationId: createBirthdayMembers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create birthday Member
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createBirthdayMembers'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-nova-data:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: Get Nova Data
+      operationId: GetNovaData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description:  Get Nova Data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetNovaData'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-unfriended:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: Get Unfriended User
+      operationId: GetUnfriended
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Unfriended User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetUnfriended'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/save-unfriended:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: Save Unfriended User
+      operationId: saveUnfriended
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Save Unfriended User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/saveUnfriended'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/user-add-new:
+    post:
+      tags:
+        - Facebook-Extension-API
+      summary: Save New User
+      operationId: saveNewUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Save New User
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/saveNewUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/crm/get-crm-status:
+    post:
+      tags:
+        - User-Extension-API
+      summary: Get CRM Status
+      operationId: getCrmStatus
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/facebook/create:
+    post:
+      tags:
+        - User-Extension-API
+      summary: Create Facebook Account
+      operationId: createFbAccount
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Facebook Account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createFbAccount'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/instagram/create:
+    post:
+      tags:
+        - User-Extension-API
+      summary: Create Instagram Account
+      operationId: createInstaAccount
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Instagram Account
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createInstaAccount'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /statistics/api/statistics:
+    post:
+      tags:
+        - User-Extension-API
+      summary: Create statistics
+      operationId: createStatistics
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create statistics
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createStatistics'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/tag/get-tagged-user:
+    post:
+      tags:
+        - User-Extension-API
+      summary: Get Tagged User
+      operationId: getTaggedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Tagged User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getTaggedUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/tag/update-insta-tagged-user:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Update Insta Tagged User
+      operationId: updateInstaTaggedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Tagged User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateInstaTaggedUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/instagram/setting/api/get_private_users:
+    get:
+      tags:
+        - Instagram-Extension-API
+      summary: get Private Users
+      parameters:
+        - in: query
+          name: insta_login_account
+          description: Enter Insta User Account Id
+          required: false
+          schema:
+            type: string
+      operationId: getPrivateUsers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/instagram/setting/api/get_all_prospect_members:
+    get:
+      tags:
+        - Instagram-Extension-API
+      summary: get Private Users
+      parameters:
+        - in: query
+          name: group_id
+          description: Enter Insta group Id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: group_name
+          description: Enter Insta group name
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: browser_insta_user_id
+          description: Enter Browser Insta Login Id
+          required: true
+          schema:
+            type: string
+      operationId: getPrivateUsers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/instagram/setting/api/save_private_insta_user:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: save private insta user
+      operationId: savePrivateInstaUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: save private insta user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/savePrivateInstaUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /prospect/instagram/setting/api/create_prospect_members:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: create prospect members
+      operationId: createProspectMembers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: create prospect members
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createProspectMembers'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /user/api/instagram/users:
+    get:
+      tags:
+        - Instagram-Extension-API
+      summary: Get All Insta Users
+      parameters:
+        - in: query
+          name: start
+          description: Enter page number
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: offset
+          description: Enter offset
+          required: true
+          schema:
+            type: string
+      operationId: getAllInstaUsers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /instagram/compaign/api/create:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Create Insta Compaign
+      operationId: createInstaCompaign
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Insta Compaign
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/userCompaignsCreate'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /instagram/compaign/api/all:
+    get:
+      tags:
+        - Instagram-Extension-API
+      summary: get Insta Compaign
+      operationId: getInstaCompaign
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/tag/get-insta-tagged-user/filter:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Get Filter Insta Tagged User
+      operationId: getFilterInstaTaggedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Filter Insta Tagged User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getFilterInstaTaggedUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/tag/get-insta-tagged-user:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Get Insta Tagged User
+      operationId: getInstaTaggedUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Filter Insta Tagged User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getInstaTaggedUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+
+  /novadata/api/add-insta-followers:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Add Insta Followers
+      operationId: addInstaFollowers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Add Insta Followers
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/addInstaFollowers'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/get-end-cursor:
+    get:
+      tags:
+        - Instagram-Extension-API
+      summary: get end cursor
+      operationId: getEndCursor
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/update-insta-users:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Update Insta User
+      operationId: updateInstaUser
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Insta User
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateInstaUser'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/insta-followers-data:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Get Insta Followers
+      operationId: getInstaFollowers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Insta Followers
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getInstaFollowers'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /novadata/api/tag-insta-followers:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Bulk tag Assign Insta
+      operationId: bulkTagAssignInsta
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Bulk tag Assign Insta
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/bulkTagAssignInsta'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /api/ext/group/create-group:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Create Insta Group
+      operationId: createInstaGroup
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Insta Group
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createInstaGroup'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /commentai/api/commentgenerate:
+    post:
+      tags:
+        - Instagram-Extension-API
+      summary: Generate Comment
+      operationId: generateComment
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Generate Comment
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/generateComment'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/login:
+    post:
+      tags:
+        - Admin-user
+      summary: Admin Login
+      operationId: adminLogin
+      requestBody:
+        description: Admin Login
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/adminLogin'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/userdata:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Translation
+      operationId: getTranslation
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/userallowedroutes:
+    get:
+      tags:
+        - Admin-user
+      summary: Get User Routes
+      operationId: getUserRoutes
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/dashboarddata:
+    post:
+      tags:
+        - Admin-user
+      summary: Get User Admin Dashboard Data
+      operationId: getUserDashboardData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/get-company-logo:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Company Logo
+      operationId: getCompanyLogo
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get Company Logo
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getCompanyLogo'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getsettingsdata:
+    post:
+      tags:
+        - Admin-user
+      summary: Manage Payout Get
+      operationId: getManagePayout
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Manage Payout
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/getManagePayout'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/updatesettingsdata:
+    post:
+      tags:
+        - Admin-user
+      summary: Update Manage Payout Data
+      operationId: updateManagePayoutData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Manage Payout
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateManagePayoutData'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/approvedpayout:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Approved Payout
+      operationId: getApprovedPayout
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getuserslist:
+    post:
+      tags:
+        - Admin-user
+      summary: Get User List
+      operationId: getUserList
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/kycreport:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Kyc Report
+      operationId: getKycReport
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/payoutdetailsupdatereport:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Payout Report
+      operationId: getPayoutReport
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getminiadmin:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Mini admin
+      operationId: getminiadmin
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getusersales:
+    post:
+      tags:
+        - Admin-user
+      summary: Get User Sales
+      operationId: getusersales
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Get User Sales
+        content:
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/getusersales'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/createadmin:
+    post:
+      tags:
+        - Admin-user
+      summary: Create Admin
+      operationId: createAdmin
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Admin
+        content:
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/createAdmin'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/adminlogs:
+    post:
+      tags:
+        - Admin-user
+      summary: Admin Logs
+      operationId: adminLogs
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Admin Logs
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/adminLogs'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/pending-pay-of-all-users:
+    post:
+      tags:
+        - Admin-user
+      summary: Panding Pay Of All Users
+      operationId: pandingPayOfAllUsers
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getlimitsdata:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Limits Data
+      operationId: getLimitsData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/updatelimitsdata:
+    post:
+      tags:
+        - Admin-user
+      summary: Update Limits Data
+      operationId: updateLimitsData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Limits Data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateLimitsData'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/adminaccountsettings:
+    post:
+      tags:
+        - Admin-user
+      summary: Admin Account Settings
+      operationId: adminAccountSettings
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Admin Account Settings
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/adminAccountSettings'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/apis/reseller/add-new:
+    post:
+      tags:
+        - Admin-user
+      summary: Create Add New Reseller
+      operationId: createNewReseller
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Create Add New Reseller
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createNewReseller'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/apis/reseller/get-listing:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Reseller Listing
+      operationId: getResellerListing
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getpoolreports:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Pool Reports
+      operationId: getPoolReports
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getunilevelreports:
+    post:
+      tags:
+        - Admin-user
+      summary: Get unilevel Reports
+      operationId: getUnilevelReports
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getpooldistributionreports:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Pool Distribution Reports
+      operationId: getPoolDistributionReports
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/pendingpayout:
+    post:
+      tags:
+        - Admin-user
+      summary: Pending Payout
+      operationId: pendingPayout
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/processingallpayout:
+    post:
+      tags:
+        - Admin-user
+      summary: Processing All Payout
+      operationId: processingAllPayout
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getallprocessingpayout:
+    post:
+      tags:
+        - Admin-user
+      summary: Get All Processing Payout
+      operationId: getAllProcessingPayout
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/approveallpayout:
+    post:
+      tags:
+        - Admin-user
+      summary: Approv All Payouts
+      operationId: approveAllPayouts
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getunilevel:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Unilevel Data
+      operationId: getUnilevelData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/getpool:
+    post:
+      tags:
+        - Admin-user
+      summary: Get Pool Data
+      operationId: getPoolData
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/updatepassword:
+    post:
+      tags:
+        - Admin-user
+      summary: Update Password
+      operationId: updatePassword
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updatePassword'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /admin/api/updatetransactionpassword:
+    post:
+      tags:
+        - Admin-user
+      summary: Update Transaction Password
+      operationId: updateTransactionPassword
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Update Transaction Password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updatePassword'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  
+  # /user/friends/get-friend-listing:
+  #   post:
+  #     tags:
+  #       - User
+  #     summary: Friend List
+  #     operationId: friendList
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: friendList
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/getFriendList'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /user/friends/delete-friend:
+  #   post:
+  #     tags:
+  #       - User
+  #     summary: delete
+  #     operationId: delete friend
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: delete 
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/deleteFriend'
+  #       required: true  
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /request/get-listing:
+  #   post:
+  #     tags:
+  #       - Request
+  #     summary: getRequestResponse
+  #     operationId: getRequestResponse
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: getRequestResponse
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/getRequestResponse'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /request/add-and-update:
+  #   post:
+  #     tags:
+  #       - Request
+  #     summary: addAndUpdateRequest
+  #     operationId: addAndUpdateRequest
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: addAndUpdateRequest
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/addAndUpdateRequest'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /messages/get-listing:
+  #   post:
+  #     tags:
+  #       - Message
+  #     summary: getMessageResponse
+  #     operationId: getMessageResponse
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: getMessageResponse
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/getMessageResponse'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /messages/add-and-update:
+  #   post:
+  #     tags:
+  #       - Message
+  #     summary: addAndUpdateMessage
+  #     operationId: addAndUpdateMessage
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: addAndUpdateMessage
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/addAndUpdateMessage'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /messages/delete-message:
+  #   post:
+  #     tags:
+  #       - Message
+  #     summary: deleteMessage
+  #     operationId: deleteMessage
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: deleteMessage
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/deleteMessage'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /members/add-new:
+  #   post:
+  #     tags:
+  #       - Members
+  #     summary: Member add
+  #     operationId: memberAdd
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: Member List
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/addNewMember'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  user does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /members/get-listing:
+  #   post:
+  #     tags:
+  #       - Members
+  #     summary: Members List
+  #     operationId: MembersList
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: Members List
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/getMembersList'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /members/delete-member:
+  #   post:
+  #     tags:
+  #       - Members
+  #     summary: deleteMember
+  #     operationId: deleteMember
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: deleteMember
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/deleteMember'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /members/tags/add-new:
+  #   post:
+  #     tags:
+  #       - Members
+  #     summary: Tag add
+  #     operationId: Tag Add
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: Tag List
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/addNewTag'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  user does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /members/tags/get-listing:
+  #   post:
+  #     tags:
+  #       - Members
+  #     summary: Tag List
+  #     operationId: TagList
+  #       - in: header
+  #         name: Authorization
+  #     security:
+  #       - bearerAuth: []
+  #     requestBody:
+  #       description: Tag List
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/getTagList'
+  #       required: true
+  #     responses:
+  #       '200':
+  #         description: data
+  #         content: {}
+  #       '401':
+  #         description: Unauthorized
+  #         content: {}
+  #       '422':
+  #         description:  data does not exist
+  #         content: {}
+  #     x-codegen-request-body-name: body
+  # /members/tags/delete:
+    post:
+      tags:
+        - Members
+      summary: deleteTag
+      operationId: deleteTag
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: deleteTag
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deleteTag'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  data does not exist
+          content: {}
+      x-codegen-request-body-name: body
+components:
+  schemas:
+    userLogin:
+      type: object
+      properties:
+        username:
+          type: string
+          description: 'username'
+          example: 'testsonny1'
+        password:
+          type: string
+          description: 'password'
+          example: 'Novarana'
+        ipaddress:
+          type: string
+          description: '127.0.0.1'
+          example: '127.0.0.1'
+        website:
+          type: string
+          description: 'null'
+          example: 'null'
+
+    affiliateCustomers:
+      type: object
+      properties:
+        month:
+          type: integer
+          description: ''
+          example: ''
+        year:
+          type: integer
+          description: ''
+          example: 2025
+
+    uploadKycData:
+      type: object
+      properties:
+        identityType:
+          type: string
+          description: ''
+          example: 'Identity Card'
+        idcardFront:
+          type: string
+          description: ''
+          example: ''
+        idcardBack:
+          type: string
+          description: ''
+          example: ''
+
+    createUserNote:
+      type: object
+      properties:
+        description:
+          type: string
+          description: ''
+          example: 'hello'
+        fb_user_id:
+          type: string
+          description: ''
+          example: 2025
+        type:
+          type: string
+          description: ''
+          example: "instagram"
+        user_id:
+          type: number
+          description: ''
+          example: 2298
+
+    getunilevelreports:
+      type: object
+      properties:
+        month:
+          type: number
+          description: ''
+          example: 2
+        year:
+          type: number
+          description: ''
+          example: 2025
+
+    FbProspectSettings:
+      type: object
+      properties:
+        action:
+          type: string
+          description: ''
+          example: "{\"moveStageId\":78864,\"moveGroupId\":21293,\"stage_num\":1}"
+        country:
+          type: string
+          description: ''
+          example: null
+        custom:
+          type: string
+          description: ''
+          example: "0"
+        datevalue:
+          type: string
+          description: ''
+          example: "2024-09-11"
+        gender:
+          type: string
+          description: ''
+          example: "both"
+        group:
+          type: string
+          description: ''
+          example: null
+        group_id:
+          type: string
+          description: ''
+          example: "82424"
+        group_url:
+          type: string
+          description: ''
+          example: null
+        groups:
+          type: object
+          description: ''
+          example: {}
+        grouptype:
+          type: string
+          description: ''
+          example: null
+        id:
+          type: number
+          description: ''
+          example: 2052
+        interval:
+          type: string
+          description: ''
+          example: "1-3"
+        keyword:
+          type: string
+          description: ''
+          example: null
+        keywords:
+          type: string
+          description: ''
+          example: null
+        level:
+          type: string
+          description: ''
+          example: null
+        message:
+          type: string
+          description: ''
+          example: "19414"
+        messages:
+          type: object
+          description: ''
+          example: {}
+        negative_keyword:
+          type: string
+          description: ''
+          example: null
+        newMessage:
+          type: object
+          description: ''
+          example: {}
+        norequest:
+          type: string
+          description: ''
+          example: "5"
+        post_target:
+          type: string
+          description: ''
+          example: "comment"
+        pro_convo:
+          type: number
+          description: ''
+          example: 1
+        pro_stratagy:
+          type: number
+          description: ''
+          example: 1
+        prospect:
+          type: string
+          description: ''
+          example: "yes"
+        prospection_type:
+          type: string
+          description: ''
+          example: "facebook"
+        resume:
+          type: string
+          description: ''
+          example: null
+        search_index:
+          type: number
+          description: ''
+          example: 1
+        selectedinterval:
+          type: string
+          description: ''
+          example: "alltime"
+        status:
+          type: string
+          description: ''
+          example: null
+        stratagy:
+          type: boolean
+          description: ''
+          example: false
+        user_id:
+          type: number
+          description: ''
+          example: 2298
+        
+    createBirthdaySettings:
+      type: object
+      properties:
+        action:
+          type: string
+          description: ''
+          example: "{\"moveStageId\":78927,\"moveGroupId\":\"21314\"}"
+        birthday_id:
+          type: number
+          description: ''
+          example: 21513
+        birthday_type:
+          type: string
+          description: ''
+          example: "in1days"
+        prospect:
+          type: string
+          description: ''
+          example: "yes"
+        type:
+          type: string
+          description: ''
+          example: "message"
+
+    saveRequestMessages:
+      type: object
+      properties:
+        accept_group_id:
+          type: number
+          description: ''
+          example: 20663
+        accept_message_id:
+          type: number
+          description: ''
+          example: 19396
+        accept_stage_id:
+          type: number
+          description: ''
+          example: 0
+        reject_group_id:
+          type: number
+          description: ''
+          example: 0
+        reject_message_id:
+          type: number
+          description: ''
+          example: 19393
+        reject_stage_id:
+          type: number
+          description: ''
+          example: 76810
+
+    updateRequestMessages:
+      type: object
+      properties:
+        reject_group_id:
+          type: number
+          description: ''
+          example: 20663
+        accept_group_id:
+          type: number
+          description: ''
+          example: 19396
+        reject_message_id:
+          type: number
+          description: ''
+          example: 0
+        accept_message_id:
+          type: number
+          description: ''
+          example: 0
+        reject_stage_id:
+          type: number
+          description: ''
+          example: 19393
+        accept_stage_id:
+          type: number
+          description: ''
+          example: 76810
+
+    tagCreate:
+      type: object
+      properties:
+        custom_color:
+          type: string
+          description: ''
+          example: "rgba(187, 36, 126, 1)"
+        name:
+          type: string
+          description: ''
+          example: "testing"
+        no_stages_group:
+          type: boolean
+          description: ''
+          example: false
+
+    tagUpdate:
+      type: object
+      properties:
+        custom_color:
+          type: string
+          description: ''
+          example: "rgba(60, 96, 130, 1)"
+        name:
+          type: string
+          description: ''
+          example: "testing 11"
+
+    moveAnotherStage:
+      type: object
+      properties:
+        stage_id:
+          type: number
+          description: ''
+          example: 79023
+        tagged_user_ids:
+          type: array
+          description: ''
+          example: [521770]
+
+    moveAnotherGroup:
+      type: object
+      properties:
+        group_tag_id:
+          type: number
+          description: ''
+          example: 21347
+        stage_id:
+          type: number
+          description: ''
+          example: 79026
+        tagged_user_ids:
+          type: array
+          description: ''
+          example: [521770]
+
+    createInstaStages:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ''
+          example: "testing stage"
+        tag_id:
+          type: number
+          description: ''
+          example: 3548
+
+    updateStage:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ''
+          example: "stage 11"
+
+    chnageGender:
+      type: object
+      properties:
+        gender:
+          type: string
+          description: ''
+          example: "male"
+
+    createFolder:
+      type: object
+      properties:
+        folder_name:
+          type: string
+          description: ''
+          example: "insta groups"
+        selectedGroups:
+          type: array
+          description: ''
+          example: ""
+        social_type:
+          type: string
+          description: ''
+          example: "ig_followers"
+    
+    getAllMessages:
+      type: object
+      properties:
+        visibility_type:
+          type: string
+          description: ''
+          example: '["fb_prospecting","ig_prospecting","fb_crm","ig_crm","birthday","request"]'
+
+    createNewMessage:
+      type: object
+      properties:
+        language:
+          type: string
+          description: ''
+          example: 'English'
+        name:
+          type: string
+          description: ''
+          example: 'Testing message template'
+        variants:
+          type: array
+          description: ''
+          example: ["12", "34", "56"]
+        visibility_type:
+          type: array
+          description: ''
+          example: ["ig_prospecting"]
+        attachment:
+          type: string
+          description: ''
+          example: 'base 64 url comes here'
+
+    createDuplicateMsg:
+      type: object
+      properties:
+        message_id:
+          type: number
+          description: ''
+          example: 28856
+
+    updateFavourite:
+      type: object
+      properties:
+        action_id:
+          type: number
+          description: ''
+          example: 10
+        type:
+          type: string
+          description: ''
+          example: 'message'
+
+    createNewKeywords:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ''
+          example: 'Testing keyword template'
+        negative_keyword:
+          type: string
+          description: ''
+          example: "[\"pakistan\"]"
+        positive_keyword:
+          type: string
+          description: ''
+          example: "[\"USA\",\"work\"]"
+        type:
+          type: array
+          description: ''
+          example: ['facebook']
+
+    updateMessage:
+      type: object
+      properties:
+        message_id:
+          type: number
+          description: ''
+          example: 21798
+        name:
+          type: string
+          description: ''
+          example: 'Testing message template'
+        variants:
+          type: array
+          description: ''
+          example: ["12", "34", "56"]
+        visibility_type:
+          type: array
+          description: ''
+          example: ["ig_prospecting"]
+        attachment:
+          type: string
+          description: ''
+          example: null
+
+    saveWhitelist:
+      type: object
+      properties:
+        ids:
+          type: array
+          description: ''
+          example: [4718426, 4718425]
+
+    removeFbTag:
+      type: object
+      properties:
+        ids:
+          type: array
+          description: ''
+          example: [4718426, 4718425]
+
+    syncFbFriends:
+      type: object
+      properties:
+        friends:
+          type: array
+          description: ''
+          example: [{"fb_numeric_id":"100083050718808", "image": "data:image/jpeg;base", "name": "Amit Panwar 23", "url": "https://www.facebook.com/techrit.sre", "mutual_friend": 0}]
+
+      
+    syncFbFriendsDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ''
+          example: "100000693107378"
+        name:
+          type: string
+          description: ''
+          example: "Sobinder Rana 12"
+        birthday:
+          type: string
+          description: ''
+          example: "07/08"
+        gender:
+          type: string
+          description: ''
+          example: "male"
+        hometown:
+          type: string
+          description: ''
+          example: "YNR"
+        languages:
+          type: string
+          description: ''
+          example: "English"
+
+    getDeactivated:
+      type: object
+      properties:
+        userIds:
+          type: array
+          description: ''
+          example: [12,56,2]
+
+    deleteDeactivated:
+      type: object
+      properties:
+        id:
+          type: number
+          description: ''
+          example: 12
+
+    removeWhitelist:
+      type: object
+      properties:
+        ids:
+          type: array
+          description: ''
+          example: [4842514, 4842512]
+
+    getAllFriends:
+      type: object
+      properties:
+        type:
+          type: string
+          description: ''
+          example: 'get'
+
+    getTaggedUser:
+      type: object
+      properties:
+        type:
+          type: string
+          description: ''
+          example: "get"
+
+    dashboardConnection:
+      type: object
+
+
+    createFbAccount:
+      type: object
+      properties:
+        fb_user_id:
+          type: string
+          description: ''
+          example: "rajni.sharma1122"
+        fb_user_name:
+          type: string
+          description: ''
+          example: "Rajni sharma"
+        following:
+          type: number
+          description: ''
+          example: 0
+        profile_image:
+          type: string
+          description: ''
+          example: "https://scontent.fixc8-4.fna.fbcdn.net/v/t"
+        total_followers:
+          type: number
+          description: ''
+          example: 0
+        total_friends:
+          type: number
+          description: ''
+          example: 52
+
+    createInstaAccount:
+      type: object
+      properties:
+        following:
+          type: number
+          description: ''
+          example: 611
+        insta_user_id:
+          type: string
+          description: ''
+          example: "akash_pandit541"
+        insta_user_name:
+          type: string
+          description: ''
+          example: "akash_pandit541"
+        posts:
+          type: number
+          description: ''
+          example: 2
+        profile_image:
+          type: string
+          description: ''
+          example: "https://scontent.fixc8-4.fna.fbcdn.net/v/t"
+        profile_url:
+          type: string
+          description: ''
+          example: "https://www.instagram.com/akash_pandit541"
+        thread_id:
+          type: string
+          description: ''
+          example: "17846284842200051"
+        total_followers:
+          type: number
+          description: ''
+          example: 62
+        total_friends:
+          type: number
+          description: ''
+          example: 673
+
+    createProspectMember:
+      type: object
+      properties:
+        convo_status:
+          type: number
+          description: ''
+          example: 0
+        fb_user_id:
+          type: string
+          description: ''
+          example: "100014777495314"
+        group_id:
+          type: number
+          description: ''
+          example: 87670
+
+    createStatistics:
+      type: object
+      properties:
+        type:
+          type: string
+          description: ''
+          example: "fb_prospection"
+
+    getTaggedUser:
+      type: object
+      properties:
+        fb_image_id:
+          type: string
+          description: ''
+          example: null
+        fb_name:
+          type: string
+          description: ''
+          example: "Monali Mengade"
+        fb_user_alphanumeric_id:
+          type: string
+          description: ''
+          example: "monali.mengade.1"
+        fb_user_e2ee_id:
+          type: string
+          description: ''
+          example: null
+        fb_user_id:
+          type: string
+          description: ''
+          example: "7878978787879878"
+        is_e2ee:
+          type: number
+          description: ''
+          example: 0
+        is_primary:
+          type: number
+          description: ''
+          example: 2345
+        profile_pic:
+          type: string
+          description: ''
+          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ"
+        stage_id:
+          type: number
+          description: ''
+          example: 79022
+        tag_id:
+          type: array
+          description: ''
+          example: [21345]
+        type:
+          type: string
+          description: ''
+          example: add
+
+    updateInstaTaggedUser:
+      type: object
+      properties:
+        insta_user_id:
+          type: string
+          description: ''
+          example: "iplt20"
+        type:
+          type: string
+          description: ''
+          example: "single_get"
+
+    savePrivateInstaUser:
+      type: object
+      properties:
+        insta_login_account:
+          type: string
+          description: ''
+          example: "akash_pandit541"
+        private_insta_account:
+          type: array
+          description: ''
+          example: ["shubmangill77732", "_.joyal._m.j._", "rcb_virat_181818"]
+
+    createProspectMembers:
+      type: object
+      properties:
+        browser_insta_user_id:
+          type: string
+          description: ''
+          example: "akash_pandit541"
+        group_id:
+          type: string
+          description: ''
+          example: "65535"
+        instagram_user_id:
+          type: string
+          description: ''
+          example: "khalid_maya_"
+
+    createBirthdayMembers:
+      type: object
+      properties:
+        connected_fb_user_id:
+          type: string
+          description: ''
+          example: "61570617024187"
+        fb_user_id:
+          type: string
+          description: ''
+          example: "dx.shanu.9"
+
+    userCompaignsCreate:
+      type: object
+      properties:
+        message_id:
+          type: number
+          description: ''
+          example: 58780
+        time_interval:
+          type: string
+          description: ''
+          example: "1-3 Min"
+        userIds:
+          type: array
+          description: ''
+          example: [789793]
+
+    getFilterInstaTaggedUser:
+      type: object
+      properties:
+        ids:
+          type: string
+          description: ''
+          example: "52376"
+
+    getInstaTaggedUser:
+      type: object
+      properties:
+        group_tag_id:
+          type: array
+          description: ''
+          example: [3548]
+        insta_name:
+          type: string
+          description: ''
+          example: "么 M M Y"
+        insta_user_id:
+          type: string
+          description: ''
+          example: "ammy.ontop"
+        is_primary:
+          type: number
+          description: ''
+          example: 3548
+        profilePic:
+          type: string
+          description: ''
+          example: "data:image/webp;base64,UklGRpgHAABXRUJQVlA4WAoAA"
+        stage_id:
+          type: number
+          description: ''
+          example: 10671
+        thread_id:
+          type: string
+          description: ''
+          example: "17847543621029823"
+        type:
+          type: string
+          description: ''
+          example: "add"
+      
+    GetNovaData:
+      type: object
+      properties:
+        selected_users:
+          type: array
+          description: ''
+          example: [3405132, 3405129]
+
+    GetUnfriended:
+      type: object
+      properties:
+        userIds:
+          type: array
+          description: ''
+          example: [3405108]
+
+    saveUnfriended:
+      type: object
+      properties:
+        Tag:
+          type: string
+          description: ''
+          example: null
+        Tag_id:
+          type: string
+          description: ''
+          example: null
+        bioInfo:
+          type: string
+          description: ''
+          example: ""
+        birthday:
+          type: string
+          description: ''
+          example: ", "
+        comments:
+          type: integer
+          description: ''
+          example: 0
+        contact:
+          type: string
+          description: ''
+          example: ""
+        email:
+          type: string
+          description: ''
+          example: " "
+        facebook:
+          type: string
+          description: ''
+          example: "https://www.facebook.com/profile.php?id=100057454340779"
+        fbId:
+          type: string
+          description: ''
+          example: "100057454340779"
+        gender:
+          type: string
+          description: ''
+          example: ""
+        has_conversection:
+          type: integer
+          description: ''
+          example: 0
+        id:
+          type: integer
+          description: ''
+          example: 3405108
+        image:
+          type: string
+          description: 'Base64 encoded image'
+          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/..."
+        instagram:
+          type: string
+          description: ''
+          example: ""
+        languages:
+          type: string
+          description: ''
+          example: ""
+        linkedIn:
+          type: string
+          description: ''
+          example: ""
+        lived:
+          type: string
+          description: ''
+          example: "-"
+        messages:
+          type: integer
+          description: ''
+          example: 0
+        mutual_friend:
+          type: integer
+          description: ''
+          example: 0
+        pinterest:
+          type: string
+          description: ''
+          example: ""
+        profile:
+          type: string
+          description: ''
+          example: "https://www.facebook.com/profile.php?id=100057454340779"
+        reactions:
+          type: integer
+          description: ''
+          example: 0
+        rgb:
+          type: string
+          description: ''
+          example: null
+        status:
+          type: integer
+          description: ''
+          example: 0
+        tier:
+          type: string
+          description: ''
+          example: null
+        twitter:
+          type: string
+          description: ''
+          example: ""
+        type:
+          type: string
+          description: ''
+          example: null
+        user_id:
+          type: integer
+          description: ''
+          example: 102562
+        user_name:
+          type: string
+          description: ''
+          example: "Sonu Gola"
+        youTube:
+          type: string
+          description: ''
+          example: ""
+
+    saveNewUser:
+      type: object
+      example: []
+
+    addInstaFollowers:
+      type: object
+      properties:
+        followers:
+          type: array
+          description: ''
+          example:  [{"node": {"id": "51289370192","username": "afzalansari8134","full_name": "Afzal Ansari 813","profile_pic_url": "https://instagram.fixc8-3.fna.","is_verified": false}}]
+        end_cursor:
+          type: string
+          description: ''
+          example: "QVFEMlF4ZEN1MGFMVVk3UDViMERmWlRUeGpfbWNUXzlYQzJncm1qYnJQd3RaVmtIc0tCVUpWSEc5dlRNQlpIX0lDS19xSDN3TGNvT2dNTVJ3ejFRdFJYLZ=="
+
+    updateInstaUser:
+      type: object
+      properties:
+        data:
+          type: array
+          description: ''
+          example: [{"insta_user_id": "51289370192","nova_id": "22881","followers": 587,"followings": 67,"eimu_id": "17844587262129368","full_name": "afzalansari8178",}]
+
+    getInstaFollowers:
+      type: object
+      properties:
+        type:
+          type: string
+          description: ''
+          example: "get-follower"
+
+    bulkTagAssignInsta:
+      type: object
+      properties:
+        type:
+          type: string
+          description: ''
+          example: "bulk-tag-assign"
+        members:
+          type: array
+          description: ''
+          example: []
+        selected_tag_stage_ids:
+          type: array
+          description: ''
+          example: []
+        is_primary:
+          type: number
+          description: ''
+          example: 987
+
+    createInstaGroup:
+      type: object
+      properties:
+        group_type:
+          type: string
+          description: ''
+          example: "insta_profile"
+        name:
+          type: string
+          description: ''
+          example: "abcdef"
+        post_image:
+          type: string
+          description: ''
+          example: "image-url"
+        prospection_type:
+          type: string
+          description: ''
+          example: "instagram"
+        total_member:
+          type: number
+          description: ''
+          example: 551
+        type:
+          type: string
+          description: ''
+          example: "addToNovalya"
+        url:
+          type: string
+          description: ''
+          example: "https://www.instagram.com/m.r_hayper__47/followers"
+
+    generateComment:
+      type: object
+      properties:
+        gender:
+          type: string
+          description: ''
+          example: "male"
+        temp:
+          type: object
+          description: ''
+          example: {}
+        text:
+          type: string
+          description: ''
+          example: "annavansambeckVe"
+        type:
+          type: string
+          description: ''
+          example: "facebook"
+
+    getCompanyLogo:
+      type: object
+      properties:
+        domain:
+          type: string
+          description: ''
+          example: ""
+
+    getManagePayout:
+      type: object
+      properties:
+        keynames:
+          type: string
+          description: ''
+          example: "'payout_fee', 'payout_date', 'payout_flat_fee', 'payout_percentage_fee'"
+
+    updateManagePayoutData:
+      type: object
+      properties:
+        obj:
+          type: object
+          description: ''
+          example: {payout_fee: "5", payout_date: "2023-10-15", payout_flat_fee: "5", payout_percentage_fee: "5"}
+
+    getusersales:
+      type: object
+      example: {}
+
+    createAdmin:
+      type: object
+      example: {}
+
+    adminLogs:
+      type: object
+      properties:
+        type:
+          type: string
+          description: ''
+          example: "admin"
+
+    updateLimitsData:
+      type: object
+      properties:
+        plan1_AI_credits:
+          type: number
+          description: ''
+          example: 800
+        plan1_Tags_pipelines:
+          type: number
+          description: ''
+          example: 10
+        plan1_fb_messages:
+          type: number
+          description: ''
+          example: 1200
+        plan1_id:
+          type: string
+          description: ''
+          example: "Basic"
+        plan1_insta_messages:
+          type: number
+          description: ''
+          example: 800
+        plan2_AI_credits:
+          type: number
+          description: ''
+          example: 2000
+        plan2_Tags_pipelines:
+          type: number
+          description: ''
+          example: 25
+        plan2_fb_messages:
+          type: number
+          description: ''
+          example: 2400
+        plan2_id:
+          type: string
+          description: ''
+          example: "Business"
+        plan2_insta_messages:
+          type: number
+          description: ''
+          example: 1600
+        plan3_AI_credits:
+          type: number
+          description: ''
+          example: 9999
+        plan3_Tags_pipelines:
+          type: number
+          description: ''
+          example: 9999
+        plan3_fb_messages:
+          type: number
+          description: ''
+          example: 9999
+        plan3_id:
+          type: string
+          description: ''
+          example: "Unlimited_new"
+        plan3_insta_messages:
+          type: number
+          description: ''
+          example: 9999
+
+    adminLogs:
+      type: object
+      properties:
+        extension_version:
+          type: string
+          description: ''
+          example: "2.2.41"
+
+    createNewReseller:
+      type: object
+      properties:
+        admin_transaction_password:
+          type: string
+          description: ''
+          example: "1234567"
+        allowedroutes:
+          type: string
+          description: ''
+          example: "[\"/logout\",\"/404\",\"/\",\"/dashboard\",\"/users-list\",\"/unlock-user\"]"
+        brand_color:
+          type: string
+          description: ''
+          example: "#62a25d"
+        company_address:
+          type: string
+          description: ''
+          example: "Abcd ghjki sdf"
+        company_name:
+          type: string
+          description: ''
+          example: "chroexTech"
+        email:
+          type: string
+          description: ''
+          example: "akashsharmayn@gmail.com"
+        favIconImage:
+          type: string
+          description: ''
+          example: "data:image/png;base64"
+        first_name:
+          type: string
+          description: ''
+          example: "Tester"
+        image:
+          type: string
+          description: ''
+          example: "data:image/png;base64"
+        last_name:
+          type: string
+          description: ''
+          example: "Kumar"
+        password:
+          type: string
+          description: ''
+          example: "78789798"
+        phone:
+          type: string
+          description: ''
+          example: "999990909990"
+        profileImage:
+          type: string
+          description: ''
+          example: "data:image/png;base64"
+        username:
+          type: string
+          description: ''
+          example: "Dev-Sobinder"
+        website:
+          type: string
+          description: ''
+          example: "chroex-tech"
+
+    updatePassword:
+      type: object
+      properties:
+        newpassword:
+          type: string
+          description: ''
+          example: "7878"
+        oldpassword:
+          type: string
+          description: ''
+          example: "7878"
+
+    adminLogin:
+      type: object
+      properties:
+        ipaddress:
+          type: string
+          description: ''
+          example: "127.0.0.1"
+        password:
+          type: string
+          description: ''
+          example: "1111"
+        username:
+          type: string
+          description: ''
+          example: "Dev-Sobinder"
+
+    # createNewUser:
+    #   type: object
+    #   properties:
+    #     first_name:
+    #       type: string
+    #       description: 'Sam'
+    #       example: 'Sam'
+    #     last_name:
+    #       type: string
+    #       description: 'Sam'
+    #       example: 'Sam'
+    #     email:
+    #       type: string
+    #       description: 'email'
+    #       example: "harry@gmail.com"
+    #     password:
+    #       type: string
+    #       description: '123456'
+    #       example: '123456'
+    # updateUserDetails:
+    #   type: object
+    #   properties:
+    #     user_id:
+    #       type: string
+    #       description: 'user_id'
+    #       example: 'GF1174'
+    #     states:
+    #       type: string
+    #       description: 'add'
+    #       example: 'add'
+    # deleteUser:
+    #   type: object
+    #   properties:
+    #     user_id:
+    #       type: string
+    #       description: 'user_id'
+    #       example: 'GF6588'
+    # getUserList:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     limit:
+    #       type: string
+    #       description: '10'
+    #       example: '10'
+    # addNewGroup:
+    #   type: object
+    #   properties:
+    #     name:
+    #       type: string
+    #       description: 'shivalik'
+    #       example: 'shivalik'
+    #     member_count:
+    #       type: string
+    #       description: '5'
+    #       example: '5'
+    # deleteGroup:
+    #   type: object
+    #   properties:
+    #     group_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # adminCreateNewTemplate:
+    #   type: object
+    #   properties:
+    #     name:
+    #       type: string
+    #       description: 'birthday'
+    #       example: 'birthday'
+    #     type:
+    #       type: string
+    #       description: 'birthday'
+    #       example: 'birthday'
+    # templateListing:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     limit:
+    #       type: string
+    #       description: '10'
+    #       example: '10'
+    # adminAddTemplateGroup:
+      type: object
+      properties:
+        template_id:
+          type: string
+          description: '1'
+          example: '1'
+        name:
+          type: string
+          description: 'Today birthday'
+          example: 'Today birthday'
+        
+    # getGroupList:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     limit:
+    #       type: string
+    #       description: '10'
+    #       example: '10'
+    # getFriendList:
+    #   type: object
+    #   properties:
+    #     type:
+    #       type: string
+    #       description: 'facebook'
+    #       example: 'facebook'
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     limit:
+    #       type: string
+    #       description: '10'
+    #       example: '10'
+    # deleteFriend:
+    #   type: object
+    #   properties:
+    #     id:
+    #       type: string
+    #       description: 'id'
+    #       example: '1'
+    # addNewGroupResponse:
+    #   type: object
+    #   properties:
+    #     type:
+    #       type: string
+    #       description: 'update'
+    #       example: 'update'
+    #     group_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     title:
+    #       type: string
+    #       description: 'mahindra'
+    #       example: 'mahindra'
+    #     positive_keywords:
+    #       type: array
+    #       description: 'positive_keywords'
+    #       example: ['look','safety']
+    #     negative_keywords:
+    #       type: array
+    #       description: 'positive_keywords'
+    #       example: ['Fuel', 'milage']
+    #     response:
+    #       type: array
+    #       description: 'positive_keywords'
+    #       example: ['good look', 'drive', 'look']
+    # getGroupResponse:
+    #   type: object
+    #   properties:
+    #     group_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # getPostList:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     search:
+    #       type: string
+    #       description: 'sample'
+    #       example: 'sample'
+    # getPostCategoryList:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # checkPostExists:
+    #   type: object
+    #   properties:
+    #     post_id:
+    #       type: string
+    #       example: '1234567890'
+    # createAndUpdatePost:
+    #   type: object
+    #   properties:
+    #     category_id:
+    #       type: string
+    #       example: '1'
+    #     post_id:
+    #       type: string
+    #       example: '1234567890'
+    #     name:
+    #       type: string
+    #       example: 'Sample Post 1'
+    #     profile_link:
+    #       type: string
+    #       example: 'http://example.com/profile1'
+    #     data:
+    #       type: string
+    #       example: 'This is dummy post data 1.'
+    #     post_link:
+    #       type: string
+    #       example: 'http://example.com/post1'
+    #     like_count:
+    #       type: string
+    #       example: '20'
+    #     comment_count:
+    #       type: string
+    #       example: '10'
+    # deletePost:
+    #   type: object
+    #   properties:
+    #     id:
+    #       type: string
+    #       example: '1'
+    # addAndUpdateRequest:
+    #   type: object
+    #   properties:
+    #     type:
+    #       type: string
+    #       description: 'update'
+    #       example: 'update'
+    #     group_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     requests:
+    #       type: string
+    #       description: '10'
+    #       example: '10'
+    #     requests:
+    #       type: string
+    #       description: 'fast'
+    #       example: 'fast'
+    #     positive_keywords:
+    #       type: array
+    #       description: 'positive_keywords'
+    #       example: ['look','safety']
+    #     negative_keywords:
+    #       type: array
+    #       description: 'positive_keywords'
+    #       example: ['Fuel', 'milage']
+    # getRequestResponse:
+    #   type: object
+    #   properties:
+    #     group_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # getCategoryKeywordList:
+    #   type: object
+    #   properties:
+    #     category_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # getCategoryKeywordResponseList:
+    #   type: object
+    #   properties:
+    #     category_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     keyword_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # addAndUpdateMessage:
+    #   type: object
+    #   properties:
+    #     type:
+    #       type: string
+    #       description: 'create'
+    #       example: 'create/update'
+    #     name:
+    #       type: string
+    #       description: 'update'
+    #       example: 'update'
+    #     message_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     visibility:
+    #       type: array
+    #       description: 'visibility'
+    #       example: ['facebook','IG']
+    #     variants:
+    #       type: array
+    #       description: 'variants'
+    #       example: ['Hello[first_name]', 'Hi[first_name]']
+    # getMessageResponse:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # deleteMessage:
+    #   type: object
+    #   properties:
+    #     messgae_id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # addNewMember:
+    #   type: array
+    #   items:
+    #     type: object
+    #     properties:
+    #       name:
+    #         type: string
+    #         description: 'Name of the member'
+    #         example: 'John Doe'
+    #       email:
+    #         type: string
+    #         description: 'Email of the member'
+    #         example: 'john.doe@example.com'
+    #       profile_id:
+    #         type: string
+    #         description: 'profile id of the member'
+    #         example: '1234567890'
+    #       type:
+    #         type: string
+    #         description: 'Type of the member (e.g., website/group/post/admin/user)'
+    #         example: 'admin'
+    #       tags:
+    #         type: array
+    #         items:
+    #           type: string
+    #         description: 'Tags associated with the member'
+    #         example: ["car", "bike"]
+    #       question_answer:
+    #         type: array
+    #         items:
+    #           type: object
+    #           properties:
+    #             question:
+    #               type: string
+    #               description: 'The question text'
+    #               example: 'What is your favorite color?'
+    #             answer:
+    #               type: string
+    #               description: 'The answer text'
+    #               example: 'Blue'
+    #         description: 'An array of question-answer objects'
+    #         example:
+    #           - question: 'What is your favorite color?'
+    #             answer: 'Blue'
+    #           - question: 'What is your favorite food?'
+    #             answer: 'Pizza'
+    #       profile_link:
+    #         type: string
+    #         description: 'Profile link of the member'
+    #         example: 'http://example.com/profile/johndoe'
+    # deleteMember:
+    #   type: object
+    #   properties:
+    #     id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # getMembersList:
+    #   type: object
+    #   properties:
+    #     page:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    #     limit:
+    #       type: string
+    #       description: '10'
+    #       example: '10'
+    # addNewTag:
+    #   type: object
+    #   properties:
+    #     name:
+    #       type: string
+    #       description: 'shivalik'
+    #       example: 'shivalik'
+    # deleteTag:
+    #   type: object
+    #   properties:
+    #     id:
+    #       type: string
+    #       description: '1'
+    #       example: '1'
+    # getTagList:
+      type: object
+      properties:
+        page:
+          type: string
+          description: '1'
+          example: '1'
+        limit:
+          type: string
+          description: '10'
+          example: '10'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
