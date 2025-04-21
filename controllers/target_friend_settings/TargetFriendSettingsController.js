@@ -30,6 +30,7 @@ self.createTargetSetting = async (req, res) => {
           where: {
             user_id: user_id,
             prospection_type: prospection_type,
+            group_id: group_id
           },
         })
           .then(async (record) => {
@@ -56,7 +57,7 @@ self.createTargetSetting = async (req, res) => {
                   post_target
                 },
                 {
-                  where: { user_id, prospection_type },
+                  where: { user_id, prospection_type, group_id },
                 }
               );
               TargetFriendSettings.findOne({

@@ -535,8 +535,6 @@ self.getGroupByFolder = async (req, res)=>{
       };
     }
 
-    console.log("orderSort: ",orderSort)
-
     const fetchParams = {
       where: whereOptions,
       order: [orderSort],
