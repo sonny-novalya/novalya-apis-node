@@ -28,11 +28,11 @@ taggedUser.belongsTo(db.instatag, {
   as: 'tag',  // Alias for association
 });
 
-// Novadata.hasOne(db.taggedusers, {
-//   foreignKey: 'fb_user_id',   // Ensuring correct key reference
-//   sourceKey: 'fbId',
-//   as: 'taggedusers',
-// });
+Novadata.hasOne(db.taggedusers, {
+  foreignKey: 'fb_user_id',   // Ensuring correct key reference
+  sourceKey: 'fbId',
+  as: 'taggedusers',
+});
 
 // taggedusers belongs to a tag (fixing the incorrect foreign key)
 db.taggedusers.belongsTo(db.tag, {
