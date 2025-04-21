@@ -6,6 +6,15 @@ const { authenticateUser } = require("../middlewares/authMiddleware");
 // Define the route handlers and their corresponding HTTP methods
 
 const routes = [
+
+  // API TO CREATE PROSPECTION FOLDERS AND GROUP BY FOLDER
+  { method: "post", path: "/create-prospect-folder", handler: groupController.createProspectFolder },
+  { method: "put", path: "/update-prospect-folder", handler: groupController.updateProspectFolder },
+  { method: "post", path: "/delete-prospect-folder", handler: groupController.deleteProspectFolder },
+  { method: "get", path: "/get-prospect-folders", handler: groupController.getProspectFolders },
+  { method: "post", path: "/get-group-by-folder", handler: groupController.getGroupByFolder },
+  // API TO CREATE PROSPECTION FOLDERS AND GROUP BY FOLDER END
+  
   { method: "get", path: "/all", handler: groupController.getAllGroups },
   { method: "post", path: "/create", handler: groupController.createGroup },
   { method: "get", path: "/:groupID", handler: groupController.getGroupByID },
