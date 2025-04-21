@@ -1,5 +1,6 @@
-const { Group, Sequelize } = require("../../Models");
+const { Group, Sequelize, ProspectionGrpFolders } = require("../../Models");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
+const Response = require("../../helpers/response");
 const Op = Sequelize.Op;
 let self = {};
 
@@ -210,5 +211,349 @@ self.updateGroupMembers = async (req, res) => {
     });
   }
 };
+
+self.createProspectFolder = async (req, res)=>{
+  try {
+    const user_id = req.authUser;
+
+    const { folder_name, social_type, selectedGroups, prospect_folder} = req.body;
+
+    // Check if a group with the same URL already exists
+    const existingFolder = await ProspectionGrpFolders.findOne({ where: { user_id, folder_name } });
+    let grpMsg = "No Group Selected to Assign Folder"
+
+    if (existingFolder) {
+      return res.status(400).json({
+        status: "error",
+        message: "A Folder with the same name already exists.",
+      });
+    }
+
+    if(selectedGroups.length <= 0){
+      return res.status(400).json({
+        status: "error",
+        message: "Groups can't be empty.",
+      });
+    }
+
+    const newFolder = await ProspectionGrpFolders.create({
+      user_id,
+      folder_name,
+      social_type,
+      prospect_folder
+    });
+
+    // group map
+    await Promise.all(
+      selectedGroups.map(async (grpData) => {
+        const {id, group_name, url} = grpData
+        let grpDataToInsert;
+        // let folderIds = [];
+        
+        const checkGrp = await Group.findOne({ where: { user_id, url } });
+        
+        if(!checkGrp){
+          throw new Error(`Selected group with id "${id}" not found.`);
+        }
+        
+        let previousData = checkGrp.grp_folder_ids
+        
+        
+        if(previousData != null && previousData != ""){  // merge folder ids
+          let parsedId = JSON.parse(previousData)
+          parsedId.push(newFolder.id)
+          grpDataToInsert = JSON.stringify(parsedId)
+        }else{
+          grpDataToInsert = JSON.stringify([newFolder.id])
+        }
+        
+        await checkGrp.update({
+          grp_social_type: social_type,
+          grp_folder_ids: grpDataToInsert, // stringyfy [1,2]
+        });
+        
+      })
+    )
+    grpMsg = "Group Added Successfully"
+  
+    // res.status(200).json({ status: "success", newFolder: newFolder, message: grpMsg});
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      {
+        newFolder: newFolder,
+        message: grpMsg
+      }
+    );
+  } catch (error) {
+    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+  }
+}
+
+self.updateProspectFolder = async (req, res)=> {
+  try {
+    const user_id = req.authUser;
+
+    const { folder_id, folder_name, social_type, selectedGroups} = req.body;
+
+    // Check if a group with the same URL already exists
+    const existingFolder = await ProspectionGrpFolders.findOne({ where: { user_id, id: folder_id } });
+    let grpMsg = "No Group Selected to Assign Folder"
+
+    if (!existingFolder) {
+      return res.status(400).json({
+        status: "error",
+        message: "Folder not exists.",
+      });
+    }
+
+    const newFolder = await existingFolder.update({
+      user_id,
+      folder_name,
+      social_type
+    });
+
+    // group map
+    if(selectedGroups.length > 0){
+      await Promise.all(
+        selectedGroups.map(async (grpData) => {
+          const {id, group_name, url} = grpData
+          let grpDataToInsert;
+          // let folderIds = [];
+          
+          const checkGrp = await Group.findOne({ where: { user_id, url } });
+          
+          if(!checkGrp){
+            throw new Error(`Selected group with id "${id}" not found.`);
+          }
+          
+          let previousData = checkGrp.grp_folder_ids
+          
+          
+          if(previousData != null && previousData != ""){  // merge folder ids
+            let parsedId = JSON.parse(previousData)
+            if(parsedId.includes(newFolder.id) == false){
+              parsedId.push(newFolder.id)
+            }
+            grpDataToInsert = JSON.stringify(parsedId)
+          }else{
+            grpDataToInsert = JSON.stringify([newFolder.id])
+          }
+          
+          await checkGrp.update({
+            grp_social_type: social_type,
+            grp_folder_ids: grpDataToInsert, // stringyfy [1,2]
+          });
+          
+        })
+      )
+      grpMsg = "Group updated Successfully"
+    }
+    
+    // res.status(200).json({ status: "success", newFolder: newFolder, message: grpMsg});
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      {
+        newFolder: newFolder,
+        message: grpMsg
+      }
+    );
+  } catch (error) {
+    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+
+  }
+}
+
+self.deleteProspectFolder = async (req, res)=>{
+  try {
+    const user_id = req.authUser;
+
+    const { folder_id, selectedGroups} = req.body;
+
+    // destroy the group.
+    await ProspectionGrpFolders.destroy({ where: { user_id, id: folder_id } });
+    let grpMsg = "No Group Selected."
+
+    // group map
+    if(selectedGroups.length > 0){
+      await Promise.all(
+        selectedGroups.map(async (grpData) => {
+          const {id, group_name, url} = grpData
+          let grpDataToInsert;
+          // let folderIds = [];
+          
+          const checkGrp = await Group.findOne({ where: { user_id, url } });
+          
+          if(!checkGrp){
+            throw new Error(`Selected group with id "${id}" not found.`);
+          }
+          
+          let previousData = checkGrp.grp_folder_ids
+          
+          if(previousData != null && previousData != ""){  // merge folder ids
+            let parsedId = JSON.parse(previousData)
+
+            let newArray = parsedId.filter(num => num != folder_id);
+
+            if(newArray.length <= 0){
+              grpDataToInsert = null
+            }else{
+              grpDataToInsert = JSON.stringify(newArray)
+            }
+          }
+
+          await checkGrp.update({
+            grp_folder_ids: grpDataToInsert, // stringyfy [1,2]
+          });
+          
+        })
+      )
+      grpMsg = "Group updated Successfully"
+    }
+    
+    // res.status(200).json({ status: "success", folder: "Folder deleted successfully", group: grpMsg});
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      {
+        folder: "Folder deleted successfully",
+        group: grpMsg
+      }
+    );
+  } catch (error) {
+    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+
+  }
+}
+
+self.getProspectFolders = async (req, res)=>{
+  try {
+    const user_id = req.authUser;
+
+    const { social_type = null, prospect_folder} = req.query;
+
+    const whereOptions = user_id ? { user_id: user_id } : {};
+
+    if(social_type){
+      whereOptions.social_type = social_type;
+    }
+
+    if(prospect_folder){
+      whereOptions.prospect_folder = prospect_folder;
+    }
+
+    const fetchParams = {
+      where: whereOptions,
+    };
+
+    const folders = await ProspectionGrpFolders.findAll(fetchParams);
+    // res.status(200).json({ status: "success", data: folders });
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      folders      
+    );
+  } catch (error) {
+    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+  }
+}
+
+self.getGroupByFolder = async (req, res)=>{
+  try {
+    const user_id = req.authUser;
+    // page = 1,
+    // limit = 50,
+    const {
+      social_type = null,
+      id = null,
+      search_grp,
+      group_type = null,
+      type = null,
+      sort_by = 0,
+      page = 1,
+      limit = 25,
+    } = req.body;
+
+    const offset = (page - 1) * limit;
+    const whereOptions = user_id ? { user_id: user_id } : {}; 
+    const orderArray = [];
+
+    if(social_type == "fb_groups"){
+      whereOptions.group_type = {
+        [Op.in]: ['member', 'things in common']
+      }
+    }else if(social_type == "fb_posts"){
+      whereOptions.group_type = "Post-Like"
+
+    }else if(social_type == "ig_followers"){
+      whereOptions.group_type = "insta_profile"
+
+    }else if(social_type == "ig_posts"){
+      whereOptions.group_type = "insta_likePost"
+
+    }else if(social_type == "ig_hashtags"){
+      whereOptions.group_type = "insta_hashtag"
+
+    }
+    // else{
+    //   res.status(400).json({ status: "error", message: `Invalid Params ${social_type}` });
+    // }
+
+    if(search_grp){
+      whereOptions.name = {
+        [Op.like]: `%${search_grp}%`
+      };
+    }
+
+    if(group_type){  // filter data by group type eg. member, things in common
+      whereOptions.group_type = group_type
+    }
+
+    if(type == "facebook"){
+      whereOptions[Op.or] = [
+        { prospection_type: null },
+        { prospection_type: { [Op.in]: ['facebook'] } }
+      ];
+    }else{
+      whereOptions.prospection_type = type
+    }
+
+    if(id && id != 'all'){
+      whereOptions.grp_folder_ids = {
+        [Op.or]:  [
+          { [Op.like]: `%[${id},%` },  // Matches [id,...
+          { [Op.like]: `%,${id},%` },  // Matches ,id,...
+          { [Op.like]: `%,${id}]%` },  // Matches ,id]
+          { [Op.like]: `%[${id}]%` }   // Matches [id]
+        ]
+      };
+    }
+
+    const fetchParams = {
+      where: whereOptions,
+      order: [['name', sort_by === 0 ? 'ASC' : 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    };
+    // order: [["order", "asc"]],
+
+    const { rows: groups, count: total } = await Group.findAndCountAll(fetchParams);
+
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      {
+        data: groups,
+        totalGrp: total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit)
+      }
+    );
+  } catch (error) {
+    return Response.resWith422(res, error.message);
+
+  }
+}
 
 module.exports = self;
