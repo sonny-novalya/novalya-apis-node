@@ -9,10 +9,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
       },
       fb_name: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT
       },
       fb_image_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(500),
       },
       fb_user_id: {
         type: DataTypes.STRING,
@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
 
       },
       profile_pic: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
       },
       is_primary: {
         type: DataTypes.INTEGER,
@@ -51,12 +51,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  taggedUser.sync({ alter: true })
-  .then(() => {
-    console.log('User table created or updated successfully');
-  })
-  .catch(err => {
-    console.error('Error creating or updating User table:', err);
-  });
+  // taggedUser.sync({ alter: true })
+  // .then(() => {
+  //   console.log('User table created or updated successfully');
+  // })
+  // .catch(err => {
+  //   console.error('Error creating or updating User table:', err);
+  // });
   return taggedUser;
 };

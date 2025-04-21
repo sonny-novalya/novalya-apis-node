@@ -6,6 +6,7 @@ const tag = db.instatag;
 const User = db.User;
 const stage = db.instastage;
 const taggedusers = db.instataggedusers;
+const Response = require("../../helpers/response");
 
 self.createStage = async (req, res) => {
   try {
@@ -26,18 +27,17 @@ self.createStage = async (req, res) => {
         tag_id,
         user_id: user_id,
       });
-      res.status(201).json({ status: "success", data: newStage });
+
+      return Response.resWith202(res, 'success', newStage);
     } catch (error) {
-      res
-        .status(500)
-        .json({ status: "error", message: "Error creating the stage" });
+      
+      console.log('error', error);    
+      return Response.resWith422(res, error.message);
     }
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "An error occurred while creating the message.",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 self.getAllStages = async (req, res) => {
@@ -57,13 +57,12 @@ self.getAllStages = async (req, res) => {
       include: [{ model: tag, as: "tag" }],
     };
     const stages = await stage.findAll(fetchParams);
-    res.json({ status: "success", data: stages });
+
+    return Response.resWith202(res, 'success', stages);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error fetching stages",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -77,17 +76,15 @@ self.getStageById = async (req, res) => {
       include: ["tag"],
     });
     if (!stagedata) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Stage not found" });
+
+      return Response.resWith422(res, 'Stage not found');
     }
-    res.json({ status: "success", data: stagedata });
+
+    return Response.resWith202(res, 'success', stagedata);
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "Error fetching the stage",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -98,19 +95,19 @@ self.updateStage = async (req, res) => {
   try {
     const existingStage = await stage.findByPk(stageId);
     if (!existingStage) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Stage not found" });
+
+      return Response.resWith422(res, 'Stage not found');
     }
     existingStage.stage_num = stage_num;
     existingStage.name = name;
     existingStage.tag_id = tag_id;
     await existingStage.save();
-    res.json({ status: "success", data: existingStage });
+    
+    return Response.resWith202(res, 'success', existingStage);
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Error updating the stage" });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -119,16 +116,16 @@ self.updateStage = async (req, res) => {
   try {
     const existingStage = await stage.findByPk(stageId);
     if (!existingStage) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Stage not found" });
+
+      return Response.resWith422(res, 'Stage not found');
     }
     await existingStage.destroy();
-    res.json({ status: "success", message: "Stage deleted successfully" });
+
+    return Response.resWith202(res, 'Stage deleted successfully');
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Error deleting the stage" });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 }),
   (self.reOrderStageAndUpdateUser = async (req, res) => {
@@ -141,9 +138,8 @@ self.updateStage = async (req, res) => {
 
         const existingStage = await stage.findByPk(stageId.id);
         if (!existingStage) {
-          return res
-            .status(404)
-            .json({ status: "error", message: "Stage not found" });
+
+          return Response.resWith422(res, "Stage not found");
         }
         existingStage.stage_num = i + 1;
         await existingStage.save();
@@ -178,15 +174,11 @@ self.updateStage = async (req, res) => {
         where: { user_id: user_id, tag_id: tagId },
       });
 
-      res.json({
-        status: "success",
-        message: "Stage updated successfully",
-        data: { updatedStages, taggedUsers },
-      });
+      return Response.resWith202(res, 'success', {'updatedStages' : updatedStages, 'taggedUsers' : taggedUsers});
     } catch (error) {
-      res
-        .status(500)
-        .json({ status: "error", message: "Error updating the stage" });
+
+      console.log('error', error);    
+      return Response.resWith422(res, error.message);
     }
   });
 

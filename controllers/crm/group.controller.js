@@ -4,6 +4,7 @@ const {
   getAuthUser,
   randomToken,
 } = require("../../helpers/functions");
+const Response = require("../../helpers/response");
 const { Model } = require("sequelize");
 const { Sequelize } = require("../../Models");
 const Op = Sequelize.Op;
@@ -66,11 +67,13 @@ const placetag = async (req, res) => {
         include: "stage",
       });
     }
-    res.send(createdTag);
+    return Response.resWith202(res, 'success', createdTag);
   } catch (error) {
-    res.status(500).send(error);
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
+
 const getAll = async (req, res) => {
   try {
     const query = req.query;
@@ -86,9 +89,11 @@ const getAll = async (req, res) => {
       ],
       order: [["order_num", "DESC"]],
     });
-    res.send(data);
+    return Response.resWith202(res, 'success', data);
   } catch (error) {
-    res.status(500).json({ message: error });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -113,6 +118,7 @@ function findDuplicateStages(stageData) {
 }
 
 const getOne = async (req, res) => {
+
   const id = req.params.id;
   const authUser = await getAuthUser(req, res);
 
@@ -123,7 +129,8 @@ const getOne = async (req, res) => {
     });
 
     if (!tagData) {
-      return res.status(404).json({ message: "Tag not found" });
+      
+      return Response.resWith422(res, 'Tag not found');
     }
 
     let stageData = await db.stage.findAll({
@@ -158,25 +165,43 @@ const getOne = async (req, res) => {
       },
     });
 
-    res.json({
-      ...tagData.toJSON(),
-      taggedUsers: taggedUsersDetails,
-      stage: stageData,
-      duplicateStages,
-    });
+    var final_response = {
+        tag_data: tagData.toJSON(),
+        taggedUsers: taggedUsersDetails,
+        stage: stageData,
+        duplicate_stage: duplicateStages
+    };
+    return Response.resWith202(res, 'success', final_response);
+    
+    // res.json({
+    //   ...tagData.toJSON(),
+    //   taggedUsers: taggedUsersDetails,
+    //   stage: stageData,
+    //   duplicateStages,
+    // });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
 const updateOne = async (req, res) => {
-  const id = req.params.id;
-  const authUser = await getAuthUser(req, res);
-  let params = req.body;
-  params.user_id = authUser;
+  
+  try {
+    
+    const id = req.params.id;
+    const authUser = await getAuthUser(req, res);
+    let params = req.body;
+    params.user_id = authUser;
 
-  const data = await tag.update(params, { where: { id: id } });
-  res.send(data);
+    const data = await tag.update(params, { where: { id: id } });
+    return Response.resWith202(res, 'success', data);
+  } catch (error) {
+    
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
 };
 
 const deleteOne = async (req, res) => {
@@ -199,14 +224,12 @@ const deleteOne = async (req, res) => {
     );
 
     await tag.destroy({ where: { id: id } });
-    res.json({
-      message: "tag successfully deleted",
-    });
+
+    return Response.resWith202(res, null, 'tag successfully deleted');
   } catch (error) {
-    res.json({
-      message: "tag successfully deleted",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -258,14 +281,13 @@ const limitDowngrade = async (req, res) => {
     );
   
     // Send a single response after all operations are complete
-    res.json({
-      message: "All tags successfully processed.",
-    });
+    return Response.resWith202(res, null, 'All tags successfully processed.');
+    
+    
   } catch (error) {
-    res.json({
-      message: "tag successfully deleted",
-      error: error.message,
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -287,8 +309,9 @@ const reorderGroup = async (req, res) => {
     await updatedGroups[i].update({ order_num: updatedGroups.length - i });
   }
 
-  res.send(updatedGroups);
+  return Response.resWith202(res, updatedGroups);
 };
+
 module.exports = {
   placetag,
   getAll,

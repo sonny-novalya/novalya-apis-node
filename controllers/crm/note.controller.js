@@ -2,6 +2,8 @@ const db = require("../../Models/crm");
 const { checkAuthorization, getAuthUser } = require("../../helpers/functions");
 const { Op } = require("sequelize");
 const note = db.note;
+const Response = require("../../helpers/response");
+
 const placeNote = async (req, res) => {
   try {
     const data = await note.create(req.body);
@@ -13,7 +15,8 @@ const placeNote = async (req, res) => {
 
 const getAll = async (req, res) => {
   try {
-    const query = req.query;
+
+    const query = req.body;
 
     const user_id = await getAuthUser(req, res);
 
@@ -26,19 +29,30 @@ const getAll = async (req, res) => {
     };
 
     const data = await note.findAll(fetchParams);
-    res.send(data);
+    return Response.resWith202(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
 const getOne = async (req, res) => {
-  const id = req.params.id;
 
-  const data = await note.findOne({ where: { id: id } });
+  try {
+    
+    const id = req.params.id;
 
-  res.json(data);
+    const data = await note.findOne({ where: { id: id } });
+    return Response.resWith202(data);
+  } catch (error) {
+    
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
+  
 };
+
 const updateOne = async (req, res) => {
   const id = req.params.id;
 

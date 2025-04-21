@@ -6,12 +6,15 @@ const tag = db.tag;
 const User = db.User;
 const stage = db.stage;
 const taggedusers = db.taggedusers;
+const Response = require("../../helpers/response");
 
 self.createStage = async (req, res) => {
   try {
+    
     const user_id = req.authUser;
     let { stage_num = 1, name, tag_id } = req.body;
     try {
+
       const lastStage = await Stage.findOne({
         where: { tag_id },
         order: [["id", "DESC"]],
@@ -26,21 +29,23 @@ self.createStage = async (req, res) => {
         tag_id,
         user_id: user_id,
       });
-      res.status(201).json({ status: "success", data: newStage });
+
+      return Response.resWith202(res, 'success', newStage);
     } catch (error) {
-      res
-        .status(500)
-        .json({ status: "error", message: "Error creating the stage" });
+
+      console.log('error', error);    
+      return Response.resWith422(res, error.message);
     }
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "An error occurred while creating the message.",
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
+
 self.getAllStages = async (req, res) => {
   try {
+
     const user_id = req.authUser;
     const whereOptions = {
       user_id: user_id,
@@ -55,10 +60,14 @@ self.getAllStages = async (req, res) => {
       order: [["stage_num", orderBy === "desc" ? "DESC" : "ASC"]],
       include: [{ model: tag, as: "tag" }],
     };
+
     const stages = await db.stage.findAll(fetchParams);
-    res.json({ status: "success", data: stages });
+    
+    return Response.resWith202(res, 'success', stages);
   } catch (error) {
-    res.status(500).json({ status: "error", message: "Error fetching stages" });
+    
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -72,15 +81,15 @@ self.getStageById = async (req, res) => {
       include: ["tag"],
     });
     if (!stage) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Stage not found" });
+
+      return Response.resWith422(res, 'Stage not found');
     }
-    res.json({ status: "success", data: stage });
+
+    return Response.resWith202(res, 'success', stage);
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Error fetching the stage" });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -90,94 +99,98 @@ self.updateStage = async (req, res) => {
   const authUser = req.authUser;
   try {
     const existingStage = await Stage.findByPk(stageId);
+    
     if (!existingStage) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Stage not found" });
+
+      return Response.resWith422(res, 'Stage not found');
     }
+
     existingStage.stage_num = stage_num;
     existingStage.name = name;
     existingStage.tag_id = tag_id;
     await existingStage.save();
-    res.json({ status: "success", data: existingStage });
+    
+    return Response.resWith202(res, 'success', existingStage);
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Error updating the stage" });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
 (self.deleteStage = async (req, res) => {
   const stageId = req.params.id;
   try {
+
     const existingStage = await Stage.findByPk(stageId);
     if (!existingStage) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "Stage not found" });
+
+      return Response.resWith422(res, "Stage not found");
     }
     await existingStage.destroy();
-    res.json({ status: "success", message: "Stage deleted successfully" });
+
+    return Response.resWith202(res, 'Stage deleted successfully');
   } catch (error) {
-    res
-      .status(500)
-      .json({ status: "error", message: "Error deleting the stage" });
+    
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 }),
-  (self.reOrderStageAndUpdateUser = async (req, res) => {
-    const { stages } = req.body;
-    const user_id = req.authUser;
-    const tagId = stages[0].tag_id;
-    try {
-      for (let i = 0; i < stages.length; i++) {
-        const stage = stages[i];
-        const existingStage = await Stage.findByPk(stage.id);
-        if (!existingStage) {
-          return res
-            .status(404)
-            .json({ status: "error", message: "Stage not found" });
-        }
-        existingStage.stage_num = i + 1;
-        await existingStage.save();
+
+
+(self.reOrderStageAndUpdateUser = async (req, res) => {
+
+  const { stages } = req.body;
+  const user_id = req.authUser;
+  const tagId = stages[0].tag_id;
+  try {
+
+    for (let i = 0; i < stages.length; i++) {
+      const stage = stages[i];
+      const existingStage = await Stage.findByPk(stage.id);
+      if (!existingStage) {
+
+        return Response.resWith422(res, "Stage not found");
       }
-      stages.forEach(async (element, index) => {
-        const taggedUsersDetails = await db.taggedusers.findAll({
-          where: {
-            tag_id: {
-              [Op.like]: `%${element.tag_id}%`,
-            },
-            stage_id: element.stage_num,
-            user_id: user_id,
-          },
-        });
-
-        if (taggedUsersDetails.length > 0) {
-          taggedUsersDetails.forEach(async (taggedUser) => {
-            await taggedusers.update(
-              { stage_id: index + 1 },
-              { where: { id: taggedUser.id } }
-            );
-          });
-        }
-      });
-      const updatedStages = await stage.findAll({
-        where: { user_id: user_id, tag_id: tagId },
-        order: [["stage_num", "ASC"]],
-      });
-      const taggedUsers = await taggedusers.findAll({
-        where: { user_id: user_id, tag_id: tagId },
-      });
-
-      res.json({
-        status: "success",
-        message: "Stage updated successfully",
-        data: { updatedStages, taggedUsers },
-      });
-    } catch (error) {
-      res
-        .status(500)
-        .json({ status: "error", message: "Error updating the stage" });
+      existingStage.stage_num = i + 1;
+      await existingStage.save();
     }
-  });
+    stages.forEach(async (element, index) => {
+      const taggedUsersDetails = await db.taggedusers.findAll({
+        where: {
+          tag_id: {
+            [Op.like]: `%${element.tag_id}%`,
+          },
+          stage_id: element.stage_num,
+          user_id: user_id,
+        },
+      });
+
+      if (taggedUsersDetails.length > 0) {
+        taggedUsersDetails.forEach(async (taggedUser) => {
+          await taggedusers.update(
+            { stage_id: index + 1 },
+            { where: { id: taggedUser.id } }
+          );
+        });
+      }
+    });
+
+    const updatedStages = await stage.findAll({
+      where: { user_id: user_id, tag_id: tagId },
+      order: [["stage_num", "ASC"]],
+    });
+    const taggedUsers = await taggedusers.findAll({
+      where: { user_id: user_id, tag_id: tagId },
+    });
+
+    return Response.resWith202(res, 'success', {'updatedStages' : updatedStages, 'taggedUsers' : taggedUsers});
+
+  } catch (error) {
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
+});
 
 module.exports = self;
