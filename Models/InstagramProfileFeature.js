@@ -17,6 +17,9 @@ module.exports = (sequelize, DataTypes) => {
     insta_user_id: {
       type: DataTypes.STRING
     },
+    insta_numeric_id: {
+      type: DataTypes.STRING
+    },
     insta_user_name: {
       type: DataTypes.STRING
     },

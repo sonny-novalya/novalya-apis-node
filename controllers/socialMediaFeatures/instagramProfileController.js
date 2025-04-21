@@ -5,13 +5,14 @@ let self = {};
 self.createOrUpdateFeature = async (req, res) => {
     try {
         const user_id = req.authUser;
-        const { insta_user_id, insta_user_name, following, total_followers, profile_image ,posts} = req.body;
+        const { insta_user_id, insta_numeric_id, insta_user_name, following, total_followers, profile_image ,posts} = req.body;
 
         let existingProfile = await InstagramProfileFeature.findOne({ where: { user_id } });
 
         if (existingProfile) {
             existingProfile = await existingProfile.update({
                 insta_user_id,
+                insta_numeric_id,
                 insta_user_name,
                 following,
                 total_followers,
@@ -23,6 +24,7 @@ self.createOrUpdateFeature = async (req, res) => {
         } else {
             const newInstagramProfileFeature = await InstagramProfileFeature.create({
                 insta_user_id,
+                insta_numeric_id,
                 insta_user_name,
                 following,
                 total_followers,
