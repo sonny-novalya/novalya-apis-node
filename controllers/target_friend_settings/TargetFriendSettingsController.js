@@ -117,10 +117,15 @@ self.getAllTargetSetting = async (req, res) => {
           limit = null,
           orderBy = "desc",
           prospection_type = "facebook",
+          grp_id
         } = req.query;
         const offset = (page - 1) * limit;
         const whereOptions = user_id ? { user_id: user_id } : {};
         whereOptions.prospection_type = prospection_type;
+
+        if(grp_id){
+          whereOptions.group_id = grp_id;
+        }
 
         const fetchParams = {
             where: whereOptions,
