@@ -2,6 +2,7 @@ const { Group, Sequelize, ProspectionGrpFolders } = require("../../Models");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 const Response = require("../../helpers/response");
 const Op = Sequelize.Op;
+const literal = Sequelize.literal;
 let self = {};
 
 // Fetch all groups with pagination and optional ordering
@@ -470,14 +471,18 @@ self.getGroupByFolder = async (req, res)=>{
       search_grp,
       group_type = null,
       type = null,
+      field = null,
       sort_by = 0,
       page = 1,
       limit = 25,
     } = req.body;
 
     const offset = (page - 1) * limit;
+    // const validFields = ["id", "name", "total_member", "createdAt"];
+
+    const orderField = field == "member" ? literal("CAST(total_member AS UNSIGNED)") : "name";
+    const orderSort = (sort_by === 0 || sort_by === 1) ? [orderField, sort_by === 0 ? "ASC" : "DESC"] : ["name", "DESC"];
     const whereOptions = user_id ? { user_id: user_id } : {}; 
-    const orderArray = [];
 
     if(social_type == "fb_groups"){
       whereOptions.group_type = {
@@ -530,9 +535,11 @@ self.getGroupByFolder = async (req, res)=>{
       };
     }
 
+    console.log("orderSort: ",orderSort)
+
     const fetchParams = {
       where: whereOptions,
-      order: [['name', sort_by === 0 ? 'ASC' : 'DESC']],
+      order: [orderSort],
       limit: parseInt(limit),
       offset: parseInt(offset)
     };
