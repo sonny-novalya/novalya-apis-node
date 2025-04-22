@@ -63,7 +63,7 @@ db.tag.hasMany(db.campaign, { foreignKey: "group_id" }); // Use "tag_id" as the 
 db.instatag.hasMany(db.instagramCampaign, { foreignKey: "group_id" }); // Use "tag_id" as the foreign key in campaign
 db.campaign.belongsTo(db.tag, { foreignKey: "group_id" });
 db.instagramCampaign.belongsTo(db.instatag, { foreignKey: "group_id" });
-db.tag.hasMany(db.stage, { foreignKey: "tag_id", as: "stage" }); // Use "tag_id" as the foreign key in campaign
+// db.tag.hasMany(db.stage, { foreignKey: "tag_id", as: "stage" }); // Use "tag_id" as the foreign key in campaign
 db.instatag.hasMany(db.instastage, { foreignKey: "tag_id", as: "stage" }); // Use "tag_id" as the foreign key in campaign
 
 db.stage.hasMany(db.taggedusers, { foreignKey: "user_id" }); // Use "tag_id" as the foreign key in campaign
