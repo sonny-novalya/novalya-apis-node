@@ -41,7 +41,7 @@ self.getBirthdaySetting = async (req, res) => {
 self.createBirthdaySetting = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { type, time_interval, birthday_id, birthday_type, action } = req.body;
+    const { type, time_interval, birthday_id, birthday_type, action, prospect } = req.body;
     const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id }});
     console.log('existingBirthdaySetting--46', existingBirthdaySetting);
     
@@ -53,6 +53,7 @@ self.createBirthdaySetting = async (req, res) => {
         birthday_id,
         birthday_type,
         action,
+        prospect
       });
       console.log('updateData--46', updateData);
     } else {
@@ -64,6 +65,7 @@ self.createBirthdaySetting = async (req, res) => {
         birthday_id,
         birthday_type,
         action,
+        prospect
       });
       console.log('newBirthdaySetting--46', newBirthdaySetting);
     }
