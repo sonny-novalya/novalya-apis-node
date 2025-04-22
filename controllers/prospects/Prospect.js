@@ -219,7 +219,8 @@ self.createFbBirthdayMember = async (req, res) =>{
       const result = await BirthdayWishes.create({
         user_id: user_id,
         fb_user_id: fb_user_id,
-        connected_fb_user_id: connected_fb_user_id
+        connected_fb_user_id: connected_fb_user_id,
+        birthday_type: birthday_type
       });
 
       return Response.resWith202(
