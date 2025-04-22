@@ -17,9 +17,9 @@ const placetaggedUsers = async (req, res) => {
 
 const taggedusersmove = async (req, res) => {
   try {
+    
     const { type = "facebook" } = req.query;
-    const taggedusersTable =
-      type === "instagram" ? db.instataggedusers : taggedusers;
+    const taggedusersTable = type === "instagram" ? db.instataggedusers : taggedusers;
 
     const tagged_user_ids = req.body.tagged_user_ids;
 
@@ -32,12 +32,14 @@ const taggedusersmove = async (req, res) => {
           );
         })
       );
-      res.send("success");
+      return Response.resWith202(res, 'success');
     } else {
-      res.status(400).send("No tagged user ids provided");
+
+      return Response.resWith422(res, "No tagged user ids provided");
     }
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", error: error });
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
