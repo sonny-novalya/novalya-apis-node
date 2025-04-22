@@ -28,7 +28,8 @@ module.exports = (sequelize, DataTypes) => {
     time_interval: DataTypes.INTEGER,
     birthday_id: DataTypes.INTEGER,
     birthday_type: DataTypes.TEXT,
-    action: DataTypes.TEXT
+    action: DataTypes.TEXT,
+    prospect: DataTypes.STRING(11)
   }, {
     sequelize,
     modelName: 'BirthdaySetting',
