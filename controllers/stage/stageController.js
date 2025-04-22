@@ -130,7 +130,7 @@ self.updateStage = async (req, res) => {
     //   { where: { id: stageId } }
     // );
 
-    console.log('updateStage--118', updateStage);
+    // console.log('updateStage--118', updateStage);
     
     // existingStage.stage_num = stage_num;
     // existingStage.name = name;
