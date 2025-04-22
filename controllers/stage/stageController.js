@@ -97,8 +97,6 @@ self.updateStage = async (req, res) => {
   
   const stageId = req.body.stageId;
 
-  console.log('stageId--100', stageId);
-  console.log('req.body--100', req.body);
   const { stage_num, name, tag_id } = req.body;
   const authUser = req.authUser;
   try {
@@ -114,28 +112,7 @@ self.updateStage = async (req, res) => {
     if (typeof name !== 'undefined') updates.name = name;
     if (typeof tag_id !== 'undefined') updates.tag_id = tag_id;
 
-    if (typeof stage_num !== 'undefined') existingStage.stage_num = stage_num;
-    if (typeof name !== 'undefined') existingStage.name = name;
-    if (typeof tag_id !== 'undefined') existingStage.tag_id = tag_id;
-
     await existingStage.save();
-    console.log('Saved via instance.save()');
-
-    // var updateStage = await Stage.update(
-    //   { 
-    //     stage_num: stage_num,
-    //     name: name,
-    //     tag_id: tag_id
-    //   },
-    //   { where: { id: stageId } }
-    // );
-
-    // console.log('updateStage--118', updateStage);
-    
-    // existingStage.stage_num = stage_num;
-    // existingStage.name = name;
-    // existingStage.tag_id = tag_id;
-    // await existingStage.save();
     
     return Response.resWith202(res, 'success');
   } catch (error) {
