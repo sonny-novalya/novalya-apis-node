@@ -95,7 +95,7 @@ self.getStageById = async (req, res) => {
 
 self.updateStage = async (req, res) => {
   
-  const stageId = req.params.id;
+  const stageId = req.body.id;
 
   console.log('stageId--100', stageId);
   console.log('req.body--100', req.body);
