@@ -23,6 +23,14 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
     }
   );
+
+  stage.sync({ alter: true })
+  .then(() => {
+    console.log('stage created or updated successfully');
+  })
+  .catch(err => {
+    console.error('Error creating or updating stage:', err);
+  });
   
   return stage;
 };
