@@ -37,6 +37,7 @@ self.createTargetSetting = async (req, res) => {
             if (record) {
               const newTargetFriendSetting = await TargetFriendSettings.update(
                 {
+                  group_id,
                   message,
                   norequest,
                   interval,
@@ -63,7 +64,6 @@ self.createTargetSetting = async (req, res) => {
                 where: {
                   user_id: user_id,
                   prospection_type: prospection_type,
-                  group_id: group_id
                 },
               }).then(async (record) => {
                 res.status(200).json({ status: "success", data: record });
