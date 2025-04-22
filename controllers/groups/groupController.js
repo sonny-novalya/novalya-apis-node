@@ -361,7 +361,7 @@ self.updateProspectFolder = async (req, res)=> {
       }
     );
   } catch (error) {
-    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+    return Response.resWith422(res, error.message || "An error occurred.");
 
   }
 }
@@ -423,7 +423,7 @@ self.deleteProspectFolder = async (req, res)=>{
       }
     );
   } catch (error) {
-    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+    return Response.resWith422(res, error.message || "An error occurred while deleting the folder.");
 
   }
 }
@@ -456,7 +456,7 @@ self.getProspectFolders = async (req, res)=>{
       folders      
     );
   } catch (error) {
-    return Response.resWith422(res, error.message || "An error occurred while creating the folder.");
+    return Response.resWith422(res, error.message || "An error occurred.");
   }
 }
 
