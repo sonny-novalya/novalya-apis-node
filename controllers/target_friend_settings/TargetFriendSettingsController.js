@@ -3,6 +3,10 @@ const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
 
+TargetFriendSettings.belongsTo(Group, { as: 'groupData', foreignKey: 'group_id' })
+
+Group.hasMany(TargetFriendSettings, { foreignKey: 'group_id' })
+
 self.createTargetSetting = async (req, res) => {
     try {
         const user_id = req.authUser;
@@ -37,7 +41,6 @@ self.createTargetSetting = async (req, res) => {
             if (record) {
               const newTargetFriendSetting = await TargetFriendSettings.update(
                 {
-                  group_id,
                   message,
                   norequest,
                   interval,
@@ -64,6 +67,7 @@ self.createTargetSetting = async (req, res) => {
                 where: {
                   user_id: user_id,
                   prospection_type: prospection_type,
+                  group_id: group_id
                 },
               }).then(async (record) => {
                 res.status(200).json({ status: "success", data: record });
@@ -136,7 +140,7 @@ self.getAllTargetSetting = async (req, res) => {
             include: [
                 {
                     model: Group,// Include the Group model
-                    as: 'groups',
+                    as: 'groupData',
                 },
                 {
                     model: MessageData,// Include the Group model
