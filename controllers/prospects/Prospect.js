@@ -6,8 +6,10 @@ const {
   Section,
   Sequelize,
   Prospects,
+  BirthdayWishes,
   FacebookGroupUsers,
 } = require("../../Models");
+const Response = require("../../helpers/response");
 const Op = Sequelize.Op;
 let self = {};
 
@@ -182,5 +184,85 @@ self.createFacebookProspectMember = async (req, res) => {
     });
   }
 };
+
+self.createFbBirthdayMember = async (req, res) =>{
+  const user_id = req.authUser;
+  const { fb_user_id, connected_fb_user_id, birthday_type} = req.body;
+
+  try{
+    let getExistingRecords = await BirthdayWishes.findOne({
+      where: {user_id, fb_user_id, connected_fb_user_id},
+    });
+
+    if(getExistingRecords){
+      const currentDate = new Date();
+      await BirthdayWishes.update(
+        {
+          updated_at: currentDate,
+          birthday_type: birthday_type
+        },
+        {
+          where: {
+            user_id: user_id,
+            fb_user_id: fb_user_id,
+            connected_fb_user_id: connected_fb_user_id
+          },
+        }
+      );
+
+      return Response.resWith202(
+        res,
+        "updated",
+        fb_user_id
+      );
+    }else{
+      const result = await BirthdayWishes.create({
+        user_id: user_id,
+        fb_user_id: fb_user_id,
+        connected_fb_user_id: connected_fb_user_id
+      });
+
+      return Response.resWith202(
+        res,
+        "created",
+        result
+      );
+    }
+    
+  }catch(error){
+    return Response.resWith422(res, error.message || "An error occurred");
+  }
+}
+
+self.getFbBirthdayMember = async (req, res) =>{
+  const user_id = req.authUser;
+
+  try{
+    let allRecords = await BirthdayWishes.findAll({
+      where: {user_id},
+    });
+
+    if(allRecords.length > 0){
+      
+      // res.status(200).json({status: 200, data: allRecords})
+      return Response.resWith202(
+        res,
+        "opration completed",
+        allRecords
+      );
+    }else{
+
+      // res.status(200).json({status: 200, data: "No record found"})
+      return Response.resWith202(
+        res,
+        "No record found"
+      );
+    }
+    
+  }catch(error){
+    // res.status(400).json({error: error})
+    return Response.resWith422(res, error.message || "An error occurred.");
+  }
+}
 
 module.exports = self;

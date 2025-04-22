@@ -30,6 +30,7 @@ self.createTargetSetting = async (req, res) => {
           where: {
             user_id: user_id,
             prospection_type: prospection_type,
+            group_id: group_id
           },
         })
           .then(async (record) => {
@@ -56,7 +57,7 @@ self.createTargetSetting = async (req, res) => {
                   post_target
                 },
                 {
-                  where: { user_id, prospection_type },
+                  where: { user_id, prospection_type, group_id },
                 }
               );
               TargetFriendSettings.findOne({
@@ -117,10 +118,15 @@ self.getAllTargetSetting = async (req, res) => {
           limit = null,
           orderBy = "desc",
           prospection_type = "facebook",
+          grp_id
         } = req.query;
         const offset = (page - 1) * limit;
         const whereOptions = user_id ? { user_id: user_id } : {};
         whereOptions.prospection_type = prospection_type;
+
+        if(grp_id){
+          whereOptions.group_id = grp_id;
+        }
 
         const fetchParams = {
             where: whereOptions,
