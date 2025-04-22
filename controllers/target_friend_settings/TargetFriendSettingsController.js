@@ -3,6 +3,10 @@ const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
 
+TargetFriendSettings.belongsTo(Group, { as: 'groupData', foreignKey: 'group_id' })
+
+Group.hasMany(TargetFriendSettings, { foreignKey: 'group_id' })
+
 self.createTargetSetting = async (req, res) => {
     try {
         const user_id = req.authUser;
@@ -136,7 +140,7 @@ self.getAllTargetSetting = async (req, res) => {
             include: [
                 {
                     model: Group,// Include the Group model
-                    as: 'groups',
+                    as: 'groupData',
                 },
                 {
                     model: MessageData,// Include the Group model
