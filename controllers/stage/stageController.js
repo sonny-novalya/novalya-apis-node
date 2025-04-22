@@ -114,7 +114,12 @@ self.updateStage = async (req, res) => {
     if (typeof name !== 'undefined') updates.name = name;
     if (typeof tag_id !== 'undefined') updates.tag_id = tag_id;
 
-    var updateStage = await Stage.update(updates, { where: { id: stageId } });
+    if (typeof stage_num !== 'undefined') existingStage.stage_num = stage_num;
+    if (typeof name !== 'undefined') existingStage.name = name;
+    if (typeof tag_id !== 'undefined') existingStage.tag_id = tag_id;
+
+    await existingStage.save();
+    console.log('Saved via instance.save()');
 
     // var updateStage = await Stage.update(
     //   { 
