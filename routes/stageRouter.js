@@ -9,7 +9,7 @@ const routes = [
     { method: 'get', path: '/all', handler: stageController.getAllStages },
     { method: 'post', path: '/create', handler: stageController.createStage },
     { method: 'get', path: '/:id', handler: stageController.getStageById },
-    { method: 'post', path: 'updated-stage/:id', handler: stageController.updateStage },
+    { method: 'post', path: '/updated-stage/:id', handler: stageController.updateStage },
     { method: 'get', path: '/delete/:id', handler: stageController.deleteStage },
     { method: 'post', path: '/reOrderStageAndUpdateUser', handler: stageController.reOrderStageAndUpdateUser },
 ];
