@@ -109,14 +109,21 @@ self.updateStage = async (req, res) => {
       return Response.resWith422(res, 'Stage not found');
     }
 
-    var updateStage = await Stage.update(
-      { 
-        stage_num: stage_num,
-        name: name,
-        tag_id: tag_id
-      },
-      { where: { id: stageId } }
-    );
+    const updates = {};
+    if (typeof stage_num !== 'undefined') updates.stage_num = stage_num;
+    if (typeof name !== 'undefined') updates.name = name;
+    if (typeof tag_id !== 'undefined') updates.tag_id = tag_id;
+
+    var updateStage = await Stage.update(updates, { where: { id: stageId } });
+
+    // var updateStage = await Stage.update(
+    //   { 
+    //     stage_num: stage_num,
+    //     name: name,
+    //     tag_id: tag_id
+    //   },
+    //   { where: { id: stageId } }
+    // );
 
     console.log('updateStage--118', updateStage);
     
