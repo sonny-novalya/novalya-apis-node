@@ -14,7 +14,8 @@ const UploadImageOnS3Bucket = async (imageData, folder, imageId) => {
             const uploadParams = {
                 Bucket: 'novalya-assets',
                 Key: `images/${folder}/${imageId}.${imageExtension}`,
-                Body: imageBuffer
+                Body: imageBuffer,
+                ContentType: 'image/jpeg'
             };
       
             const uploadResult = await s3.upload(uploadParams).promise();
