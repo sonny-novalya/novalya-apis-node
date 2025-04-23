@@ -99,9 +99,10 @@ router
   .delete("/group/:id", groupController.deleteOne);
 
 // tags instagram
+// .get("/instagram/group", instagramGroupController.getAll)   previous API
 router
   .post("/instagram/group", instagramGroupController.placetag)
-  .get("/instagram/group", instagramGroupController.getAll)
+  .post("/instagram/get-all-groups", instagramGroupController.getAll)
   .get("/instagram/users", instagramGroupController.getAllUsers)
 
   .post("/instagram/reorderGroup", instagramGroupController.reorderGroup);
