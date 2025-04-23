@@ -101,7 +101,8 @@ router
 // tags instagram
 router
   .post("/instagram/group", instagramGroupController.placetag)
-  .get("/instagram/group", instagramGroupController.getAll)
+  .post("/instagram/get-all-groups", instagramGroupController.getAll)
+  // .get("/instagram/group", instagramGroupController.getAll)
   .get("/instagram/users", instagramGroupController.getAllUsers)
 
   .post("/instagram/reorderGroup", instagramGroupController.reorderGroup);

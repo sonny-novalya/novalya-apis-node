@@ -6,6 +6,7 @@ const {
 } = require("../../helpers/functions");
 const { Model } = require("sequelize");
 const { Sequelize } = require("../../Models");
+const Response = require("../../helpers/response");
 const Op = Sequelize.Op;
 const tag = db.instatag;
 const campaign = db.instagramCampaign;
@@ -86,9 +87,14 @@ const getAll = async (req, res) => {
       ],
       order: [["order_num", "DESC"]],
     });
-    res.send(data);
+    
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      data
+    );
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return Response.resWith422(res, error.message);
   }
 };
 
