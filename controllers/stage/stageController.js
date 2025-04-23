@@ -94,7 +94,9 @@ self.getStageById = async (req, res) => {
 };
 
 self.updateStage = async (req, res) => {
+  
   const stageId = req.params.id;
+
   const { stage_num, name, tag_id } = req.body;
   const authUser = req.authUser;
   try {
@@ -105,12 +107,13 @@ self.updateStage = async (req, res) => {
       return Response.resWith422(res, 'Stage not found');
     }
 
-    existingStage.stage_num = stage_num;
-    existingStage.name = name;
-    existingStage.tag_id = tag_id;
-    await existingStage.save();
+    if (typeof stage_num !== 'undefined') existingStage.stage_num = stage_num;
+    if (typeof name !== 'undefined') existingStage.name = name;
+    if (typeof tag_id !== 'undefined') existingStage.tag_id = tag_id;
+
+    await existingStage.save();    
     
-    return Response.resWith202(res, 'success', existingStage);
+    return Response.resWith202(res, 'success');
   } catch (error) {
 
     console.log('error', error);    

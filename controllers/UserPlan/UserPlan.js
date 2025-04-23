@@ -9,6 +9,7 @@ const {
 const { tag } = require("../../Models/crm");
 const db = require("../../Models/crm");
 const taggedusers = db.taggedusers;
+const Response = require("../../helpers/response");
 
 let self = {};
 
@@ -166,6 +167,7 @@ self.updateLimit = async (req, res) => {
 
 self.updateGender = async (req, res) => {
   try {
+    
     const user_id = req.authUser;
 
     const { gender } = req.body;
@@ -173,23 +175,18 @@ self.updateGender = async (req, res) => {
     const userDetails = await UsersData.findOne({
       where: { id: user_id },
     });
+
     if (userDetails) {
       await UsersData.update(
         { gender: gender },
-        {
-          where: { id: user_id },
-        }
+        { where: { id: user_id }}
       );
-      return res.status(200).json({
-        status: "success",
-        message: "Record Updated",
-      });
+      return Response.resWith202(res, 'Record Updated');
     }
   } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: "An error occurred while updating user limit.",
-    });
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
   }
 };
 
