@@ -67,9 +67,9 @@ const placetag = async (req, res) => {
         include: "stage",
       });
     }
-    res.send(createdTag);
+    return Response.resWith202(res, 'success', createdTag);
   } catch (error) {
-    res.status(500).send(error);
+    return Response.resWith422(res, error.message);
   }
 };
 const getAll = async (req, res) => {
@@ -175,18 +175,28 @@ const getOne = async (req, res) => {
     });
 
     if (data) {
-      res.json({
-        ...data.toJSON(),
-        taggedUsers: taggedUsersDetails,
-        stage: stageData,
-      });
+      // res.json({
+      //   ...data.toJSON(),
+      //   taggedUsers: taggedUsersDetails,
+      //   stage: stageData,
+      // });
+
+      return Response.resWith202(res, 'success', 
+        {
+          ...data.toJSON(),
+          taggedUsers: taggedUsersDetails,
+          stage: stageData
+        }
+      );
     } else {
-      res.status(404).json({ message: "Tag not found" });
+      return Response.resWith422(res, "Tag not found" );
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    // res
+    //   .status(500)
+    //   .json({ message: "Internal server error", error: error.message });
+      
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -197,7 +207,8 @@ const updateOne = async (req, res) => {
   params.user_id = authUser;
 
   const data = await tag.update(params, { where: { id: id } });
-  res.send(data);
+
+  return Response.resWith202(res, 'success', data);
 };
 
 const deleteOne = async (req, res) => {
@@ -222,13 +233,14 @@ const deleteOne = async (req, res) => {
       }
     );
     await tag.destroy({ where: { id: id } });
-    res.json({
-      message: "tag successfully deleted",
-    });
+
+    return Response.resWith202(res, 'success', "tag successfully deleted");
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    // res
+    //   .status(500)
+    //   .json({ message: "Internal server error", error: error.message });
+
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -250,7 +262,7 @@ const reorderGroup = async (req, res) => {
     await updatedGroups[i].update({ order_num: updatedGroups.length - i });
   }
 
-  res.send(updatedGroups);
+  return Response.resWith202(res, 'success', updatedGroups);
 };
 module.exports = {
   placetag,
