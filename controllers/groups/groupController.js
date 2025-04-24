@@ -190,7 +190,9 @@ self.updateGroupMembers = async (req, res) => {
     }
     const { total_member, post_image } = req.body;
 
-    group.total_member = total_member;
+    if(total_member){
+      group.total_member = total_member;
+    }
 
     if(post_image && !group.post_image) {
       try {
@@ -480,7 +482,10 @@ self.getGroupByFolder = async (req, res)=>{
     const offset = (page - 1) * limit;
     // const validFields = ["id", "name", "total_member", "createdAt"];
 
-    const orderField = field == "total_member" ? literal("CAST(total_member AS UNSIGNED)") : "name";
+    const orderField = field == "total_member" 
+    ? literal("CAST(total_member AS UNSIGNED)") // "123" 134
+    : field == "type" ? "group_type"
+    : "name";
     const orderSort = (sort_by === 0 || sort_by === 1) ? [orderField, sort_by === 0 ? "ASC" : "DESC"] : ["name", "DESC"];
     const whereOptions = user_id ? { user_id: user_id } : {}; 
 
