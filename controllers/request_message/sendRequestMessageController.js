@@ -161,7 +161,7 @@ self.getAllSendRequestMessages = async (req, res) => {
           ],
         },
       ],
-      raw: true,
+      // raw: true,
     })
     .then((record) => {
       Response.resWith202(res, "success", record);
