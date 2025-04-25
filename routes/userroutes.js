@@ -42,7 +42,6 @@ router.post("/createaffiliateuser", UserController.createAffiliateUser);
 router.post("/createportalsession", UserController.createPortalSession);
 router.post("/checkcoupon", UserController.checkcoupon);
 router.post("/getchargebeecustomer", UserController.getChargebeeCustomer);
-router.post("/checkhostedpage11", UserController.checkhostedpage11);
 router.post("/checkaffiliatehostedpage", UserController.checkaffiliatehostedpage);
 router.post("/dashboarddata", UserController.dashboarddata);
 router.post("/teamusers", UserController.teamusers);
