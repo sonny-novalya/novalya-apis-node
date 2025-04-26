@@ -1,5 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+
+// Create a multer middleware for handling the file upload
+const upload = multer({
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Increase the maximum file size (e.g., 10MB)
+    fieldSize: 25 * 1024 * 1024,
+  },
+});
 
 // Create a new routes : sachin
 const UserController = require("../controllers/UserController");
@@ -48,6 +57,12 @@ router.post("/teamusers", UserController.teamusers);
 router.post("/updatelanguage", UserController.updatelanguage);
 router.post("/news", UserController.news);
 router.post("/singlenews", UserController.singlenews);
+
+router.post("/uploadkycdata", upload.fields([
+  { name: "idcardFront", maxCount: 1 },
+  { name: "idcardBack", maxCount: 1 },
+]), UserController.uploadKycData);
+
 router.post("/binarypointsreport", UserController.binarypointsreport);
 router.post("/subscriptionreport", UserController.subscriptionreport);
 router.post("/personalreferrals", UserController.personalreferrals);

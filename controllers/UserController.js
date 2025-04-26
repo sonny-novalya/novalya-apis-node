@@ -2606,6 +2606,83 @@ exports.singlenews = async (req, res) => {
   }
 };
 
+exports.uploadKycData = async (req, res) => {
+  
+  try {
+
+      const postData = req.body;
+      const authUser = await checkAuthorization(req, res);
+    
+      if (authUser) {
+
+        let id_front, id_back;
+        const uploadDir = path.join(__dirname, "../public/uploads/kyc/");
+
+        const identityType = postData.identityType;
+        const residentialAddress = postData.residentialAddress;
+        const date = new Date().toISOString().slice(0, 19).replace("T", " ");
+
+        if (identityType === "Passport") {
+          const idCardFront = postData.idcardFront.split(";base64,");
+          const idCardFrontTypeAux = idCardFront[0].split("image/");
+          const idCardFrontType = idCardFrontTypeAux[1];
+          const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
+          const idCardFrontFilename = `${Date.now()}.png`;
+          const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
+          fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
+          id_front = idCardFrontFilename;
+          id_back = "";
+        } else if (identityType === "Identity Card") {
+          // Process the front and back sides of the identity (ID card)
+          const idCardFront = postData.idcardFront.split(";base64,");
+          const idCardFrontTypeAux = idCardFront[0].split("image/");
+          const idCardFrontType = idCardFrontTypeAux[1];
+          const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
+          const idCardFrontFilename = `${Date.now()}.png`;
+          const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
+          fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
+          const idCardBack = postData.idcardBack.split(";base64,");
+          const idCardBackTypeAux = idCardBack[0].split("image/");
+          const idCardBackType = idCardBackTypeAux[1];
+          const idCardBackBase64 = Buffer.from(idCardBack[1], "base64");
+          const idCardBackFilename = `${Date.now()}.png`;
+          const idCardBackFilePath = path.join(uploadDir, idCardBackFilename);
+          fs.writeFileSync(idCardBackFilePath, idCardBackBase64);
+          id_front = idCardFrontFilename;
+          id_back = idCardBackFilename;
+        } else {
+
+          console.error("Error occurred:", error); 
+          return Response.resWith422(res, "Invalid identity type selected.");
+        }
+
+        const insertPackageResult = await Qry(
+          "INSERT INTO `kyc`(`userid`, `id_front`, `id_back`, `address`, `type`, `date`) VALUES (?,?,?,?,?,?)",
+          [authUser, id_front, id_back, residentialAddress, identityType, date]
+        );
+
+        const updateUser = await Qry(
+          "update usersdata set kyc_status = ? where id = ?",
+          ["Uploaded", authUser]
+        );
+        if (insertPackageResult.affectedRows > 0 && updateUser.affectedRows > 0) {
+
+          const selectUserQuery = `SELECT * FROM usersdata where id = ?`;
+          const selectUserResult = await Qry(selectUserQuery, [authUser]);
+
+          logger.info(`User ${selectUserResult[0].username} has requested KYC of type ${identityType}`,
+            { type: "user" }
+          );
+
+          return Response.resWith202(res, "KYC request has been submitted successfully");
+        }
+      }
+  } catch (error) {
+    console.error("Error:", error);  
+    return Response.resWith422(res, "Something went wrong");
+  }
+};
+
 exports.binarypointsreport = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res);
@@ -2944,9 +3021,11 @@ exports.updatepayoutdetails = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
+
       const payoutType = postData.type;
 
       if (payoutType === "Bank") {
+
         const country = postData.country;
         const bankAccountName = postData.bank_account_name;
         const bankAccountBIC = postData.bank_account_bic;
@@ -2974,18 +3053,14 @@ exports.updatepayoutdetails = async (req, res) => {
           ]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(
-            `User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].bank_account_title} to ${bankAccountName}, IBAN from ${selectUserResult[0].bank_account_iban} to ${bankAccountIBAN}, BIC from ${selectUserResult[0].bank_account_bic} to ${bankAccountBIC} and Country from ${selectUserResult[0].bank_account_country} to ${country}`,
+          logger.info(`User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].bank_account_title} to ${bankAccountName}, IBAN from ${selectUserResult[0].bank_account_iban} to ${bankAccountIBAN}, BIC from ${selectUserResult[0].bank_account_bic} to ${bankAccountBIC} and Country from ${selectUserResult[0].bank_account_country} to ${country}`,
             { type: "user" }
           );
 
-          res.status(200).json({
-            status: "success",
-            message:
-              "Your request has been submitted successfully to admin, it will be verify soon.",
-          });
+          return Response.resWith202(res, "Your request has been submitted successfully to admin, it will be verify soon.");
         }
       } else if (payoutType === "Crypto") {
+
         const address = postData.wallet_address;
 
         const selectUserQuery = `select * from usersdata where id = ?`;
@@ -2996,18 +3071,14 @@ exports.updatepayoutdetails = async (req, res) => {
           [authUser, address]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(
-            `User ${selectUserResult[0].username} has updated wallet address from ${selectUserResult[0].wallet_address} to ${address}`,
+          logger.info(`User ${selectUserResult[0].username} has updated wallet address from ${selectUserResult[0].wallet_address} to ${address}`,
             { type: "user" }
           );
 
-          res.status(200).json({
-            status: "success",
-            message:
-              "Your payout detail request has been submit to admin successfully. It will be verify soon.",
-          });
+          return Response.resWith202(res, "Your payout detail request has been submit to admin successfully. It will be verify soon.");
         }
       } else if (payoutType === "Bank_out_ue") {
+
         const country = postData.country;
         const bankAccountName = postData.bank_account_name;
         const bankAccountNumber = postData.bank_account_number;
@@ -3037,25 +3108,23 @@ exports.updatepayoutdetails = async (req, res) => {
           ]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(
-            `User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].outside_bank_account_title} to ${bankAccountName}, Account Number from ${selectUserResult[0].outside_bank_account_number} to ${bankAccountNumber}, Swift Code from ${selectUserResult[0].outside_bank_account_swift_code} to ${bankAccountSwiftCode}, Account Routing from ${selectUserResult[0].outside_bank_account_routing} to ${bankAccountRouting}, Address from ${selectUserResult[0].outside_bank_account_address} to ${bankAccountAddress}, City from ${selectUserResult[0].outside_bank_account_city} to ${bankAccountCity}, Zip Code from ${selectUserResult[0].outside_bank_account_zip_code} to ${bankAccountZipCode} and Country from ${selectUserResult[0].outside_bank_account_country} to ${country}`,
+          logger.info(`User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].outside_bank_account_title} to ${bankAccountName}, Account Number from ${selectUserResult[0].outside_bank_account_number} to ${bankAccountNumber}, Swift Code from ${selectUserResult[0].outside_bank_account_swift_code} to ${bankAccountSwiftCode}, Account Routing from ${selectUserResult[0].outside_bank_account_routing} to ${bankAccountRouting}, Address from ${selectUserResult[0].outside_bank_account_address} to ${bankAccountAddress}, City from ${selectUserResult[0].outside_bank_account_city} to ${bankAccountCity}, Zip Code from ${selectUserResult[0].outside_bank_account_zip_code} to ${bankAccountZipCode} and Country from ${selectUserResult[0].outside_bank_account_country} to ${country}`,
             { type: "user" }
           );
 
-          res.status(200).json({
-            status: "success",
-            message:
-              "Your request has been submitted successfully to admin, it will be verify soon.",
-          });
+          return Response.resWith202(res, "Your payout detail request has been submit to admin successfully. It will be verify soon.");
         }
       } else {
-        res
-          .status(400)
-          .json({ status: "error", message: "Invalid payout type selected." });
+
+        return Response.resWith422(res, "Invalid payout type selected.");
       }
+    } else {
+      return Response.resWith422(res, "Invalid token.");
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
