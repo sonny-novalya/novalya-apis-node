@@ -7753,8 +7753,10 @@ exports.getpoolreports = async (req, res) => {
 
 exports.getunilevelreports = async (req, res) => {
   try {
+
     const auth_id = await checkAuthorization(req, res);
     if (auth_id) {
+      
       const selectQuerLogin = await Qry(
         "SELECT * FROM usersdata WHERE id = ?",
         [auth_id]
@@ -7767,17 +7769,13 @@ exports.getunilevelreports = async (req, res) => {
       let currentYear = new Date().getFullYear();
       let year = postData?.year || currentYear;
       let commission = await total_payment_function_afcm_tbl(auth_id, month, year);
-  
-      res.json({
-        status: "success",
-        data: commission,
-      });
+      
+      return Response.resWith202(res, "success", commission);
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
