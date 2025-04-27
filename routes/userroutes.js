@@ -12,6 +12,7 @@ const upload = multer({
 
 // Create a new routes : sachin
 const UserController = require("../controllers/UserController");
+const AffiliateController = require("../controllers/AffiliateController");
 
 //CRM
 const campaignController = require("../controllers/crm/campaign.controller");
@@ -33,8 +34,13 @@ router.post("/resetpassword", UserController.resetpassword);
 router.post("/validateemailtoken", UserController.validatEmailToken);
 router.post("/verifyemailaccount", UserController.verifyEmailAccount);
 router.post("/userdata", UserController.userdata);
+
+//affiliate apis
+router.post("/affiliate/kyc-data", AffiliateController.affiliateKycData);
 router.post("/refferedUsers", UserController.refferedUsers);
 router.post("/affiliate-customers", UserController.affiliateCustomers);
+
+
 router.post("/ticketCount", UserController.ticketCount);
 router.post("/singleuserdata", UserController.singleUserData);
 router.post("/getmessageslist", UserController.getMessagesList);
