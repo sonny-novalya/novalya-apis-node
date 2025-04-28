@@ -168,11 +168,11 @@ self.getAllSendRequestMessages = async (req, res) => {
     })
     .catch((error) => {
       console.error("Error occurred:", error); 
-      return Response.resWith422(res, "An error occurred while updating the message.");
+      return Response.resWith422(res, "Something went wrong");
     });
   } catch (error) {
     console.error("Error occurred:", error);  
-    return Response.resWith422(res, "An error occurred while updating the message.");
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 

@@ -69,9 +69,10 @@ const ProcessOldMessagesFunc = require("../utils/newMsgSchemaChange");
 const ProcessBase64ImageDataFunc = require("../utils/uploadImageDataToS3");
 const processL2SponsorId = require("../utils/processL2SponsorId");
 
+const Response = require("../helpers/response");
+
 exports.login = async (req, res) => {
 
-  console.log("Login");
   const postData = req.body;
   const { website = false } = req.body;
   const username1 = CleanHTMLData(CleanDBData(postData.username));
@@ -80,6 +81,7 @@ exports.login = async (req, res) => {
 
   username = username.toLowerCase();
   try {
+
     let selectUserQuery = `SELECT * FROM usersdata WHERE (username = ? OR email=?)`;
     let selectUserResult = await Qry(selectUserQuery, [username, username1]);
 
@@ -316,6 +318,7 @@ exports.login = async (req, res) => {
     });
   }
 };
+
 
 exports.manualSignIn = async (req, res) => {
   const postData = req.body;
@@ -727,11 +730,8 @@ exports.resetpassword = async (req, res) => {
     const userData = selectUserResult[0];
 
     if (!userData || userData.email !== email) {
-      res.json({
-        status: "error",
-        message: "Invalid account",
-      });
-      return;
+
+      return Response.resWith422(res, "Invalid account");
     }
 
     // Generate a salt for password hashing
@@ -743,17 +743,13 @@ exports.resetpassword = async (req, res) => {
       salt: salt, // Pass the generated salt
     };
     const hashedPassword = bcrypt.hashSync(password, options.cost);
-    const encryptedPassword = crypto.AES.encrypt(
-      hashedPassword,
-      encryptionKey
-    ).toString();
+    const encryptedPassword = crypto.AES.encrypt(hashedPassword, encryptionKey).toString();
 
     const updateQuery = `UPDATE usersdata SET password = ?, emailtoken = '', password_status = ? WHERE email = ?`;
     const updateParams = [encryptedPassword, 1, email];
     const updateResult = await Qry(updateQuery, updateParams);
 
-    logger.info(
-      `User ${userData.username} has successfully update its password using email ${email}`,
+    logger.info(`User ${userData.username} has successfully update its password using email ${email}`,
       { type: "user" }
     );
 
@@ -764,26 +760,19 @@ exports.resetpassword = async (req, res) => {
       } else {
         var website = userData.website;
       }
-      res.json({
-        status: "success",
-        data: { 'website': website },
-        message: "Password updated successfully",
-      });
+
+      return Response.resWith202(res, "Password updated successfully", { 'website': website });
     } else {
-      logger.info(
-        `User ${userData.username} has failed to update its password using email ${email}`,
+      logger.info(`User ${userData.username} has failed to update its password using email ${email}`,
         { type: "user" }
       );
-      res.json({
-        status: "error",
-        message: "Failed to update password",
-      });
+
+      return Response.resWith422(res, "Failed to update password");
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+    
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -798,29 +787,23 @@ exports.validatEmailToken = async (req, res) => {
     const userData = selectUserResult[0];
 
     if (userData && userData.email === email && userData.emailtoken === token) {
-      logger.info(
-        `Email token successfully verified for user ${userData.username}`,
+      logger.info(`Email token successfully verified for user ${userData.username}`,
         { type: "user" }
       );
-      res.json({
-        status: "success",
-        message: "Valid token",
-      });
+
+      return Response.resWith202(res, "Valid token");
     } else {
-      logger.info(
-        `Email token verification failed for user ${userData.username}`,
+
+      logger.info(`Email token verification failed for user ${userData.username}`,
         { type: "user" }
       );
-      res.json({
-        status: "error",
-        message: "Invalid token",
-      });
+      
+      return Response.resWith422(res, "Invalid token");
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+
+    console.error("Error occurred:", error);  
+     return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -879,39 +862,11 @@ exports.userdata = async (req, res) => {
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
 
     if (authUser) {
-      const userSelectQuery = `SELECT parent_id,isAlreadyCharge,isAffiliate, sub_type,plan_period,plan_pkg, isChatActive,connection_type, sponsorid, username, randomcode, firstname, lastname, email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin, lastip, referral_side, kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank, novarank, connect_status, birthday_status, crm_status, unfollow_status, outside_bank_account_country, outside_bank_account_title, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,website, outside_bank_account_address, outside_bank_account_city, outside_bank_account_zip_code, outside_bank_account_street, bank_account_address, bank_account_city, bank_account_zip_code, outside_payout_country, payout_country, subscription_status, language, language_status, currency, trial, trial_status, trial_end FROM usersdata WHERE id = ?`;
+      const userSelectQuery = `SELECT parent_id, isAlreadyCharge, isAffiliate, sub_type,plan_period,plan_pkg, isChatActive,connection_type, sponsorid, username, randomcode, firstname, lastname, email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin, lastip, referral_side, kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank, novarank, connect_status, birthday_status, crm_status, unfollow_status, outside_bank_account_country, outside_bank_account_title, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,website, outside_bank_account_address, outside_bank_account_city, outside_bank_account_zip_code, outside_bank_account_street, bank_account_address, bank_account_city, bank_account_zip_code, outside_payout_country, payout_country, subscription_status, language, language_status, currency, trial, trial_status, trial_end FROM usersdata WHERE id = ?`;
 
       const userSelectParams = [authUser];
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
       const userdbData = userSelectResult[0];
-
-      if (userdbData.sponsorid != 0) {
-        const sponsorSelectQuery = `SELECT username AS sponsorusername FROM usersdata WHERE id = ?`;
-        const sponsorSelectParams = [userdbData.sponsorid];
-        const sponsorSelectResult = await Qry(
-          sponsorSelectQuery,
-          sponsorSelectParams
-        );
-        const sponsordbData = sponsorSelectResult[0];
-        userdbData.sponsorusername = sponsordbData.sponsorusername;
-      } else {
-        userdbData.sponsorusername = "admin";
-      }
-
-      const transactionSelectQuery = `SELECT COALESCE(SUM(amount), 0) AS totalpayout FROM transactions WHERE type = 'payout' AND receiverid = ?`;
-      const transactionSelectParams = [authUser];
-      const transactionSelectResult = await Qry(
-        transactionSelectQuery,
-        transactionSelectParams
-      );
-      const transactiondbData = transactionSelectResult[0];
-      userdbData.totalpayout = transactiondbData.totalpayout;
-
-      const selectTreeQuery = `SELECT COUNT(*) AS count FROM usersdata WHERE sponsorid = ? AND status = 'approved'`;
-      const selectTreeParams = [authUser];
-      const selectTreeResult = await Qry(selectTreeQuery, selectTreeParams);
-      const count = selectTreeResult[0].count;
-      userdbData.activereferrals = count;
 
       userdbData.referrallink = `${weblink}signup/${userdbData.randomcode}`;
 
@@ -928,48 +883,23 @@ exports.userdata = async (req, res) => {
       userdbData.subscriptionId = subscriptionId;
       userdbData.planId = planId;
 
-      const poSelectQuery = `SELECT count(*) as total FROM payout_information_request WHERE userid = ? and status = ?`;
-      const poSelectResult = await Qry(poSelectQuery, [authUser, "Pending"]);
-
-      userdbData.porequestcount = poSelectResult[0].total;
-
-      const kycSelectQuery = `SELECT * FROM kyc WHERE userid = ? and status = ? order by id DESC limit 1`;
-      const kycSelectResult = await Qry(kycSelectQuery, [authUser, "Rejected"]);
-
-      userdbData.kycRejectcount = kycSelectResult;
-
-      const poRejectSelectQuery = `SELECT * FROM payout_information_request WHERE userid = ? and status = ? order by id DESC limit 1`;
-      const poRejectSelectResult = await Qry(poRejectSelectQuery, [
-        authUser,
-        "Rejected",
-      ]);
-
-      userdbData.poRejectedCount = poRejectSelectResult;
-
-      // const userLimitsSelectQuery = `SELECT fb_no_crm_group AS no_crm_group, fb_no_stages_group AS no_stages_group, fb_no_friend_request AS no_friend_request, fb_no_crm_message AS no_crm_message, fb_no_ai_comment AS no_ai_comment, fb_advanced_novadata AS advanced_novadata, fb_no_friend_requests_received AS no_friend_requests_received, fb_no_of_birthday_wishes AS no_of_birthday_wishes, insta_no_crm_group, insta_no_stages_group, insta_no_friend_request, insta_no_crm_message, insta_no_ai_comment, insta_advanced_novadata, insta_no_friend_requests_received, insta_no_of_birthday_wishes FROM users_limits WHERE userid = ?`;
       const userLimitsSelectQuery = `SELECT * FROM users_limits WHERE userid = ?`;
-      const userLimitsSelectResult = await Qry(userLimitsSelectQuery, [
-        authUser,
-      ]);
+      const userLimitsSelectResult = await Qry(userLimitsSelectQuery, [authUser]);
       let usersLimitsData = userLimitsSelectResult[0];
       userdbData.users_limits = usersLimitsData;
       userdbData.user_id = authUser;
-      res.json({
-        status: "success",
-        data: userdbData,
-      });
+      
+      return Response.resWith202(res, "success", userdbData);
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred in query",
-    });
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
 exports.refferedUsers = async (req, res) => {
   try {
-
 
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
@@ -1551,20 +1481,19 @@ exports.updatePassword = async (req, res) => {
   const postData = req.body;
 
   try {
+
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
     const oldpassword = CleanHTMLData(CleanDBData(postData.oldpassword));
     const newpassword = CleanHTMLData(CleanDBData(postData.newpassword));
     if (authUser) {
+
       const selectUserQuery = "SELECT * FROM usersdata WHERE id = ?";
       const selectUserResult = await Qry(selectUserQuery, [authUser]);
       const userData = selectUserResult[0];
 
       if (!userData || userData.id !== authUser) {
-        res.json({
-          status: "error",
-          message: "Invalid data contact support for this issue",
-        });
-        return;
+
+        return Response.resWith422(res, "Invalid data contact support for this issue");
       }
 
       // Generate a salt for password hashing
@@ -1576,45 +1505,31 @@ exports.updatePassword = async (req, res) => {
         salt: salt, // Pass the generated salt
       };
       const hashedPassword = bcrypt.hashSync(newpassword, options.cost);
-      const encryptedPassword = crypto.AES.encrypt(
-        hashedPassword,
-        encryptionKey
-      ).toString();
-      const decryptedPassword = crypto.AES.decrypt(
-        userData.password,
-        encryptionKey
-      ).toString(crypto.enc.Utf8);
+     
+      const encryptedPassword = crypto.AES.encrypt(hashedPassword, encryptionKey).toString();
+      const decryptedPassword = crypto.AES.decrypt(userData.password,encryptionKey).toString(crypto.enc.Utf8);
       const passwordMatch = bcrypt.compareSync(oldpassword, decryptedPassword);
 
       if (!passwordMatch) {
-        res.json({
-          status: "error",
-          message: "Incorrect Old Password",
-        });
-        return;
+
+        return Response.resWith422(res, "Incorrect Old Password");
       }
 
       const updateQuery = "UPDATE usersdata SET password = ? WHERE id = ?";
       const updateParams = [encryptedPassword, authUser];
       const updateResult = await Qry(updateQuery, updateParams);
 
-      logger.info(
-        `User ${userData.username} has update password from manage profile`,
-        { type: "user" }
-      );
+      logger.info(`User ${userData.username} has update password from manage profile`,{ type: "user" });
 
       if (updateResult.affectedRows > 0) {
-        res.json({
-          status: "success",
-          message: "Password updated successfully",
-        });
+
+        return Response.resWith202(res, "Password updated successfully");
       }
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -1856,9 +1771,8 @@ exports.createAffiliateUser = async (req, res) => {
 
 exports.createPortalSession = async (req, res) => {
   try {
-    const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
+    const authUser = await checkAuthorization(req, res); 
     const postData = req.body;
-    //subscription item details
     const customerid = CleanHTMLData(CleanDBData(postData.customerid));
 
     const createSession = () => {
@@ -1872,7 +1786,6 @@ exports.createPortalSession = async (req, res) => {
           })
           .request(function (error, result) {
             if (error) {
-              //handle error
 
               reject(error);
             } else {
@@ -1884,23 +1797,18 @@ exports.createPortalSession = async (req, res) => {
 
     let sessionResult;
     try {
+
       sessionResult = await createSession();
-      res.json({
-        status: "success",
-        data: sessionResult,
-      });
+
+      return Response.resWith202(res, "success", sessionResult);
     } catch (error) {
-      res.json({
-        status: "error",
-        message: error?.message,
-      });
-      return;
+      console.error("Error occurred:", error);  
+      return Response.resWith422(res, "Something went wrong");
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      errordetails: error,
-    });
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -1910,26 +1818,17 @@ exports.checkcoupon = async (req, res) => {
     const couponcode = CleanHTMLData(CleanDBData(postData?.couponcode));
     chargebee.coupon.retrieve(couponcode).request(function (error, result) {
       if (error) {
-        //handle error
-
-        res.json({
-          status: "error",
-          message: "invalid coupon code",
-        });
+        
+        return Response.resWith422(res, "invalid coupon code");
       } else {
         var coupon = result.coupon;
-        res.json({
-          status: "success",
-          message: "coupon validated successfully",
-          coupondata: coupon,
-        });
+        
+        return Response.resWith202(res, "success", {coupondata: coupon});
       }
     });
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -1957,429 +1856,6 @@ exports.getChargebeeCustomer = async (req, res) => {
             carddata: card,
           });
         }
-      });
-    }
-  } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
-  }
-};
-
-exports.checkhostedpage11 = async (req, res) => {
-  const postData = req.body;
-  try {
-    const hostedId = CleanHTMLData(CleanDBData(postData?.hostedId));
-    const checkHostedId = () => {
-      return new Promise((resolve, reject) => {
-        chargebee.hosted_page
-          .retrieve(hostedId)
-          .request(function (error, result) {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result.hosted_page);
-            }
-          });
-      });
-    };
-
-    const randomCode = randomToken(10);
-    const emailToken = randomToken(150);
-    const date = new Date().toISOString().slice(0, 19).replace("T", " ");
-    const username = CleanHTMLData(
-      CleanDBData(postData.username)
-    ).toLowerCase();
-    const firstname = CleanHTMLData(CleanDBData(postData.firstname));
-    const lastname = CleanHTMLData(CleanDBData(postData.lastname));
-    const email = CleanHTMLData(CleanDBData(postData.email));
-    const mobile = CleanHTMLData(CleanDBData(postData.mobile));
-    const address1 = CleanHTMLData(CleanDBData(postData.address));
-    const password = CleanHTMLData(CleanDBData(postData.password));
-    const country = CleanHTMLData(CleanDBData(postData.country));
-    const language = CleanHTMLData(CleanDBData(postData.language));
-    const company = CleanHTMLData(CleanDBData(postData.company));
-    const zip_code = CleanHTMLData(CleanDBData(postData.zipCode));
-    const city = CleanHTMLData(CleanDBData(postData.city));
-    const birthday = CleanHTMLData(CleanDBData(postData.birthday));
-
-    // Generate a salt for password hashing
-    const saltRounds = 16; // The number of salt rounds determines the complexity of the hashing
-    const salt = bcrypt.genSaltSync(saltRounds);
-    const options = {
-      cost: 12, // Specify the hashing cost (higher cost means more secure but slower)
-      salt: salt, // Pass the generated salt
-    };
-    const hashedPassword = bcrypt.hashSync(password, options.cost);
-    const encryptedPassword = crypto.AES.encrypt(
-      hashedPassword,
-      encryptionKey
-    ).toString();
-
-    let binaryVolume;
-    var subscriptionResult = await checkHostedId();
-
-    const hostedStatus = subscriptionResult.state;
-    const invoiceStatus = subscriptionResult.content.invoice.status;
-
-    const amount = subscriptionResult.content.invoice.amount_paid / 100;
-    let planId =
-      subscriptionResult.content.subscription.subscription_items[0]
-        .item_price_id;
-    const subscriptionId = subscriptionResult.content.subscription.id;
-    const customerId = subscriptionResult.content.customer.id;
-    const currencyCode = subscriptionResult.content.subscription.currency_code;
-    const couponCode =
-      subscriptionResult.content?.subscription?.coupons &&
-        subscriptionResult.content.subscription.coupons.length > 0
-        ? subscriptionResult.content.subscription.coupons[0].coupon_id
-        : "";
-    const activatedAt = subscriptionResult.content.subscription.created_at;
-    const nextBillingAt =
-      subscriptionResult.content.subscription.next_billing_at;
-    const subscriptionStatus = "Active";
-    const pkgName =
-      subscriptionResult.content.invoice.line_items[0].description;
-    binaryVolume = Math.ceil(amount);
-    const subscriptionType =
-      subscriptionResult.content.subscription.billing_period_unit;
-    const maskedNumber = subscriptionResult.content.card.masked_number;
-    const sposnorUser = subscriptionResult.content.customer.cf_sponsor_username;
-    const parent_id = subscriptionResult.content.customer.cf_cf_parent_id;
-
-    const selectUsernameQuery = `SELECT * FROM usersdata WHERE username = ?`;
-    const selectUsernameResult = await Qry(selectUsernameQuery, [username]);
-
-    if (selectUsernameResult.length > 0) {
-      res.json({
-        status: "error",
-        message:
-          "Your account is already approved and validated please login with your username and password",
-      });
-      return;
-    }
-
-    const selectEmailQuery = `SELECT * FROM usersdata WHERE email = ?`;
-    const selectEmailResult = await Qry(selectEmailQuery, [email]);
-
-    if (selectEmailResult.length > 0) {
-      res.json({
-        status: "error",
-        message:
-          "Your account is already approved and validated please login with your username and password",
-      });
-      return;
-    }
-
-    const selectSponsorQuery = `SELECT * FROM usersdata WHERE username = ?`;
-    const selectSponsorResult = await Qry(selectSponsorQuery, [sposnorUser]);
-    const userSponsorId = selectSponsorResult[0].id;
-    const availableSpace = await findAvailableSpace(
-      userSponsorId,
-      selectSponsorResult[0].referral_side
-    );
-
-    if (subscriptionType === "year") {
-      binaryVolume = Math.ceil(amount / 12);
-    }
-
-    let newUserId;
-    const insertResult = await Qry(
-      `INSERT INTO usersdata (mobile,sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, emailstatus, birth_date,parent_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        mobile,
-        userSponsorId,
-        selectSponsorResult[0].referral_side,
-        username,
-        encryptedPassword,
-        email,
-        country,
-        company,
-        address1,
-        zip_code,
-        city,
-        language,
-        firstname,
-        lastname,
-        randomCode,
-        emailToken,
-        maskedNumber,
-        "Approved",
-        customerId,
-        subscriptionType,
-        "verified",
-        birthday,
-        parent_id,
-      ]
-    );
-    newUserId = insertResult.insertId;
-
-    const insertPackageResult = await Qry(
-      `INSERT INTO new_packages(userid, amount, subscriptionid, customerid, currency, planid,  coupon, activatedAt, nextBillingAt, status, pkg_name, binary_volume, sub_type) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        newUserId,
-        amount,
-        subscriptionId,
-        customerId,
-        currencyCode,
-        planId,
-        couponCode,
-        activatedAt,
-        nextBillingAt,
-        subscriptionStatus,
-        pkgName,
-        binaryVolume,
-        subscriptionType,
-      ]
-    );
-
-    const insertBinaryTree = await Qry(
-      "insert into binarytree(userid,pid,leg) values (?, ?, ?)",
-      [newUserId, availableSpace, selectSponsorResult[0].referral_side]
-    );
-
-    const selectLeftBinaryPointsUsers = await Qry(
-      "WITH RECURSIVE UserTree AS (SELECT `id`, `userid`, `pid`, `leg` FROM `binarytree` WHERE `userid` = ? UNION ALL SELECT bt.`id`, bt.`userid`, bt.`pid`, bt.`leg` FROM `binarytree` bt JOIN UserTree ut ON bt.`userid` = ut.`pid`) SELECT * FROM UserTree WHERE leg = ? ",
-      [newUserId, "L"]
-    );
-    const leftreceiverIds = selectLeftBinaryPointsUsers.map((row) => row.pid);
-    let leftDataToInsert = JSON.stringify({ receiver_ids: leftreceiverIds });
-
-    const selectRightBinaryPointsUsers = await Qry(
-      "WITH RECURSIVE UserTree AS (SELECT `id`, `userid`, `pid`, `leg` FROM `binarytree` WHERE `userid` = ? UNION ALL SELECT bt.`id`, bt.`userid`, bt.`pid`, bt.`leg` FROM `binarytree` bt JOIN UserTree ut ON bt.`userid` = ut.`pid`) SELECT * FROM UserTree WHERE leg = ? ",
-      [newUserId, "R"]
-    );
-    const rightreceiverIds = selectRightBinaryPointsUsers.map((row) => row.pid);
-    let rightDataToInsert = JSON.stringify({ receiver_ids: rightreceiverIds });
-
-    if (leftreceiverIds.length > 0) {
-      const insertLeftPoints = await Qry(
-        "insert into points(sender_id,points,leg,type,period,receiver_ids,dat) values (?, ?, ?, ?, ?, ?, ?)",
-        [
-          newUserId,
-          binaryVolume,
-          "L",
-          "Binary Points",
-          subscriptionType,
-          leftDataToInsert,
-          date,
-        ]
-      );
-    } else {
-      leftDataToInsert = null;
-    }
-
-    if (rightreceiverIds.length > 0) {
-      const insertRightPoints = await Qry(
-        "insert into points(sender_id,points,leg,type,period,receiver_ids,dat) values (?, ?, ?, ?, ?, ?, ?)",
-        [
-          newUserId,
-          binaryVolume,
-          "R",
-          "Binary Points",
-          subscriptionType,
-          rightDataToInsert,
-          date,
-        ]
-      );
-    } else {
-      rightDataToInsert = null;
-    }
-
-    const referralDataToInsert = JSON.stringify({
-      receiver_ids: [userSponsorId],
-    });
-    const insertReferralPoints = await Qry(
-      "insert into points(sender_id,points,leg,type,period,receiver_ids,dat) values (?, ?, ?, ?, ?, ?, ?)",
-      [
-        newUserId,
-        binaryVolume,
-        selectSponsorResult[0].referral_side,
-        "Referral Binary Points",
-        subscriptionType,
-        referralDataToInsert,
-        date,
-      ]
-    );
-
-    const activated_date = activatedAt * 1000;
-
-    if (subscriptionType === "year") {
-      const providedDate = new Date(activated_date);
-      const providedDay = providedDate.getDate();
-      for (let i = 0; i <= 12; i++) {
-        if (i > 1) {
-          const newDate = new Date(activated_date);
-          newDate.setDate(1);
-          newDate.setMonth(newDate.getMonth() + i);
-          if (providedDay === 30 || providedDay === 31) {
-            newDate.setDate(0); // Set the date to the last day of the previous month
-          } else {
-            newDate.setDate(providedDay);
-          }
-          const formattedDate = newDate.toISOString().slice(0, 10);
-          const insertYearlyPoints = await Qry(
-            "insert into yearly_points(senderid,points_date,points,left_receiver_ids, right_receiver_ids) values (?, ?, ?, ?, ?)",
-            [
-              newUserId,
-              formattedDate,
-              binaryVolume,
-              leftDataToInsert,
-              rightDataToInsert,
-            ]
-          );
-        }
-      }
-    }
-
-    // start add team in binary tree
-    const selectNewUserTreeQuery = `SELECT * FROM binarytree WHERE userid = ?`;
-    const selectNewUserTreeResult = await Qry(selectNewUserTreeQuery, [
-      newUserId,
-    ]);
-    let pid = selectNewUserTreeResult[0]?.pid;
-
-    while (pid !== null) {
-      const selectPlacmentTreeDataQuery = `SELECT * FROM binarytree WHERE userid = ?`;
-      const selectplacementTreeDataResult = await Qry(
-        selectPlacmentTreeDataQuery,
-        [pid]
-      );
-
-      let binaryTeam = selectplacementTreeDataResult[0]?.binary_team;
-      let newBinaryTeam;
-      if (binaryTeam === "") {
-        newBinaryTeam = newUserId;
-      } else {
-        newBinaryTeam = binaryTeam + "," + newUserId;
-      }
-      const updateBinaryTree = await Qry(
-        "update binarytree set binary_team = ? where userid = ?",
-        [newBinaryTeam, pid]
-      );
-
-      const selectTreeDataQuery = `SELECT * FROM binarytree WHERE userid = ?`;
-      const selectTreeDataResult = await Qry(selectTreeDataQuery, [pid]);
-
-      pid = selectTreeDataResult[0]?.pid;
-    }
-    // end add team in binary tree
-
-    const settingsData = await Qry(
-      "SELECT * FROM `setting` WHERE keyname IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [
-        "referral_commission_status",
-        "referral_commission_type",
-        "referral_commission_value",
-        "unilevel_status",
-        "unilevel_bonus_level1",
-        "unilevel_bonus_level2",
-        "unilevel_bonus_level3",
-        "unilevel_bonus_level4",
-        "unilevel_bonus_level5",
-        "unilevel_bonus_level6",
-        "unilevel_bonus_level7",
-        "unilevel_bonus_level8",
-        "unilevel_bonus_level9",
-        "unilevel_bonus_level10",
-      ]
-    );
-
-    const referralCommissionType = settingsData[0].keyvalue;
-    const referralCommissionValue = settingsData[1].keyvalue;
-    const referralCommissionStatus = settingsData[2].keyvalue;
-    const uniLevelStatus = settingsData[3].keyvalue;
-    let commissionAmount;
-
-    if (referralCommissionStatus === "On") {
-      referralCommissionType === "Percentage"
-        ? (commissionAmount = (referralCommissionValue / 100) * amount)
-        : referralCommissionType === "Flat"
-          ? (commissionAmount = referralCommissionValue)
-          : (commissionAmount = 0);
-
-      if (commissionAmount > 0) {
-        updateSponsorBalance = await Qry(
-          "update usersdata set current_balance = current_balance + ? where id = ?",
-          [commissionAmount, userSponsorId]
-        );
-
-        insertTransaction = await Qry(
-          "insert into transactions ( receiverid, senderid, amount, type, details) values ( ? , ? , ? ,? , ?)",
-          [
-            userSponsorId,
-            newUserId,
-            commissionAmount,
-            "Referral Commission",
-            referralCommissionType,
-          ]
-        );
-      }
-    }
-
-    let bonusValue;
-    let x = 4;
-    let level = 1;
-    let sponsorid = userSponsorId;
-    if (uniLevelStatus === "On") {
-      while (x <= 13 && sponsorid !== "") {
-        bonusValue = settingsData[x].keyvalue;
-        updateSponsorBalance = await Qry(
-          "update usersdata set current_balance = current_balance + ? where id = ?",
-          [bonusValue, sponsorid]
-        );
-
-        insertTransaction = await Qry(
-          "insert into transactions ( receiverid, senderid, amount, type, details) values ( ? , ? , ? ,? , ?)",
-          [
-            sponsorid,
-            newUserId,
-            bonusValue,
-            "Unilevel Commission",
-            `Received Level ${level} commission from user ${username}`,
-          ]
-        );
-        const snameData = await Qry("SELECT * FROM usersdata WHERE id = ?", [
-          sponsorid,
-        ]);
-        sponsorid = snameData[0].sponsorid;
-
-        x++;
-        level++;
-      }
-    }
-
-    if (planId === "NovaConnect-Lancement-Officiel-EUR-Monthly") {
-      const updateUsersData = await Qry(
-        "update usersdata set connect_status = ? where id = ?",
-        ["On", newUserId]
-      );
-    }
-    if (planId === "NovaConnect-Plus-CRM-Lancement-Officiel-EUR-M") {
-      const updateUsersData = await Qry(
-        "update usersdata set connect_status = ?, crm_status = ? where id = ?",
-        ["On", "On", newUserId]
-      );
-    }
-    if (planId === "NovaConnect-Plus-CRM-B-Lancement-Officiel-EUR-M") {
-      const updateUsersData = await Qry(
-        "update usersdata set connect_status = ?, crm_status = ?, birthday_status = ? where id = ?",
-        ["On", "On", "On", newUserId]
-      );
-    }
-
-    if (insertResult.affectedRows > 0 && insertPackageResult.affectedRows > 0) {
-      res.json({
-        status: "success",
-        message:
-          "Account has been created successfully. Now you can login to your account",
-      });
-    } else {
-      res.json({
-        status: "error",
-        message: "Server error occurred in registration",
       });
     }
   } catch (error) {
@@ -3057,10 +2533,12 @@ exports.teamusers = async (req, res) => {
   }
 };
 
-exports.updatelanguage = async (req, res) => {
+exports.updatelanguage = async (req, res) => {  
   try {
+
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
+
       const postData = req.body;
       let language = postData.language;
 
@@ -3071,43 +2549,43 @@ exports.updatelanguage = async (req, res) => {
         language: language,
       };
 
-      const updateData = await updateCustomer(
-        selectUserResult[0].customerid,
-        data
-      );
+      const updateData = await updateCustomer(selectUserResult[0].customerid, data);
+      
       const updateUser = await Qry(
         "update usersdata set language = ?, language_status = ? where id = ?",
         [language, 1, authUser]
       );
 
-      res.status(200).json({
-        status: "success",
-        message: "Language has been updated successfully.",
-      });
+      return Response.resWith202(res, 'Language has been updated successfully.');
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+    
+    console.error("Error:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
 exports.news = async (req, res) => {
   try {
+
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
-      // start latest news data
+
       const selectnewsQuery = `SELECT * FROM news ORDER BY id DESC`;
       const selectnewsResult = await Qry(selectnewsQuery);
-      // end latest news data
+
       let imageUrl = backoffice_link + "uploads/news/";
 
-      res.status(200).json({
-        status: "success",
+      var final_response = {
         news: selectnewsResult,
-        imageUrl: imageUrl,
-      });
+        imageUrl: imageUrl
+      };
+      return Response.resWith202(res, 'success.', final_response);
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+    
+    console.error("Error:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -3117,18 +2595,91 @@ exports.singlenews = async (req, res) => {
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
       let id = postData.newsid;
-      // start latest news data
       const selectnewsQuery = `SELECT * FROM news where id = ?`;
       const selectnewsResult = await Qry(selectnewsQuery, [id]);
-      // end latest news data
 
-      res.status(200).json({
-        status: "success",
-        news: selectnewsResult,
-      });
+      return Response.resWith202(res, 'success.', {news: selectnewsResult});
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+    console.error("Error:", error);  
+    return Response.resWith422(res, "Something went wrong");
+  }
+};
+
+exports.uploadKycData = async (req, res) => {
+  
+  try {
+
+      const postData = req.body;
+      const authUser = await checkAuthorization(req, res);
+    
+      if (authUser) {
+
+        let id_front, id_back;
+        const uploadDir = path.join(__dirname, "../public/uploads/kyc/");
+
+        const identityType = postData.identityType;
+        const residentialAddress = postData.residentialAddress;
+        const date = new Date().toISOString().slice(0, 19).replace("T", " ");
+
+        if (identityType === "Passport") {
+          const idCardFront = postData.idcardFront.split(";base64,");
+          const idCardFrontTypeAux = idCardFront[0].split("image/");
+          const idCardFrontType = idCardFrontTypeAux[1];
+          const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
+          const idCardFrontFilename = `${Date.now()}.png`;
+          const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
+          fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
+          id_front = idCardFrontFilename;
+          id_back = "";
+        } else if (identityType === "Identity Card") {
+          // Process the front and back sides of the identity (ID card)
+          const idCardFront = postData.idcardFront.split(";base64,");
+          const idCardFrontTypeAux = idCardFront[0].split("image/");
+          const idCardFrontType = idCardFrontTypeAux[1];
+          const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
+          const idCardFrontFilename = `${Date.now()}.png`;
+          const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
+          fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
+          const idCardBack = postData.idcardBack.split(";base64,");
+          const idCardBackTypeAux = idCardBack[0].split("image/");
+          const idCardBackType = idCardBackTypeAux[1];
+          const idCardBackBase64 = Buffer.from(idCardBack[1], "base64");
+          const idCardBackFilename = `${Date.now()}.png`;
+          const idCardBackFilePath = path.join(uploadDir, idCardBackFilename);
+          fs.writeFileSync(idCardBackFilePath, idCardBackBase64);
+          id_front = idCardFrontFilename;
+          id_back = idCardBackFilename;
+        } else {
+
+          console.error("Error occurred:", error); 
+          return Response.resWith422(res, "Invalid identity type selected.");
+        }
+
+        const insertPackageResult = await Qry(
+          "INSERT INTO `kyc`(`userid`, `id_front`, `id_back`, `address`, `type`, `date`) VALUES (?,?,?,?,?,?)",
+          [authUser, id_front, id_back, residentialAddress, identityType, date]
+        );
+
+        const updateUser = await Qry(
+          "update usersdata set kyc_status = ? where id = ?",
+          ["Uploaded", authUser]
+        );
+        if (insertPackageResult.affectedRows > 0 && updateUser.affectedRows > 0) {
+
+          const selectUserQuery = `SELECT * FROM usersdata where id = ?`;
+          const selectUserResult = await Qry(selectUserQuery, [authUser]);
+
+          logger.info(`User ${selectUserResult[0].username} has requested KYC of type ${identityType}`,
+            { type: "user" }
+          );
+
+          return Response.resWith202(res, "KYC request has been submitted successfully");
+        }
+      }
+  } catch (error) {
+    console.error("Error:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -3470,9 +3021,11 @@ exports.updatepayoutdetails = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
+
       const payoutType = postData.type;
 
       if (payoutType === "Bank") {
+
         const country = postData.country;
         const bankAccountName = postData.bank_account_name;
         const bankAccountBIC = postData.bank_account_bic;
@@ -3500,18 +3053,14 @@ exports.updatepayoutdetails = async (req, res) => {
           ]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(
-            `User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].bank_account_title} to ${bankAccountName}, IBAN from ${selectUserResult[0].bank_account_iban} to ${bankAccountIBAN}, BIC from ${selectUserResult[0].bank_account_bic} to ${bankAccountBIC} and Country from ${selectUserResult[0].bank_account_country} to ${country}`,
+          logger.info(`User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].bank_account_title} to ${bankAccountName}, IBAN from ${selectUserResult[0].bank_account_iban} to ${bankAccountIBAN}, BIC from ${selectUserResult[0].bank_account_bic} to ${bankAccountBIC} and Country from ${selectUserResult[0].bank_account_country} to ${country}`,
             { type: "user" }
           );
 
-          res.status(200).json({
-            status: "success",
-            message:
-              "Your request has been submitted successfully to admin, it will be verify soon.",
-          });
+          return Response.resWith202(res, "Your request has been submitted successfully to admin, it will be verify soon.");
         }
       } else if (payoutType === "Crypto") {
+
         const address = postData.wallet_address;
 
         const selectUserQuery = `select * from usersdata where id = ?`;
@@ -3522,18 +3071,14 @@ exports.updatepayoutdetails = async (req, res) => {
           [authUser, address]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(
-            `User ${selectUserResult[0].username} has updated wallet address from ${selectUserResult[0].wallet_address} to ${address}`,
+          logger.info(`User ${selectUserResult[0].username} has updated wallet address from ${selectUserResult[0].wallet_address} to ${address}`,
             { type: "user" }
           );
 
-          res.status(200).json({
-            status: "success",
-            message:
-              "Your payout detail request has been submit to admin successfully. It will be verify soon.",
-          });
+          return Response.resWith202(res, "Your payout detail request has been submit to admin successfully. It will be verify soon.");
         }
       } else if (payoutType === "Bank_out_ue") {
+
         const country = postData.country;
         const bankAccountName = postData.bank_account_name;
         const bankAccountNumber = postData.bank_account_number;
@@ -3563,25 +3108,23 @@ exports.updatepayoutdetails = async (req, res) => {
           ]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(
-            `User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].outside_bank_account_title} to ${bankAccountName}, Account Number from ${selectUserResult[0].outside_bank_account_number} to ${bankAccountNumber}, Swift Code from ${selectUserResult[0].outside_bank_account_swift_code} to ${bankAccountSwiftCode}, Account Routing from ${selectUserResult[0].outside_bank_account_routing} to ${bankAccountRouting}, Address from ${selectUserResult[0].outside_bank_account_address} to ${bankAccountAddress}, City from ${selectUserResult[0].outside_bank_account_city} to ${bankAccountCity}, Zip Code from ${selectUserResult[0].outside_bank_account_zip_code} to ${bankAccountZipCode} and Country from ${selectUserResult[0].outside_bank_account_country} to ${country}`,
+          logger.info(`User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].outside_bank_account_title} to ${bankAccountName}, Account Number from ${selectUserResult[0].outside_bank_account_number} to ${bankAccountNumber}, Swift Code from ${selectUserResult[0].outside_bank_account_swift_code} to ${bankAccountSwiftCode}, Account Routing from ${selectUserResult[0].outside_bank_account_routing} to ${bankAccountRouting}, Address from ${selectUserResult[0].outside_bank_account_address} to ${bankAccountAddress}, City from ${selectUserResult[0].outside_bank_account_city} to ${bankAccountCity}, Zip Code from ${selectUserResult[0].outside_bank_account_zip_code} to ${bankAccountZipCode} and Country from ${selectUserResult[0].outside_bank_account_country} to ${country}`,
             { type: "user" }
           );
 
-          res.status(200).json({
-            status: "success",
-            message:
-              "Your request has been submitted successfully to admin, it will be verify soon.",
-          });
+          return Response.resWith202(res, "Your payout detail request has been submit to admin successfully. It will be verify soon.");
         }
       } else {
-        res
-          .status(400)
-          .json({ status: "error", message: "Invalid payout type selected." });
+
+        return Response.resWith422(res, "Invalid payout type selected.");
       }
+    } else {
+      return Response.resWith422(res, "Invalid token.");
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -8210,8 +7753,10 @@ exports.getpoolreports = async (req, res) => {
 
 exports.getunilevelreports = async (req, res) => {
   try {
+
     const auth_id = await checkAuthorization(req, res);
     if (auth_id) {
+      
       const selectQuerLogin = await Qry(
         "SELECT * FROM usersdata WHERE id = ?",
         [auth_id]
@@ -8224,17 +7769,13 @@ exports.getunilevelreports = async (req, res) => {
       let currentYear = new Date().getFullYear();
       let year = postData?.year || currentYear;
       let commission = await total_payment_function_afcm_tbl(auth_id, month, year);
-  
-      res.json({
-        status: "success",
-        data: commission,
-      });
+      
+      return Response.resWith202(res, "success", commission);
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
