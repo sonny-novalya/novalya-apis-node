@@ -5,7 +5,73 @@ const tag = db.tag;
 const message_data = db.MessageData;
 const section = db.Section;
 const taggedusers = db.taggedusers;
+const Response = require("../../helpers/response");
 const { Op } = require("sequelize");
+
+const sendCampaign = async (req, res) => {
+  try {
+    const user_id = await getAuthUser(req, res);
+
+    const { group_id, message_id, time_interval, userIds } = req.body;
+
+    let campaignRecord = await campaign.findOne({ where: { user_id } });
+    let isNewCampaignSetting = false;
+
+    if (campaignRecord) {
+      await campaign.update(
+        { group_id, message_id, time_interval },
+        { where: { user_id } }
+      );
+      campaignRecord = await campaign.findOne({ where: { user_id } }); // get updated record
+    } else {
+      campaignRecord = await campaign.create({
+        user_id,
+        group_id,
+        message_id,
+        time_interval,
+      });
+      isNewCampaignSetting = true
+    }
+
+    const newMessage = await db.Message.findOne({
+      where: {
+        user_id: user_id, id: message_id // Match the user_id in Message table
+      },
+      include: [
+        {
+          model: db.MessageVariant,
+          as: "variants", // Include MessageVariant related to Message
+          where: {
+            message_id: message_id,  // Match message_id in MessageVariant table
+          }
+        },
+      ],
+    });
+
+    // 2. get Taggedusers based on userIDs
+    const taggedUsers = await taggedusers.findAll({
+      where: {
+        user_id: user_id,
+        id: {
+          [Op.in]: userIds,  // <-- handeling the userIds array
+        },
+      },
+      attributes: ['user_id', 'id', 'fb_name', 'fb_user_id', 'numeric_fb_id', 'fb_user_e2ee_id', 'is_e2ee', 'tag_id', 'profile_pic']
+    });
+
+    return Response.resWith202(res, 'success', {
+      campaignSettings: campaignRecord,
+      isNewCampaignSetting,
+      newMessage,
+      taggedUsers,
+    });
+
+  } catch (error) {
+
+    return Response.resWith422(res, error.message );
+  }
+};
+
 const placecampaign = async (req, res) => {
   try {
     const user_id = await getAuthUser(req, res);
@@ -159,4 +225,5 @@ module.exports = {
   getOne,
   updateOne,
   deleteOne,
+  sendCampaign
 };
