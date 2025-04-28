@@ -17,7 +17,7 @@ exports.affiliateKycData = async (req, res) => {
     };
 
     const user_select_query = `
-      SELECT parent_id, isAlreadyCharge, isAffiliate, sub_type, plan_period, plan_pkg,
+      SELECT parent_id, isAlreadyCharge, sub_type, plan_period, plan_pkg,
              isChatActive, connection_type, sponsorid, username, randomcode, firstname, lastname,
              email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus,
              address1, company, country, createdat, login_status, lastlogin, lastip, referral_side,
