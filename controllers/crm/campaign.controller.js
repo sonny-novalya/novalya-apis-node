@@ -68,6 +68,7 @@ const sendCampaign = async (req, res) => {
 
   } catch (error) {
 
+    console.error("Error occurred:", error);  
     return Response.resWith422(res, error.message );
   }
 };
