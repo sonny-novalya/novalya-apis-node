@@ -1432,11 +1432,13 @@ exports.lastWeekTransactions = async (req, res) => {
   }
 };
 
-exports.updateProfileData = async (req, res) => {
+exports.updateUserProfile = async (req, res) => {
   const postData = req.body;
   try {
+
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
+
       const updates = [];
       const date = new Date().toISOString();
       postData.updatedat = date;
@@ -1451,7 +1453,7 @@ exports.updateProfileData = async (req, res) => {
       )} WHERE id = '${authUser}'`;
       const updateResult = await Qry(updateQuery);
 
-      const selectUserQuery = "SELECT * FROM usersdata WHERE id = ?";
+      const selectUserQuery = "SELECT username FROM usersdata WHERE id = ?";
       const selectUserResult = await Qry(selectUserQuery, [authUser]);
       const userData = selectUserResult[0];
 
@@ -1460,20 +1462,17 @@ exports.updateProfileData = async (req, res) => {
       });
 
       if (updateResult) {
-        res.status(200).json({
-          status: "success",
-          message: "Profile Data updated successfully",
-        });
+
+        return Response.resWith202(res, "Profile updated successfully");
       } else {
-        res.status(500).json({
-          status: "error",
-          message: "Something went wrong. Please try again later.",
-        });
+
+        return Response.resWith422(res, "Something went wrong. Please try again later.");
       }
-      await emptyArray(updates);
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 

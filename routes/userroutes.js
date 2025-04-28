@@ -47,7 +47,7 @@ router.post("/getmessageslist", UserController.getMessagesList);
 router.post("/getsinglemessage", UserController.getSingleMessage);
 router.post("/getnotifications", UserController.getNotifications);
 router.post("/lastweektransactions", UserController.lastWeekTransactions);
-router.post("/updateprofiledata", UserController.updateProfileData);
+router.post("/update-user-profile", UserController.updateUserProfile);
 router.post("/updatepassword", UserController.updatePassword);
 router.post("/getsubscriptionitems", UserController.getSubscriptionItems);
 router.post("/getupgradesubscriptionitems", UserController.getUpgradeSubscriptionItems);
