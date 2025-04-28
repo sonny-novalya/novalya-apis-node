@@ -102,7 +102,8 @@ router.post("/solvedyearlypoints", UserController.solvedyearlypoints);
 
 router.get("/compaigns/user", campaignController.userdata);
 
-router.post("/compaigns", campaignController.placecampaign).get("/compaigns", campaignController.getAll);
+router.post("/send-compaigns", campaignController.sendCampaign)
+.post("/compaigns", campaignController.placecampaign).get("/compaigns", campaignController.getAll);
 
 router.get("/compaigns/:id", campaignController.getOne)
   .patch("/compaigns/:id", campaignController.updateOne)
