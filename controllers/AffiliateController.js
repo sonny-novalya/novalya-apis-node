@@ -15,10 +15,31 @@ exports.affiliateKycData = async (req, res) => {
 
       return Response.resWith422(res, "Invalid auth");
     };
+
+    const user_select_query = `
+      SELECT parent_id, isAlreadyCharge, isAffiliate, sub_type, plan_period, plan_pkg,
+             isChatActive, connection_type, sponsorid, username, randomcode, firstname, lastname,
+             email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus,
+             address1, company, country, createdat, login_status, lastlogin, lastip, referral_side,
+             kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country,
+             bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank,
+             novarank, connect_status, birthday_status, crm_status, unfollow_status,
+             outside_bank_account_country, outside_bank_account_title, outside_bank_account_number,
+             outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,
+             website, outside_bank_account_address, outside_bank_account_city,
+             outside_bank_account_zip_code, outside_bank_account_street,
+             bank_account_address, bank_account_city, bank_account_zip_code,
+             outside_payout_country, payout_country, subscription_status, language,
+             language_status, currency, trial, trial_status, trial_end
+      FROM usersdata WHERE id = ?
+    `;
+    const [userData] = await Qry(user_select_query, [auth_user]);
    
     const kycReject = await Qry(`SELECT * FROM kyc WHERE userid = ? AND status = ? ORDER BY id DESC LIMIT 1`, [auth_user, "Rejected"]);
 
-    return Response.resWith202(res, "success", {'kyc_data': kycReject});
+    const payout_info = await Qry(`SELECT * FROM payout_information_request WHERE userid = ? AND status = ? ORDER BY id DESC LIMIT 1`, [auth_user, "Rejected"]);
+
+    return Response.resWith202(res, "success", {'user_data': userData, 'kyc_data': kycReject, 'payout_info': payout_info });
 
   } catch (error) {
     console.error("Error occurred:", error);  
