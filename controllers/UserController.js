@@ -41,6 +41,13 @@ const {
   total_payment_function_afcm_tbl,
 } = require("../helpers/functions");
 const { insert_affiliate_commission } = require("../helpers/affiliate_helper");
+const {
+  getConversionRate,
+  getUserCurrency,
+  getEarnings,
+  calculatePayoutData,
+} = require("../helpers/dashboard_service");
+
 const secretKey = process.env.jwtSecretKey;
 const sitename = process.env.sitename;
 const sitekey = process.env.sitekey;
@@ -1947,518 +1954,110 @@ exports.checkaffiliatehostedpage = async (req, res) => {
 exports.dashboarddata = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res);
-    if (authUser) {
-      function getMonthName(monthNumber) {
-        const monthNames = [
-          "Jan",
-          "Feb",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-
-        if (monthNumber >= 1 && monthNumber <= 12) {
-          return monthNames[monthNumber - 1];
-        } else {
-          return "Invalid Month";
-        }
-      }
-
-      function getLastMonthNumber() {
-        var currentDate = new Date();
-        var lastMonth = currentDate.getMonth(); // Get current month
-        lastMonth = lastMonth === 0 ? 12 : lastMonth; // If January, set to December
-        return lastMonth;
-      }
-
-      const selectUsersData = `SELECT * FROM usersdata WHERE id = ?`;
-      let resultUserData = await Qry(selectUsersData, [authUser]);
-
-      let userCurrency = resultUserData[0].currency;
-      let cSymbol;
-      let eurBankTitle = resultUserData[0].bank_account_title;
-      let usdBankTitle = resultUserData[0].outside_bank_account_title;
-      let userWalletAddress = resultUserData[0].wallet_address;
-
-      if (eurBankTitle) {
-        userCurrency = "EUR";
-      } else if (usdBankTitle) {
-        userCurrency = "USD";
-      } else if (userWalletAddress) {
-        userCurrency = "USD";
-      } else {
-        userCurrency = userCurrency;
-      }
-
-      let settingsData;
-
-      if (userCurrency === "EUR") {
-        settingsData = await Qry(
-          "SELECT * FROM `setting` WHERE keyname IN (?)",
-          ["conversion1"]
-        );
-        cSymbol = "€";
-      } else {
-        settingsData = await Qry(
-          "SELECT * FROM `setting` WHERE keyname IN (?)",
-          ["conversion"]
-        );
-        cSymbol = "$";
-      }
-
-      let conversionRate = {
-        rate: parseFloat(settingsData[0].keyvalue),
-      };
-
-      // start life time earning
-      let lifeTimeEarningEUR = 0;
-      let lifeTimeEarningUSD = 0;
-
-      const selectUsersDataTotalEarningEUR = `SELECT SUM(amount) as total FROM transactions WHERE receiverid = ? and type = ? and (currency = ? or currency = ?)`;
-      let resultUserDataTotalEarningEUR = await Qry(
-        selectUsersDataTotalEarningEUR,
-        [authUser, "Payout", "EUR", ""]
-      );
-
-      if (
-        resultUserDataTotalEarningEUR[0].total === "" ||
-        resultUserDataTotalEarningEUR[0].total === null
-      ) {
-        resultUserDataTotalEarningEUR[0].total = 0;
-      }
-
-      const selectUsersDataTotalEarningUSD = `SELECT SUM(amount) as total FROM transactions WHERE receiverid = ? and type = ? and (currency = ?)`;
-      let resultUserDataTotalEarningUSD = await Qry(
-        selectUsersDataTotalEarningUSD,
-        [authUser, "Payout", "USD"]
-      );
-
-      if (
-        resultUserDataTotalEarningUSD[0].total === "" ||
-        resultUserDataTotalEarningUSD[0].total === null
-      ) {
-        resultUserDataTotalEarningUSD[0].total = 0;
-      }
-
-      lifeTimeEarningEUR =
-        lifeTimeEarningEUR + resultUserDataTotalEarningEUR[0].total;
-      lifeTimeEarningUSD =
-        lifeTimeEarningUSD + resultUserDataTotalEarningUSD[0].total;
-
-      let lifeTImeEarning = 0;
-
-      if (userCurrency === "EUR") {
-        lifeTImeEarning =
-          lifeTimeEarningEUR + lifeTimeEarningUSD * conversionRate.rate;
-      } else {
-        lifeTImeEarning =
-          lifeTimeEarningUSD + lifeTimeEarningEUR * conversionRate.rate;
-      }
-
-      let lastMonthEur = resultUserData[0].current_balance_eur_lastmonth;
-      let lastMonthUSD = resultUserData[0].current_balance_usd_lastmonth;
-
-      const selectPoolBonusApproved = `SELECT SUM(amount) AS totalAmount FROM transactions WHERE receiverid = ? AND type IN ('Pool 1 Bonus', 'Pool 2 Bonus', 'Pool 3 Bonus') AND MONTH(approvedat) = MONTH(now()) AND YEAR(approvedat) = YEAR(now()) AND status = ?`;
-      let resultPoolBonusApproved = await Qry(selectPoolBonusApproved, [
-        authUser,
-        "Approved",
-      ]);
-
-      if (resultPoolBonusApproved[0].totalAmount === null) {
-        resultPoolBonusApproved[0].totalAmount = 0;
-      }
-
-      lastMonthUSD = lastMonthUSD + resultPoolBonusApproved[0].totalAmount;
-
-      // let lastMonthEarning = {
-      //   eur: lastMonthEur,
-      //   usd: lastMonthUSD
-      // }
-
-      let lastMonthEarning = 0;
-
-      if (userCurrency === "EUR") {
-        lastMonthEarning = lastMonthEur + lastMonthUSD * conversionRate.rate;
-      } else {
-        lastMonthEarning = lastMonthUSD + lastMonthEur * conversionRate.rate;
-      }
-
-      // end last month earning
-
-      // start total payment
-      let currentMonthNumber = currentMonthFun();
-      let commissionData = await total_payment_function(
-        authUser,
-        currentMonthNumber
-      );
-
-      // let totalPayment = {
-      //   eur: commissionData.totalPaymentEUR,
-      //   usd: commissionData.totalPaymentUSD
-      // };
-
-      let totalPayment = 0;
-
-      if (userCurrency === "EUR") {
-        totalPayment =
-          commissionData?.totalPaymentEUR +
-          commissionData?.totalPaymentUSD * conversionRate?.rate;
-      } else {
-        totalPayment =
-          commissionData?.totalPaymentUSD +
-          commissionData?.totalPaymentEUR * conversionRate?.rate;
-      }
-
-      // end total payment
-
-      // start total earning
-      let level1 = 0;
-      let level2 = 0;
-      let bonus = 0;
-      let otherBonus = 0;
-      if (userCurrency === "EUR") {
-        level1 =
-          commissionData?.level1EUR +
-          commissionData?.level1USD * conversionRate?.rate;
-        level2 =
-          commissionData?.level2EUR +
-          commissionData?.level2USD * conversionRate?.rate;
-        bonus = commissionData?.bonusUSD * conversionRate?.rate;
-        otherBonus =
-          commissionData?.eurOthers +
-          commissionData?.usdOthers * conversionRate?.rate;
-      } else {
-        level1 =
-          commissionData?.level1USD +
-          commissionData?.level1EUR * conversionRate?.rate;
-        level2 =
-          commissionData?.level2USD +
-          commissionData?.level2EUR * conversionRate?.rate;
-        bonus = commissionData?.bonusUSD;
-        otherBonus =
-          commissionData?.usdOthers +
-          commissionData?.eurOthers * conversionRate?.rate;
-      }
-
-      let totalEarning = {
-        l1: level1,
-        l2: level2,
-        bonus: bonus,
-        others: otherBonus,
-      };
-      // end total earning
-      // start current payout percentages
-      let totalUser = commissionData?.totalUser;
-
-      let unilevelData;
-      unilevelData = await Qry(
-        "SELECT * FROM unilevels WHERE `number_of_users` <= ? ORDER BY `id` DESC LIMIT 1",
-        [totalUser]
-      );
-
-      if (unilevelData.length === 0) {
-        unilevelData = await Qry("SELECT * FROM unilevels WHERE id = ?", [0]);
-      }
-
-      let nextUnilevelData = await Qry("SELECT * FROM unilevels WHERE id = ?", [
-        (unilevelData[0].id < 6 ? unilevelData[0].id + 1 : 6),
-      ]);
-
-      function updateProgressBar(value) {
-        if (value <= 50) {
-          return (value / 50) * 100;
-        } else {
-          return 100;
-        }
-      }
-      let progressBar = updateProgressBar(totalUser);
-
-      let currentPayoutPer = {
-        l1: unilevelData[0]?.level1,
-        l2: unilevelData[0]?.level2,
-      };
-
-      let nextPayoutPer = {
-        l1: nextUnilevelData[0]?.level1,
-        l2: nextUnilevelData[0]?.level2,
-        numberOfUsers: nextUnilevelData[0]?.number_of_users,
-      };
-
-      // end current payout percentages
-
-      //start active sales
-      let personalActiveSale = {
-        activeSale: totalUser,
-      };
-      // end active sales
-
-      // start level bonus data
-      const selectLevelBonus = `SELECT * FROM unilevels WHERE id != ?`;
-      const levelBonusData = await Qry(selectLevelBonus, [0]);
-
-      let uniLevelData = {
-        unilevel: levelBonusData,
-      };
-      // end level bonus data
-
-      // start Qualification Criteria
-
-      let totalActiveUser = await newSalesFunction(
-        authUser,
-        currentMonthNumber
-      );
-
-      // totalActiveUser = 19
-
-      let poolData;
-      poolData = await Qry(
-        "SELECT * FROM pool WHERE `number_of_users` <= ? ORDER BY `id` DESC LIMIT 1",
-        [totalActiveUser]
-      );
-
-      if (poolData.length === 0) {
-        poolData = await Qry("SELECT * FROM pool WHERE id = ?", [0]);
-      }
-
-      let pool = await Qry("SELECT * FROM pool WHERE id != ?", [0]);
-
-      let requiredUsers = 0;
-
-      if (poolData[0].id === 0) {
-        requiredUsers = pool[poolData[0].id]?.number_of_users - totalActiveUser;
-      } else {
-        requiredUsers = pool[poolData[0].id]?.number_of_users - totalActiveUser;
-      }
-
-      let qualificationCriteria = {
-        requiredUsers: requiredUsers,
-        userPool: poolData,
-        pool: pool,
-      };
-
-      // end Qualification Criteria
-
-      // start total new sale
-      let totalNewSale = {
-        sale: totalActiveUser,
-      };
-      // end total new sale
-
-      //start referral user data
-      // const selectReferralUserData = `SELECT usersdata.*, new_packages.pkg_name, new_packages.amount, new_packages.currency FROM usersdata JOIN new_packages ON usersdata.id = new_packages.userid WHERE usersdata.sponsorid = ? AND YEAR(usersdata.createdat) = YEAR(now()) AND MONTH(usersdata.createdat) = MONTH(now()) AND new_packages.type = ? LIMIT 5`;
-      // const referralUserData = await Qry(selectReferralUserData, [
-      //   authUser,
-      //   "package",
-      // ]);
-      // const pictureUrl = `${backoffice_link}uploads/userprofile/`;
-
-      // let referralNewUserData = {
-      //   referralUserData: referralUserData,
-      //   pictureUrl: pictureUrl,
-      // };
-      //end referral user data
-
-      // start monthly graph
-      let monthNameArray = [];
-
-      let saleEurArray = [];
-      let saleUsdArray = [];
-
-      let activeCustomersArray = [];
-      let renewedCustomersArray = [];
-
-      for (let i = 1; i <= 5; i++) {
-        let monthName = getMonthName(i);
-        monthNameArray.push(monthName);
-
-        // start monthly new sale graph
-        const selectNewSaleEur = `SELECT SUM(plan_amount) as total FROM usersdata WHERE sponsorid = ? and currency = ? and subscription_status = ? and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultNewSaleEur = await Qry(selectNewSaleEur, [
-          authUser,
-          "EUR",
-          "Active",
-          i,
-        ]);
-
-        if (resultNewSaleEur[0].total === null) {
-          resultNewSaleEur[0].total = 0;
-        }
-
-        const selectNewSaleUsd = `SELECT SUM(plan_amount) as total FROM usersdata WHERE sponsorid = ? and currency = ? and subscription_status = ? and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultNewSaleUsd = await Qry(selectNewSaleUsd, [
-          authUser,
-          "USD",
-          "Active",
-          i,
-        ]);
-
-        if (resultNewSaleUsd[0].total === null) {
-          resultNewSaleUsd[0].total = 0;
-        }
-
-        saleEurArray.push(resultNewSaleEur[0].total);
-        saleUsdArray.push(resultNewSaleUsd[0].total);
-        // end monthly new sale graph
-
-        // start monthly active customers
-        const selectActiveCustomers = `SELECT COUNT(*) as total FROM transactions WHERE receiverid = ? and event_type = ? and type = ? and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultActiveCustomers = await Qry(selectActiveCustomers, [
-          authUser,
-          "subscription_created",
-          "Level 1 Bonus",
-          i,
-        ]);
-
-        const selectRenewedCustomers = `SELECT COUNT(*) as total FROM transactions WHERE receiverid = ? and (event_type = ? or event_type = ?) and type = ? and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultRenewedCustomers = await Qry(selectRenewedCustomers, [
-          authUser,
-          "subscription_renewed",
-          "payment_succeeded",
-          "Level 1 Bonus",
-          i,
-        ]);
-
-        const selectRfundedCustomers = `SELECT COUNT(*) as total FROM transactions WHERE receiverid = ? and type = ? and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultRfundedCustomers = await Qry(selectRfundedCustomers, [
-          authUser,
-          "Level 1 Bonus Deducted",
-          i,
-        ]);
-
-        activeCustomersArray.push(
-          resultActiveCustomers[0].total - resultRfundedCustomers[0].total
-        );
-        renewedCustomersArray.push(
-          resultRenewedCustomers[0].total - resultRfundedCustomers[0].total
-        );
-        // end monthly active customers
-      }
-      let newSaleGraph = {
-        usd: saleUsdArray,
-        eur: saleEurArray,
-        month: monthNameArray,
-      };
-
-      let activeCustomersGraph = {
-        active: activeCustomersArray,
-        renewed: renewedCustomersArray,
-        month: monthNameArray,
-      };
-      // end monthly graph
-
-      // start monthly graph
-      let monthNameArray1 = [];
-
-      let earningEurArray = [];
-      let earningUsdArray = [];
-
-      for (let i = 1; i <= 12; i++) {
-        let monthName = getMonthName(i);
-        monthNameArray1.push(monthName);
-
-        const selectEarningEUR = `SELECT SUM(amount) as total FROM transactions WHERE receiverid = ? and currency = ? and (type = ? or type = ?) and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultEarningEUR = await Qry(selectEarningEUR, [
-          authUser,
-          "EUR",
-          "Level 1 Bonus",
-          "Level 2 Bonus",
-          i,
-        ]);
-
-        if (resultEarningEUR[0].total === null) {
-          resultEarningEUR[0].total = 0;
-        }
-
-        const selectRefundedEUR = `SELECT SUM(amount) as total FROM transactions WHERE receiverid = ? and currency = ? and (type = ? or type = ?) and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultRefundedEUR = await Qry(selectRefundedEUR, [
-          authUser,
-          "EUR",
-          "Level 1 Bonus Deducted",
-          "Level 2 Bonus Deducted",
-          i,
-        ]);
-
-        if (resultRefundedEUR[0].total === null) {
-          resultRefundedEUR[0].total = 0;
-        }
-
-        const selectEarningUSD = `SELECT SUM(amount) as total FROM transactions WHERE receiverid = ? and currency = ? and (type = ? or type = ?) and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultEarningUSD = await Qry(selectEarningUSD, [
-          authUser,
-          "USD",
-          "Level 1 Bonus",
-          "Level 2 Bonus",
-          i,
-        ]);
-
-        if (resultEarningUSD[0].total === null) {
-          resultEarningUSD[0].total = 0;
-        }
-
-        const selectRefundedUSD = `SELECT SUM(amount) as total FROM transactions WHERE receiverid = ? and currency = ? and (type = ? or type = ?) and MONTH(createdat) = ? and YEAR(createdat) = YEAR(now())`;
-        let resultRefundedUSD = await Qry(selectRefundedUSD, [
-          authUser,
-          "USD",
-          "Level 1 Bonus Deducted",
-          "Level 2 Bonus Deducted",
-          i,
-        ]);
-
-        if (resultRefundedUSD[0].total === null) {
-          resultRefundedUSD[0].total = 0;
-        }
-
-        earningEurArray.push(
-          resultEarningEUR[0].total - resultRefundedUSD[0].total
-        );
-        earningUsdArray.push(
-          resultEarningUSD[0].total - resultRefundedEUR[0].total
-        );
-      }
-
-      let earningGraph = {
-        eur: earningEurArray,
-        usd: earningUsdArray,
-        month: monthNameArray1,
-      };
-      // end monthly graph
-
-      let dashboardData = {
-        lifeTImeEarning: lifeTImeEarning,
-        lastMonthEarning: lastMonthEarning,
-        totalPayment: totalPayment,
-        totalEarning: totalEarning,
-        currentPayoutPer: currentPayoutPer,
-        nextPayoutPer: nextPayoutPer,
-        personalActiveSale: personalActiveSale,
-        uniLevelData: uniLevelData,
-        qualificationCriteria: qualificationCriteria,
-        totalNewSale: totalNewSale,
-        // referralNewUserData: referralNewUserData,
-        newSaleGraph: newSaleGraph,
-        activeCustomersGraph: activeCustomersGraph,
-        earningGraph: earningGraph,
-        conversionRate: conversionRate,
-        progressBar: progressBar,
-        cSymbol: cSymbol,
-
-      };
-
-      res.status(200).json({
-        status: "success",
-        dashboardData: dashboardData,
-      });
+    if (!authUser) return;
+
+    // Fetch user data
+    const result = await Qry("SELECT id, currency, bank_account_title, outside_bank_account_title, wallet_address, current_balance_eur_lastmonth, current_balance_usd_lastmonth FROM usersdata WHERE id = ?", [authUser]);
+    
+    // Check if result is iterable (array) and contains data
+    if (!result || !Array.isArray(result) || result.length === 0) {
+      return Response.resWith422(res, "User data not found.");
     }
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({ status: "error", message: e.message });
+
+    const [userData] = result; // Safe destructuring since result is validated
+    const userCurrency = getUserCurrency(userData);
+    const conversionRate = await getConversionRate(userCurrency);
+    const cSymbol = userCurrency === "EUR" ? "€" : "$";
+    
+    const {lastMonthPayout, currentMonthEarning, pendingPayment} = await get_dashboard_affiliate_summary(authUser, userCurrency, conversionRate);
+
+    // Earnings calculation
+    const { EUR: earningEUR, USD: earningUSD } = await getEarnings(authUser);
+    const lifeTimeEarning = Number((
+      userCurrency === "EUR"
+        ? earningEUR + earningUSD * conversionRate
+        : earningUSD + earningEUR * conversionRate
+    ).toFixed(2));
+
+    // Last month's earnings
+    const lastMonthEarning = Number((
+      userCurrency === "EUR"
+        ? userData.current_balance_eur_lastmonth + userData.current_balance_usd_lastmonth * conversionRate
+        : userData.current_balance_usd_lastmonth + userData.current_balance_eur_lastmonth * conversionRate
+    ).toFixed(2));
+
+    // Commission data for current month
+    const currentMonth = new Date().getMonth() + 1;
+    const commissionData = await total_payment_function(authUser, currentMonth);
+
+    const totalPayment = Number((
+      userCurrency === "EUR"
+        ? commissionData.totalPaymentEUR + commissionData.totalPaymentUSD * conversionRate
+        : commissionData.totalPaymentUSD + commissionData.totalPaymentEUR * conversionRate
+    ).toFixed(2));
+
+    const totalEarning = {
+      l1: Number((
+        userCurrency === "EUR"
+          ? commissionData.level1EUR + commissionData.level1USD * conversionRate
+          : commissionData.level1USD + commissionData.level1EUR * conversionRate
+      ).toFixed(2)),
+      l2: Number((
+        userCurrency === "EUR"
+          ? commissionData.level2EUR + commissionData.level2USD * conversionRate
+          : commissionData.level2USD + commissionData.level2EUR * conversionRate
+      ).toFixed(2)),
+      bonus: Number((
+        userCurrency === "EUR"
+          ? commissionData.bonusUSD * conversionRate
+          : commissionData.bonusUSD
+      ).toFixed(2)),
+      others: Number((
+        userCurrency === "EUR"
+          ? commissionData.eurOthers + commissionData.usdOthers * conversionRate
+          : commissionData.usdOthers + commissionData.eurOthers * conversionRate
+      ).toFixed(2))
+    };
+
+    // User balances
+    const usd_balance = userData.current_balance_usd_lastmonth || 0;
+    const eur_balance = userData.current_balance_eur_lastmonth || 0;
+
+    // Currency conversions
+    const [usd_to_eur] = await settings_data("conversion1");
+    const [eur_to_usd] = await settings_data("conversion");
+
+    const usd_rate = parseFloat(eur_to_usd.keyvalue || 0);
+    const eur_rate = parseFloat(usd_to_eur.keyvalue || 0);
+
+    const total_usd_balance = usd_balance + eur_balance * usd_rate;
+    const total_eur_balance = eur_balance + usd_balance * eur_rate;
+
+    // Usage inside your route logic
+    const { currentPayoutPer, nextPayoutPer, progressPercentage } = await calculatePayoutData(commissionData?.totalUser);
+
+    // Dashboard data
+    const dashboardData = {
+      currentMonth,
+      lifeTimeEarning,
+      lastMonthEarning,
+      totalPayment,
+      totalEarning,
+      currentPayoutPer,
+      nextPayoutPer,
+      personalActiveSale: { activeSale: commissionData.totalUser },
+      conversionRate: { rate: conversionRate },
+      progressBar: progressPercentage,
+      cSymbol,
+      lastMonthPayout,
+      currentMonthEarning,
+      pendingPayment
+    };
+
+    return Response.resWith202(res, "success", dashboardData);
+  } catch (error) {
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -2782,141 +2381,147 @@ exports.previuosmonthrecord = async (req, res) => {
 
 exports.payout = async (req, res) => {
   try {
-    const authUser = await checkAuthorization(req, res);
-    if (authUser) {
-      const selectPreviousRecordQuery = `
-      SELECT tr.*, ud.username, ud.email
-      FROM transactions tr
-      left join usersdata ud on tr.receiverid = ud.id
-      WHERE receiverid = ? and type = ? ORDER BY id DESC`;
-      let selectPreviousRecordResult = await Qry(selectPreviousRecordQuery, [
-        authUser,
-        "Payout",
-      ]);
+    const auth_user = await checkAuthorization(req, res);
+    if (!auth_user) return;
 
-      const selectSumDataQuery = `SELECT SUM(final_amount) as total FROM transactions WHERE receiverid = ? and type = ?`;
-      const selectSumDataResult = await Qry(selectSumDataQuery, [
-        authUser,
-        "Payout",
-      ]);
+    // Get previous payouts
+    const prev_payouts = await Qry(
+      `SELECT tr.*, ud.username, ud.email
+       FROM transactions tr
+       LEFT JOIN usersdata ud ON tr.receiverid = ud.id
+       WHERE receiverid = ? AND type = ? ORDER BY id DESC`,
+      [auth_user, "Payout"]
+    );
 
-      let allTimePayout = selectSumDataResult[0].total;
+    // Get all-time payout total
+    const total_payout_result = await Qry(
+      `SELECT SUM(final_amount) AS total FROM transactions WHERE receiverid = ? AND type = ?`,
+      [auth_user, "Payout"]
+    );
+    let all_time_payout = parseFloat(total_payout_result[0]?.total || 0);
 
-      if (allTimePayout === null || allTimePayout === "") {
-        allTimePayout = 0;
-      }
+    // Get user data
+    const user = (
+      await Qry(`SELECT * FROM usersdata WHERE id = ?`, [auth_user])
+    )[0];
 
-      let obj = {
-        allTimePayout: allTimePayout,
-      };
+    // User balances
+    const usd_balance = user.current_balance_usd_lastmonth || 0;
+    const eur_balance = user.current_balance_eur_lastmonth || 0;
 
-      const selectUserDataQuery = `SELECT * FROM usersdata WHERE id = ?`;
-      const selectUserDataResult = await Qry(selectUserDataQuery, [authUser]);
+    // Currency conversions
+    const [usd_to_eur] = await settings_data("conversion1");
+    const [eur_to_usd] = await settings_data("conversion");
 
+    const usd_rate = parseFloat(eur_to_usd.keyvalue || 0);
+    const eur_rate = parseFloat(usd_to_eur.keyvalue || 0);
 
-      let usdBalance = selectUserDataResult[0].current_balance_usd_lastmonth;
-      let eurBalance = selectUserDataResult[0].current_balance_eur_lastmonth;
+    const total_usd_balance = usd_balance + eur_balance * usd_rate;
+    const total_eur_balance = eur_balance + usd_balance * eur_rate;
 
-      let conversion_usd_to_eur = await settings_data("conversion1");
-      let conversion_eur_to_usd = await settings_data("conversion");
+    // Fee settings
+    const [flat_fee_obj] = await settings_data("payout_flat_fee");
+    const [percent_fee_obj] = await settings_data("payout_percentage_fee");
+    const flat_fee = parseFloat(flat_fee_obj.keyvalue || 0);
+    const percent_fee = parseFloat(percent_fee_obj.keyvalue || 0);
 
-      let totalUsdBalance =
-        usdBalance + eurBalance * parseFloat(conversion_eur_to_usd[0].keyvalue);
-      let totalEurBalance =
-        eurBalance + usdBalance * parseFloat(conversion_usd_to_eur[0].keyvalue);
+    // Initialize payout details
+    let payout_amount = 0;
+    let final_amount = 0;
+    let payout_method = "";
+    let payout_fee = 0;
+    let currency = "";
+    let status = "Unpaid";
 
-      let payoutAmountTocheck = 0;
-      let final_amount = 0;
-      let flatFee = await settings_data("payout_flat_fee");
-      let per = await settings_data("payout_percentage_fee");
-      let payout_fee = "";
-      let payoutmethod = "";
-      let status = "";
-      let currency = "";
+    // Determine payout method and calculate fees
+    const {
+      bank_account_title,
+      wallet_address,
+      outside_bank_account_title,
+      outside_bank_account_number,
+      current_balance_usd_payout,
+      current_balance_eur_payout,
+    } = user;
 
-      if (
-        selectUserDataResult[0].bank_account_title !== null &&
-        selectUserDataResult[0].wallet_address === null &&
-        selectUserDataResult[0].outside_bank_account_title === null &&
-        selectUserDataResult[0].bank_account_iban === null
-      ) {
-        payoutAmountTocheck = totalEurBalance;
-        final_amount = payoutAmountTocheck - parseInt(flatFee[0].keyvalue);
-        payout_fee = flatFee[0].keyvalue;
-        payoutmethod = "Bank";
-        currency = "EUR";
-      } else if (
-        selectUserDataResult[0].wallet_address !== null &&
-        selectUserDataResult[0].bank_account_title === null &&
-        selectUserDataResult[0].outside_bank_account_title === null
-      ) {
-        payoutAmountTocheck = totalUsdBalance;
-        final_amount =
-          payoutAmountTocheck -
-          (payoutAmountTocheck * parseFloat(per[0].keyvalue)) / 100;
-        payout_fee = per[0].keyvalue;
-        payoutmethod = "Crypto";
-        currency = "USD";
-      }
+    if (
+      bank_account_title &&
+      !wallet_address &&
+      !outside_bank_account_title &&
+      !user.bank_account_iban
+    ) {
+      // EUR Bank Transfer
+      payout_method = "Bank";
+      payout_amount = total_eur_balance;
+      payout_fee = flat_fee;
+      final_amount = payout_amount - payout_fee;
+      currency = "EUR";
+    } else if (
+      wallet_address &&
+      !bank_account_title &&
+      !outside_bank_account_title
+    ) {
+      // Crypto
+      payout_method = "Crypto";
+      payout_amount = total_usd_balance;
+      payout_fee = (payout_amount * percent_fee) / 100;
+      final_amount = payout_amount - payout_fee;
+      currency = "USD";
+    } else if (
+      outside_bank_account_title &&
+      !outside_bank_account_number &&
+      !bank_account_title &&
+      !wallet_address
+    ) {
+      // Outside Bank USD
+      payout_method = "Bank";
+      payout_amount = total_usd_balance;
+      payout_fee = flat_fee;
+      final_amount = payout_amount - payout_fee;
+      currency = "USD";
+    }
 
-      if (
-        selectUserDataResult[0].bank_account_title === null &&
-        selectUserDataResult[0].wallet_address === null &&
-        selectUserDataResult[0].outside_bank_account_title !== null &&
-        selectUserDataResult[0].outside_bank_account_number === null
-      ) {
-        payoutAmountTocheck = totalUsdBalance;
-        final_amount = payoutAmountTocheck - parseInt(flatFee[0].keyvalue);
-        payout_fee = flatFee[0].keyvalue;
-        payoutmethod = "Bank";
-        currency = "USD";
-      }
+    // If specific payout balances set, override
+    if (current_balance_usd_payout || current_balance_eur_payout) {
+      payout_amount = (current_balance_usd_payout || 0) * 0.88 + (current_balance_eur_payout || 0);
+      final_amount = payout_amount - flat_fee;
+      payout_fee = flat_fee;
+      status = "Pending";
+      currency = "EUR";
+    } else if (payout_amount >= 30) {
+      status = "Pending";
+    }
 
-      if (selectUserDataResult[0]?.current_balance_usd_payout || selectUserDataResult[0]?.current_balance_eur_payout) {
-        payoutAmountTocheck = (selectUserDataResult[0]?.current_balance_usd_payout * 0.88) + (selectUserDataResult[0]?.current_balance_eur_payout)
-        final_amount = payoutAmountTocheck - parseInt(flatFee[0].keyvalue);
-        currency = "EUR";
-        status = "Pending";
-      } else if (payoutAmountTocheck < 30) {
-        status = "Unpaid";
-      } else {
-        status = "Pending";
-      }
-      if (selectPreviousRecordResult?.length < 1) {
-        selectPreviousRecordResult = []
-      }
-      if (payoutAmountTocheck !== 0) {
-        const currentDate = new Date();
-        const isoString = currentDate.toISOString();
-
-        let obj1 = {
-          id: 0,
-          approvedat: isoString,
-          amount: payoutAmountTocheck,
-          final_amount: final_amount,
-          payoutmethod: payoutmethod,
-          payout_fee: payout_fee,
-          fee: payout_fee,
-          bank_account_title: "*******",
-          bank_account_iban: "*******",
-          bank_account_bic: "*******",
-          bank_account_country: "*******",
-          status: status,
-          createdat: "2024-04-15T07:27:49.000Z",
-          currency: currency,
-        };
-        selectPreviousRecordResult.unshift(obj1);
-
-      }
-
-      res.status(200).json({
-        status: "success",
-        data: selectPreviousRecordResult,
-        obj: obj,
+    // Build response payout object if payout available
+    const payouts = [...(prev_payouts || [])];
+    if (payout_amount > 0) {
+      const now = new Date().toISOString();
+      payouts.unshift({
+        id: 0,
+        approvedat: now,
+        amount: payout_amount,
+        final_amount,
+        payoutmethod: payout_method,
+        payout_fee,
+        fee: payout_fee,
+        bank_account_title: "*******",
+        bank_account_iban: "*******",
+        bank_account_bic: "*******",
+        bank_account_country: "*******",
+        status,
+        createdat: now,
+        currency,
       });
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+
+    var final_response = {
+      'payouts': payouts,
+      "all_time_payout": all_time_payout
+    }
+    return Response.resWith202(res, "success", final_response);
+  } catch (error) {
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, error.message);
   }
 };
 
