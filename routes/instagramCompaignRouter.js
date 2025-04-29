@@ -9,6 +9,7 @@ const routes = [
     { method: 'get', path: '/all', handler: campaignController.getAll },
     { method: 'get', path: '/user', handler: campaignController.userdata },
     { method: 'post', path: '/create', handler: campaignController.placecampaign },
+    { method: 'post', path: '/create-insta-campaign', handler: campaignController.createInstaCampaign },
     { method: 'get', path: '/:id', handler: campaignController.getOne },
     { method: 'put', path: '/:id', handler: campaignController.updateOne },
     { method: 'get', path: '/delete/:id', handler: campaignController.deleteOne },
