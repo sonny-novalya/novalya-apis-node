@@ -21,6 +21,7 @@ const routes = [
     { method: 'post', path: '/sync-fb-friends', handler: Novadata.syncFbFriends },
     { method: 'post', path: '/sync-fb-friends-details', handler: Novadata.syncFbFriendsDetails },
     { method: 'get', path: '/get-fb-end-cursor', handler: Novadata.getEndCursorFacebook },
+    { method: 'delete', path: '/delete-fb-nova-data', handler: Novadata.deleteFbNovaData },
 
     { method: 'get', path: '/lost-all', handler: Novadata.getAllLostlist },
     { method: 'get', path: '/deactivated-all', handler: Novadata.getAllDeactivated },
