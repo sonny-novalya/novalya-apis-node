@@ -39,6 +39,7 @@ const {
   newSalesFunction,
   createDefaultTagsAndMessages,
   total_payment_function_afcm_tbl,
+  get_dashboard_affiliate_summary
 } = require("../helpers/functions");
 const { insert_affiliate_commission } = require("../helpers/affiliate_helper");
 const {

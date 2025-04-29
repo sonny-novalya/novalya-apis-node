@@ -4166,6 +4166,146 @@ async function newSalesFunction(userID, month) {
   }
 }
 
+async function get_dashboard_affiliate_summary(userid, userCurrency, conversionRate, checkDate = new Date()) {
+  const today = checkDate instanceof Date ? checkDate : new Date();
+
+  const getMonthYear = (offset = 0) => {
+    const date = new Date(today);
+    date.setUTCMonth(date.getUTCMonth() + offset);
+    return [date.getUTCMonth() + 1, date.getUTCFullYear()];
+  };
+
+  const [cmonth, cyear] = getMonthYear();
+  const [lastMonth, lastMonthYear] = getMonthYear(-1);
+  const [twoMonthsAgo, twoMonthsAgoYear] = getMonthYear(-2);
+
+  const getStartEndDates = (year, month) => ({
+    start: new Date(Date.UTC(year, month - 1, 1)),
+    end: new Date(Date.UTC(year, month, 0, 23, 59, 59, 999))
+  });
+
+  const { start: startOfCurrentMonth, end: endOfCurrentMonth } = getStartEndDates(cyear, cmonth);
+  const { start: startOfLastMonth, end: endOfLastMonth } = getStartEndDates(lastMonthYear, lastMonth);
+  const { start: startOfTwoMonthsAgo, end: endOfTwoMonthsAgo } = getStartEndDates(twoMonthsAgoYear, twoMonthsAgo);
+
+  const coursePlans = [
+    'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR',
+    'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-USD',
+    'Formation-Leads-en-RDV-Qualifies-Basic-Plan-EUR-Monthly',
+    'Formation-Leads-en-RDV-Qualifies-Basic-Plan-USD-Monthly'
+  ];
+
+  const transactionTypes = [
+    {
+      types: ["Level 1 Bonus", "Level 2 Bonus", "Bonus Add By Admin"],
+      isDeduct: false
+    },
+    {
+      types: ["Level 1 Bonus Deducted", "Level 2 Bonus Deducted", "Bonus Deduct By Admin"],
+      isDeduct: true
+    }
+  ];
+
+  const [{ userCount }] = await Qry(
+    `SELECT COUNT(*) AS userCount 
+     FROM usersdata 
+     WHERE sponsorid = ? 
+       AND subscription_status NOT IN ('payment_refunded', 'subscription_cancelled', 'payment_failed') 
+       AND createdat <= ? 
+       AND trial_status = ?`,
+    [userid, today, "inactive"]
+  );
+
+  const [unilevel] = await Qry(
+    `SELECT * FROM unilevels WHERE number_of_users <= ? ORDER BY id DESC LIMIT 1`,
+    [userCount]
+  );
+
+  const nacCutoff = new Date(Date.UTC(2025, 4, 1));
+  const nacEndCutoff = new Date(Date.UTC(2025, 4, 31, 23, 59, 59, 999));
+  const nacCutoff1 = new Date(Date.UTC(2025, 5, 1));
+  const nacEndCutoff2 = new Date(Date.UTC(2025, 5, 30, 23, 59, 59, 999)); // Fixed June 30th
+  const isDuringNAC = today >= nacCutoff && today <= nacEndCutoff;
+  const isAfterNAC = today > nacEndCutoff;
+  const isJune = today >= nacCutoff1 && today <= nacEndCutoff2;
+
+  const calculateCommission = async (types, isDeduct, dateStart, dateEnd, requireLockIn = 0, typef = 1) => {
+    const placeholders = types.map(() => '?').join(',');
+    let query = `
+      SELECT paid_amount, details, type, currency
+      FROM transactions
+      WHERE receiverid = ?
+        AND type IN (${placeholders})
+        AND createdat BETWEEN ? AND ?
+    `;
+    const params = [userid, ...types, dateStart, dateEnd];
+
+    if (requireLockIn === 1) {
+      query += ` AND DATE_ADD(createdat, INTERVAL 30 DAY) ${isDeduct ? '<=' : '>'} ?`;
+      params.push(today);
+    } else if (requireLockIn === 2) {
+      query += ` AND DATE_ADD(createdat, INTERVAL 30 DAY) ${isDeduct ? '>=' : '<'} ?`;
+      params.push(today);
+    }
+
+    const result = await Qry(query, params);
+
+    let totalCommission = 0;
+
+    for (const { paid_amount, details, type, currency } of result) {
+      if (!paid_amount) continue;
+
+      let commission = 0;
+
+      if ((isAfterNAC || (details && coursePlans.includes(details))) || (typef === 3 && isDuringNAC)) {
+        commission = paid_amount * 0.4;
+      } else {
+        const levelBonus = type.includes("Level 1") ? (unilevel?.level1 ?? 0) :
+                           type.includes("Level 2") ? (unilevel?.level2 ?? 0) : 0;
+        commission = (paid_amount * levelBonus) / 100;
+      }
+
+      // Convert commission if needed
+      if (userCurrency !== currency) {
+        commission *= conversionRate;
+      }
+
+      totalCommission += isDeduct ? -commission : commission;
+    }
+
+    return totalCommission;
+  };
+
+  let lastMonthPayout = 0;
+  let currentMonthEarning = 0;
+  let pendingPayment = 0;
+
+  for (const { types, isDeduct } of transactionTypes) {
+    if (isAfterNAC) {
+      if (isJune) {
+        lastMonthPayout = 0;
+      } else {
+        lastMonthPayout += await calculateCommission(types, isDeduct, startOfTwoMonthsAgo, endOfTwoMonthsAgo, false, 1);
+      }
+      currentMonthEarning += await calculateCommission(types, isDeduct, startOfLastMonth, endOfLastMonth, 2, 2);
+      pendingPayment += await calculateCommission(types, isDeduct, startOfLastMonth, today, 1);
+    } else if (isDuringNAC) {
+      lastMonthPayout += await calculateCommission(types, isDeduct, startOfLastMonth, endOfLastMonth, false, 1);
+      currentMonthEarning = 0;
+      pendingPayment += await calculateCommission(types, isDeduct, startOfCurrentMonth, endOfCurrentMonth, false, 3);
+    } else {
+      lastMonthPayout += await calculateCommission(types, isDeduct, startOfLastMonth, endOfLastMonth, false, 1);
+      currentMonthEarning += await calculateCommission(types, isDeduct, startOfCurrentMonth, endOfCurrentMonth, false, 2);
+    }
+  }
+
+  return {
+    lastMonthPayout: +lastMonthPayout.toFixed(2),
+    currentMonthEarning: +currentMonthEarning.toFixed(2),
+    pendingPayment: +pendingPayment.toFixed(2),
+  };
+}
+
 module.exports = {
   checkAuthorization,
   adminAuthorization,
@@ -4197,4 +4337,5 @@ module.exports = {
   newSalesFunction,
   createDefaultTagsAndMessages,
   total_payment_function_afcm_tbl,
+  get_dashboard_affiliate_summary
 };
