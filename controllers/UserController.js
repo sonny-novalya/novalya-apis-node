@@ -10544,7 +10544,10 @@ exports.updateprofilepicture = async (req, res) => {
         });
 
         if (updateResult) {
-          const pictureUrl = `${image_base_url}uploads/userprofile/${filename}`;
+          const pictureUrl = `${req.protocol}://${req.get(
+              "host"
+            )}/uploads/userprofile/${filename}`;
+          // const pictureUrl = `${image_base_url}uploads/userprofile/${filename}`;
           res.status(200).json({
             status: "success",
             message: "Profile picture updated successfully",
