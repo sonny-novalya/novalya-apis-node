@@ -1440,7 +1440,7 @@ exports.updateUserProfile = async (req, res) => {
     if (authUser) {
 
       const updates = [];
-      const date = new Date().toISOString();
+      const date = new Date().toISOString().slice(0, 19).replace('T', ' ');;
       postData.updatedat = date;
 
       for (const [key, value] of Object.entries(postData)) {

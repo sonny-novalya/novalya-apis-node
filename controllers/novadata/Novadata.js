@@ -831,6 +831,36 @@ self.getEndCursorFacebook = async (req, res) => {
   }
 }
 
+self.deleteFbNovaData = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+
+    if (!user_id) {
+      return res.status(400).json({
+        status: "error",
+        message: "User ID is required.",
+      });
+    }
+
+    // Assuming you are using Sequelize or a similar ORM for database operations.
+    const deletedInstaNovaData = await Novadata.destroy({
+      where: { user_id: user_id },
+    });
+
+    const deletedInstaEndCursor = await InstaEndCursor.destroy({
+      where: { user_id: user_id, type: 'FB' },
+    });
+
+    // res.status(200).json({
+    //   status: "success",
+    //   message: "Data deleted successfully."
+    // });
+    return Response.resWith202(res, "Data deleted successfully.");
+  } catch (error) {
+    return Response.resWith422(res, "An error occurred while fetching data.");
+  }
+}
+
 self.syncFbFriends = async (req, res) => {
   try {
     const user_id = req.authUser;
