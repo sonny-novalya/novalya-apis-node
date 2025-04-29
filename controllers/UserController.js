@@ -862,7 +862,7 @@ exports.userdata = async (req, res) => {
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
 
     if (authUser) {
-      const userSelectQuery = `SELECT parent_id, isAlreadyCharge, isAffiliate, sub_type,plan_period,plan_pkg, isChatActive,connection_type, sponsorid, username, randomcode, firstname, lastname, email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin, lastip, referral_side, kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank, novarank, connect_status, birthday_status, crm_status, unfollow_status, outside_bank_account_country, outside_bank_account_title, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,website, outside_bank_account_address, outside_bank_account_city, outside_bank_account_zip_code, outside_bank_account_street, bank_account_address, bank_account_city, bank_account_zip_code, outside_payout_country, payout_country, subscription_status, language, language_status, currency, trial, trial_status, trial_end FROM usersdata WHERE id = ?`;
+      const userSelectQuery = `SELECT parent_id, isAlreadyCharge, sub_type,plan_period,plan_pkg, isChatActive,connection_type, sponsorid, username, randomcode, firstname, lastname, email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin, lastip, referral_side, kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank, novarank, connect_status, birthday_status, crm_status, unfollow_status, outside_bank_account_country, outside_bank_account_title, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,website, outside_bank_account_address, outside_bank_account_city, outside_bank_account_zip_code, outside_bank_account_street, bank_account_address, bank_account_city, bank_account_zip_code, outside_payout_country, payout_country, subscription_status, language, language_status, currency, trial, trial_status, trial_end FROM usersdata WHERE id = ?`;
 
       const userSelectParams = [authUser];
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
@@ -1432,11 +1432,13 @@ exports.lastWeekTransactions = async (req, res) => {
   }
 };
 
-exports.updateProfileData = async (req, res) => {
+exports.updateUserProfile = async (req, res) => {
   const postData = req.body;
   try {
+
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
+
       const updates = [];
       const date = new Date().toISOString();
       postData.updatedat = date;
@@ -1451,7 +1453,7 @@ exports.updateProfileData = async (req, res) => {
       )} WHERE id = '${authUser}'`;
       const updateResult = await Qry(updateQuery);
 
-      const selectUserQuery = "SELECT * FROM usersdata WHERE id = ?";
+      const selectUserQuery = "SELECT username FROM usersdata WHERE id = ?";
       const selectUserResult = await Qry(selectUserQuery, [authUser]);
       const userData = selectUserResult[0];
 
@@ -1460,20 +1462,17 @@ exports.updateProfileData = async (req, res) => {
       });
 
       if (updateResult) {
-        res.status(200).json({
-          status: "success",
-          message: "Profile Data updated successfully",
-        });
+
+        return Response.resWith202(res, "Profile updated successfully");
       } else {
-        res.status(500).json({
-          status: "error",
-          message: "Something went wrong. Please try again later.",
-        });
+
+        return Response.resWith422(res, "Something went wrong. Please try again later.");
       }
-      await emptyArray(updates);
     }
-  } catch (e) {
-    res.status(500).json({ status: "error", message: e });
+  } catch (error) {
+
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
