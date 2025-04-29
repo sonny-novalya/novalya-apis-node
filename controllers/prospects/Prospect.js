@@ -256,7 +256,8 @@ self.getFbBirthdayMember = async (req, res) =>{
       // res.status(200).json({status: 200, data: "No record found"})
       return Response.resWith202(
         res,
-        "No record found"
+        "No record found",
+        []
       );
     }
     
