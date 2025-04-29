@@ -10509,7 +10509,7 @@ exports.cronjobAffiliateCalculation = async (req, res) => {
 
 
 exports.updateprofilepicture = async (req, res) => {
-  const postData = req.body;
+  
   try {
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
