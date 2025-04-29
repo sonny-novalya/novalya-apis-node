@@ -235,5 +235,6 @@ router.post("/upload-image-to-s3-bucket", UserController.uploadImageToS3Bucket);
 router.post("/set-l2-sponsor-id", UserController.setL2SponsorId);
 router.post("/chargeBeeDatta", UserController.chargeBeeDatta);
 router.get("/cronjob_affiliate_calculation", UserController.cronjobAffiliateCalculation);
+router.post("/updateprofilepicture", UserController.updateprofilepicture);
 
 module.exports = router;

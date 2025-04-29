@@ -10506,3 +10506,66 @@ exports.cronjobAffiliateCalculation = async (req, res) => {
     res.status(500).json({ status: "error", message: e });
   }
 };
+
+
+exports.updateprofilepicture = async (req, res) => {
+  const postData = req.body;
+  try {
+    const authUser = await checkAuthorization(req, res);
+    if (authUser) {
+      const uploadDir = path.join(
+        __dirname,
+        "../public/uploads/userprofile/"
+      );
+      const imageParts = req.body.image.split(";base64,");
+      const imageTypeAux = imageParts[0].split("image/");
+      const imageType = imageTypeAux[1];
+      const imageBase64 = Buffer.from(imageParts[1], "base64");
+
+      const filename = `${Date.now()}.png`;
+      const filePath = path.join(uploadDir, filename);
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      try {
+        fs.writeFileSync(filePath, imageBase64);
+        const date = new Date().toISOString().slice(0, 19).replace("T", " ");
+
+        const updateQuery = `UPDATE usersdata SET picture = '${filename}', updatedat = '${date}'  WHERE id = '${authUser}'`;
+        const updateResult = await Qry(updateQuery);
+
+        const selectUserQuery = "SELECT * FROM usersdata WHERE id = ?";
+        const selectUserResult = await Qry(selectUserQuery, [authUser]);
+        const userData = selectUserResult[0];
+
+        logger.info(`User ${userData.username} has update profile picture`, {
+          type: "user",
+        });
+
+        if (updateResult) {
+          const pictureUrl = `${image_base_url}uploads/userprofile/${filename}`;
+          res.status(200).json({
+            status: "success",
+            message: "Profile picture updated successfully",
+            pictureurl: pictureUrl,
+          });
+        } else {
+          res.status(500).json({
+            status: "error",
+            message: "Something went wrong. Please try again later.",
+          });
+        }
+      } catch (error) {
+        res.status(500).json({
+          status: "error",
+          error: error.message,
+          message:
+            "An error occurred while uploading file. Please try again later.",
+        });
+      }
+    }
+  } catch (e) {
+    res.status(500).json({ status: "error", error: e.message, message: e });
+  }
+}
