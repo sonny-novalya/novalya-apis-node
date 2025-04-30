@@ -117,6 +117,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
     try {
 
         const user_id = req.authUser;
+        const {type = null } = req.query;
 
         var facebookProfile = {};
         var instagramProfile = {};
@@ -124,6 +125,18 @@ self.getDashboardSocialAccountData = async (req, res) => {
         facebookProfile = await FacebookProfileFeature.findOne({ where: { user_id }});
 
         instagramProfile = await InstagramProfileFeature.findOne({ where: { user_id } });
+
+        if(type == "extension"){
+            return res.status(200).json({
+                status: "success",
+                data: {
+                    facebook_data: facebookProfile,
+                    instagram_data: instagramProfile
+                },
+                message: "data get successfully.",
+            });
+        }
+        
 
         const startOfMonth = moment().startOf("month").toDate();
         const endOfMonth = moment().endOf("month").toDate();
