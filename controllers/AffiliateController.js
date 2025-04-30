@@ -38,8 +38,8 @@ exports.affiliateKycData = async (req, res) => {
     const kycReject = await Qry(`SELECT * FROM kyc WHERE userid = ? AND status = ? ORDER BY id DESC LIMIT 1`, [auth_user, "Rejected"]);
 
     const payout_info = await Qry(`SELECT * FROM payout_information_request WHERE userid = ? AND status = ? ORDER BY id DESC LIMIT 1`, [auth_user, "Rejected"]);
-
-    return Response.resWith202(res, "success", {'user_data': userData, 'kyc_data': kycReject, 'payout_info': payout_info });
+    
+    return Response.resWith202(res, "success", {'user_data': userData, 'kyc_rejected_data': kycReject, 'payout_info': payout_info });
 
   } catch (error) {
     console.error("Error occurred:", error);  
