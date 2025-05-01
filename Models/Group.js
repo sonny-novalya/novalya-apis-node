@@ -41,6 +41,12 @@ module.exports = (sequelize, DataTypes) => {
         group_type: {
             type: DataTypes.TEXT,
         },
+        grp_social_type: {
+            type: DataTypes.STRING,
+        },
+        grp_folder_ids: {
+            type: DataTypes.TEXT,
+        },
         prospection_type: {
             type: DataTypes.TEXT,
         },
