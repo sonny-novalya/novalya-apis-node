@@ -48,7 +48,12 @@ module.exports = (sequelize, DataTypes) => {
     rgb:{
       type: DataTypes.STRING,
       allowNull: true
-    }
+    },
+    hometown: DataTypes.STRING,
+    birthday: DataTypes.STRING,
+    languages: DataTypes.STRING,
+    locale: DataTypes.STRING,
+    age: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'Novadata',
