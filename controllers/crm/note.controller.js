@@ -65,6 +65,7 @@ const createNote = async (req, res) => {
     let date = Date.now()
     let imageUrl;
 
+    // CODE FOR ASSIGN OR EDIT TAGS FOR FB & IG
     if(type === "facebook" && selected_tag_stage_ids.length > 0){
       const {fb_user_id, fb_alpha_numeric_id, fb_e2ee_id, is_e2ee, fb_name} = req.body
 
@@ -123,6 +124,7 @@ const createNote = async (req, res) => {
         
       })
       await Promise.all(tagsRes);
+      
     }else if(selected_tag_stage_ids.length > 0 && type === "instagram"){
       const {insta_user_id, numeric_insta_id, insta_name, profile_pic, thread_id} = req.body
 
@@ -168,6 +170,7 @@ const createNote = async (req, res) => {
 
     }
     
+    // CODE FOR CREATE OR EDIT NOTES
     let social_user_id = type === "facebook" ? req.body.fb_user_id : req.body.insta_user_id;
 
     let noteWhereClause = {
@@ -197,6 +200,7 @@ const createNote = async (req, res) => {
       noteId = createdNote.id;
     }
 
+    // CODE FOR TO CREATE NOTES HISTORY OR VARIANTS
     if(notes_history.length > 0){
 
       const notesVariant = notes_history.map(async (note) => {
@@ -244,7 +248,6 @@ const createNote = async (req, res) => {
 
 const getUserNote = async (req, res) => {
   try {
-
     
     const user_id = await getAuthUser(req, res);
     const {fb_user_id = null, insta_user_id = null, type = "facebook"} = req.body;
