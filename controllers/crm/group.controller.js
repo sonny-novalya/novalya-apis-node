@@ -11,6 +11,7 @@ const Op = Sequelize.Op;
 const tag = db.tag;
 const campaign = db.campaign;
 const stage = db.stage;
+const taggedusers = db.taggedusers;
 
 
 const placetag = async (req, res) => {
@@ -81,7 +82,7 @@ const getAll = async (req, res) => {
     const user_id = authUser;
     const whereOptions = user_id ? { user_id: user_id } : {};
 
-    const data = await db.tag.findAll({
+    const tags = await db.tag.findAll({
       where: whereOptions,
       include: [
         { model: db.campaign },
@@ -89,7 +90,39 @@ const getAll = async (req, res) => {
       ],
       order: [["order_num", "DESC"]],
     });
-    return Response.resWith202(res, 'success', data);
+
+    // Step 2: Enrich each tag with taggedUser count and stage-level taggedUser count
+    const enrichedTags = await Promise.all(
+      tags.map(async (tag) => {
+        // Count taggedUsers for this tag
+        const taggedUsersCount = await taggedusers.count({
+          where: { tag_id: tag.id },
+        });
+
+        // Add count to each stage
+        const enrichedStages = await Promise.all(
+          (tag.stage || []).map(async (stageItem) => {
+            const taggedUsersStageCount = await taggedusers.count({
+              where: { stage_id: stageItem.id },
+            });
+
+            return {
+              ...stageItem.toJSON(),
+              taggedUsersStageCount,
+            };
+          })
+        );
+
+        return {
+          ...tag.toJSON(),
+          taggedUsersCount,
+          stage: enrichedStages,
+        };
+      })
+    );
+
+
+    return Response.resWith202(res, 'success', enrichedTags);
   } catch (error) {
 
     console.log('error', error);    

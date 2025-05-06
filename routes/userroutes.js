@@ -169,6 +169,7 @@ router
 // note
 router.post("/note/", noteController.placeNote);
 router.post("/create-note", noteController.createNote);
+router.post("/get-user-note", noteController.getUserNote);
 router.post("/get-all-note", noteController.getAll);
 
 router

@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
       Socials: {
         type: DataTypes.TEXT
       },
-      description: {
+      short_description: {
         type: DataTypes.TEXT,
       },
       type: {

@@ -7,6 +7,18 @@ const taggedUser = db.taggedusers;
 const Response = require("../../helpers/response");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 
+note.hasMany(taggedUser, {
+  sourceKey: 'fb_user_id',
+  foreignKey: 'fb_user_id',
+  as: 'taggedUsers' // use an alias
+});
+
+taggedUser.belongsTo(note, {
+  targetKey: 'fb_user_id',
+  foreignKey: 'fb_user_id'
+});
+
+
 const placeNote = async (req, res) => {
   try {
     const data = await note.create(req.body);
@@ -24,13 +36,13 @@ const createNote = async (req, res) => {
       first_name,
       last_name,
       fb_name,
-      email,
-      phone,
-      profession,
+      email = null,
+      phone = null,
+      profession = null,
       profile_pic,
       profile_url,
       short_description,
-      Socials,
+      Socials = null,
       notes_history,
       is_primary,
       selected_tag_stage_ids,
@@ -49,17 +61,17 @@ const createNote = async (req, res) => {
       const tagsRes = selected_tag_stage_ids.map(async (data) => {
         const { tag_id, stage_id } = data;
   
+        // tag_id: tag_id,   add this for multi tagging
+
         let whereClause;
         if (!fb_user_id) {
           whereClause = {
             user_id: user_id,
-            tag_id: tag_id,
             fb_user_e2ee_id: fb_e2ee_id,
           }
         } else if (fb_user_id && fb_e2ee_id) {
           whereClause = {
             user_id: user_id,
-            tag_id: tag_id,
             [Op.or]: [
               { fb_user_e2ee_id: fb_e2ee_id },
               { fb_user_id: fb_user_id }
@@ -68,7 +80,6 @@ const createNote = async (req, res) => {
         } else {
           whereClause = {
             user_id: user_id,
-            tag_id: tag_id,
             fb_user_id: fb_user_id,
           }
         }
@@ -118,7 +129,7 @@ const createNote = async (req, res) => {
       email,
       phone,
       profession,
-      description: short_description,
+      short_description,
       Socials
     }
 
@@ -171,6 +182,37 @@ const createNote = async (req, res) => {
     
   } catch (error) {
     
+    return Response.resWith422(res, error.message);
+  }
+};
+
+const getUserNote = async (req, res) => {
+  try {
+
+    const {fb_user_id} = req.body;
+
+    const user_id = await getAuthUser(req, res);
+
+    const fetchParams = {
+      where: {
+        fb_user_id,
+        user_id: user_id,
+      },
+      include: [{
+        model: taggedUser,
+        as: 'taggedUsers', // use the same alias as above
+        required: false, // true if you want only notes with tagged users
+        where: {
+          user_id // filters only taggedUsers by user_id
+        }
+      }]
+    };
+
+    const data = await note.findAll(fetchParams);
+    return Response.resWith202(res, data);
+  } catch (error) {
+
+    console.log('error', error);    
     return Response.resWith422(res, error.message);
   }
 };
@@ -263,5 +305,6 @@ module.exports = {
   updateOne,
   deleteOne,
   getByUser,
-  createNote
+  createNote,
+  getUserNote
 };
