@@ -1894,6 +1894,31 @@ paths:
       tags:
         - Friends
       summary: Unfriend list
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: Write limit of data (10,20....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: orderBy
+          description: Enter order like ASC, DESC
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: search
+          description: Enter search params
+          required: false
+          schema:
+            type: string
       operationId: getAllUnfriends
         - in: header
           name: Authorization
@@ -1916,6 +1941,31 @@ paths:
       tags:
         - Friends
       summary: Deactivated list
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: Write limit of data (10,20....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: orderBy
+          description: Enter order like ASC, DESC
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: search
+          description: Enter search params
+          required: false
+          schema:
+            type: string
       operationId: getAllDeactivated
         - in: header
           name: Authorization
@@ -1938,6 +1988,31 @@ paths:
       tags:
         - Friends
       summary: All whitelist
+      parameters:
+        - in: query
+          name: page
+          description: page no (eg, 1,2....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: limit of data (eg, 10,20....)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: orderBy
+          description: Write sort order (ASC, DESC)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: search
+          description: Enter search parameter
+          required: false
+          schema:
+            type: string
       operationId: getAllWhitelist
         - in: header
           name: Authorization
@@ -2320,6 +2395,48 @@ paths:
           required: false
           schema:
             type: string
+        - in: query
+          name: search_grp
+          description: Enter group name
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: group_type
+          description: Enter group type
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: type
+          description: Enter type like facebook and instagram
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: field
+          description: Enter field
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sort_by
+          description: Enter sort order 0 or 1
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: page
+          description: Enter page
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: Enter limit
+          required: false
+          schema:
+            type: string
       operationId: getGroupsByFolder
         - in: header
           name: Authorization
@@ -2345,6 +2462,12 @@ paths:
       parameters:
         - in: query
           name: social_type
+          description: Enter Group name like:- (ig_followers)
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: prospect_folder
           description: Enter Group name like:- (ig_followers)
           required: false
           schema:
@@ -2382,6 +2505,64 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/createFolder'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/update-prospect-folder:
+    put:
+      tags:
+        - Groups
+      summary: update prospect Folders
+      operationId: updateFolder
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: update prospect Folders
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateFolder'
+        required: true
+      responses:
+        '200':
+          description: data
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '422':
+          description:  user does not exist
+          content: {}
+      x-codegen-request-body-name: body
+
+  /groups/api/delete-prospect-folder:
+    post:
+      tags:
+        - Groups
+      summary: delete prospect Folders
+      operationId: deleteFolder
+        - in: header
+          name: Authorization
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: delete prospect Folders
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deleteFolder'
         required: true
       responses:
         '200':
@@ -2627,7 +2808,7 @@ paths:
       tags:
         - Facebook-Extension-API
       summary: Update and Get tagged user
-      operationId: getTaggedUser
+      operationId: updateAndGetTaggedUser
         - in: header
           name: Authorization
       security:
@@ -2639,7 +2820,7 @@ paths:
             schema:
               type: object
               items:
-                $ref: '#/components/schemas/getTaggedUser'
+                $ref: '#/components/schemas/updateAndGetTaggedUser'
         required: true
       responses:
         '200':
@@ -5055,6 +5236,42 @@ components:
           type: string
           description: ''
           example: "ig_followers"
+        prospect_folder:
+          type: string
+          description: ''
+          example: "ig_followers"
+
+    updateFolder:
+      type: object
+      properties:
+        folder_name:
+          type: string
+          description: ''
+          example: "insta groups"
+        selectedGroups:
+          type: array
+          description: ''
+          example: ""
+        social_type:
+          type: string
+          description: ''
+          example: "ig_followers"
+        folder_id:
+          type: number
+          description: ''
+          example: 33
+
+    deleteFolder:
+      type: object
+      properties:
+        folder_id:
+          type: number
+          description: ''
+          example: 32
+        selectedGroups:
+          type: array
+          description: ''
+          example: ""
     
     getAllMessages:
       type: object
@@ -5175,7 +5392,14 @@ components:
           type: array
           description: ''
           example: [{"fb_numeric_id":"100083050718808", "image": "data:image/jpeg;base", "name": "Amit Panwar 23", "url": "https://www.facebook.com/techrit.sre", "mutual_friend": 0}]
-
+        end_cursor:
+          type: string
+          description: ''
+          example: "end coursor"
+        status:
+          type: string
+          description: ''
+          example: "status"
       
     syncFbFriendsDetails:
       type: object
@@ -5237,7 +5461,7 @@ components:
           description: ''
           example: 'get'
 
-    getTaggedUser:
+    updateAndGetTaggedUser:
       type: object
       properties:
         type:

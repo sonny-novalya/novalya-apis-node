@@ -35,6 +35,7 @@ db.instagramCampaign = require("./instagramCampaign")(sequelize, DataTypes);
 db.taggedusers = require("./taguser")(sequelize, DataTypes);
 db.instataggedusers = require("./instataggeduser")(sequelize, DataTypes);
 db.note = require("./note")(sequelize, DataTypes);
+db.notesHistory = require("./notesHistory")(sequelize, DataTypes);
 db.stage = require("./stage")(sequelize, DataTypes);
 db.instastage = require("./instastage")(sequelize, DataTypes);
 db.MessageData = require("../MessageData")(sequelize, DataTypes);
