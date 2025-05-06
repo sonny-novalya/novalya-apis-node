@@ -18,6 +18,8 @@ taggedUser.belongsTo(note, {
   foreignKey: 'fb_user_id'
 });
 
+note.hasMany(noteHistory, { foreignKey: 'notes_id', as: 'noteHistories' });
+noteHistory.belongsTo(note, { foreignKey: 'notes_id' });
 
 const placeNote = async (req, res) => {
   try {
@@ -198,14 +200,21 @@ const getUserNote = async (req, res) => {
         fb_user_id,
         user_id: user_id,
       },
-      include: [{
-        model: taggedUser,
-        as: 'taggedUsers', // use the same alias as above
-        required: false, // true if you want only notes with tagged users
-        where: {
-          user_id // filters only taggedUsers by user_id
+      include: [
+        {
+          model: taggedUser,
+          as: 'taggedUsers', // use the same alias as above
+          required: false, // true if you want only notes with tagged users
+          where: {
+            user_id // filters only taggedUsers by user_id
+          }
+        },
+        {
+          model: noteHistory,
+          as: 'noteHistories', // make sure alias matches association
+          required: false,
         }
-      }]
+      ]
     };
 
     const data = await note.findAll(fetchParams);
