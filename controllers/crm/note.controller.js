@@ -4,18 +4,30 @@ const { Op, where } = require("sequelize");
 const note = db.note;
 const noteHistory = db.notesHistory;
 const taggedUser = db.taggedusers;
+const instaTaggedUser = db.instataggedusers;
 const Response = require("../../helpers/response");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 
 note.hasMany(taggedUser, {
-  sourceKey: 'fb_user_id',
+  sourceKey: 'fb_ig_user_id',
   foreignKey: 'fb_user_id',
   as: 'taggedUsers' // use an alias
 });
 
 taggedUser.belongsTo(note, {
-  targetKey: 'fb_user_id',
+  targetKey: 'fb_ig_user_id',
   foreignKey: 'fb_user_id'
+});
+
+note.hasMany(instaTaggedUser, {
+  sourceKey: 'fb_ig_user_id',
+  foreignKey: 'insta_user_id',
+  as: 'taggedUsersInsta' // use an alias
+});
+
+instaTaggedUser.belongsTo(note, {
+  targetKey: 'fb_ig_user_id',
+  foreignKey: 'insta_user_id'
 });
 
 note.hasMany(noteHistory, { foreignKey: 'notes_id', as: 'noteHistories' });
@@ -37,21 +49,15 @@ const createNote = async (req, res) => {
     const {
       first_name,
       last_name,
-      fb_name,
       email = null,
       phone = null,
       profession = null,
       profile_pic,
-      profile_url,
       short_description,
       Socials = null,
       notes_history,
       is_primary,
       selected_tag_stage_ids,
-      fb_user_id,
-      fb_alpha_numeric_id,
-      fb_e2ee_id,
-      is_e2ee,
       type = "facebook"
     } = req.body;
 
@@ -59,7 +65,10 @@ const createNote = async (req, res) => {
     let date = Date.now()
     let imageUrl;
 
-    if(selected_tag_stage_ids.length > 0){
+    // CODE FOR ASSIGN OR EDIT TAGS FOR FB & IG
+    if(type === "facebook" && selected_tag_stage_ids.length > 0){
+      const {fb_user_id, fb_alpha_numeric_id, fb_e2ee_id, is_e2ee, fb_name} = req.body
+
       const tagsRes = selected_tag_stage_ids.map(async (data) => {
         const { tag_id, stage_id } = data;
   
@@ -115,11 +124,58 @@ const createNote = async (req, res) => {
         
       })
       await Promise.all(tagsRes);
+      
+    }else if(selected_tag_stage_ids.length > 0 && type === "instagram"){
+      const {insta_user_id, numeric_insta_id, insta_name, profile_pic, thread_id} = req.body
+
+      const tagsRes = selected_tag_stage_ids.map(async (data) => {
+        const { tag_id, stage_id } = data;
+        
+        // tag_id: tag_id,   add this for multi tagging
+
+        let whereClause = {
+          user_id: user_id,
+          insta_user_id,
+        };
+        
+
+        if(profile_pic) {
+          
+          imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, date);
+        }
+  
+        const existingRecord = await instaTaggedUser.findOne({where:whereClause});
+  
+        const instaTaggedUserData = {
+          tag_id: tag_id,
+          stage_id: stage_id,
+          insta_name: insta_name,
+          is_primary,
+          insta_user_id,
+          profile_pic: imageUrl,
+          insta_image_id: null,
+          numeric_insta_id: numeric_insta_id,
+          thread_id
+        };
+  
+        if (existingRecord) {
+          await instaTaggedUser.update(instaTaggedUserData, { where: whereClause });
+        } else {
+          await instaTaggedUser.create({ ...instaTaggedUserData, user_id });
+        }
+
+        
+      })
+      await Promise.all(tagsRes);
+
     }
+    
+    // CODE FOR CREATE OR EDIT NOTES
+    let social_user_id = type === "facebook" ? req.body.fb_user_id : req.body.insta_user_id;
 
     let noteWhereClause = {
       user_id,
-      fb_user_id
+      fb_ig_user_id: social_user_id
     }
     let noteId = 0;
     
@@ -132,17 +188,19 @@ const createNote = async (req, res) => {
       phone,
       profession,
       short_description,
-      Socials
+      Socials,
+      type
     }
 
     if(existingNotes){
       await note.update(noteData, { where: noteWhereClause });
       noteId = existingNotes?.id;
     }else{
-      const createdNote = await note.create({ ...noteData, user_id, fb_user_id });
+      const createdNote = await note.create({ ...noteData, user_id, fb_ig_user_id :social_user_id });
       noteId = createdNote.id;
     }
 
+    // CODE FOR TO CREATE NOTES HISTORY OR VARIANTS
     if(notes_history.length > 0){
 
       const notesVariant = notes_history.map(async (note) => {
@@ -190,20 +248,22 @@ const createNote = async (req, res) => {
 
 const getUserNote = async (req, res) => {
   try {
-
-    const {fb_user_id} = req.body;
-
+    
     const user_id = await getAuthUser(req, res);
+    const {fb_user_id = null, insta_user_id = null, type = "facebook"} = req.body;
+    const social_user_id = type === "facebook" ? fb_user_id : insta_user_id
+    const taggedUserDb = type === "facebook" ? taggedUser : instaTaggedUser
+    const databaseAlies = type === "facebook" ? "taggedUsers" : "taggedUsersInsta"
 
     const fetchParams = {
       where: {
-        fb_user_id,
+        fb_ig_user_id: social_user_id,
         user_id: user_id,
       },
       include: [
         {
-          model: taggedUser,
-          as: 'taggedUsers', // use the same alias as above
+          model: taggedUserDb,
+          as: databaseAlies, // use the same alias as above
           required: false, // true if you want only notes with tagged users
           where: {
             user_id // filters only taggedUsers by user_id
@@ -218,6 +278,50 @@ const getUserNote = async (req, res) => {
     };
 
     const data = await note.findAll(fetchParams);
+    return Response.resWith202(res, data);
+  } catch (error) {
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
+};
+
+const editUserNote = async (req, res) => {
+  try {
+
+    const user_id = await getAuthUser(req, res);
+
+    if(!user_id){
+      return Response.resWith422(res, "Invalid user");
+    }
+    const {note_id, discription, id} = req.body;
+
+    const dateNow = new Date().toISOString().replace('T', ' ').substring(0, 19)
+
+    const noteData = {
+      description: discription,
+      updatedAt: dateNow
+    }
+
+    const data = await noteHistory.update(noteData, { where: { notes_id: note_id, id } });
+
+    return Response.resWith202(res, data);
+  } catch (error) {
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
+};
+
+const deleteUserNote = async (req, res) => {
+  try {
+
+    const user_id = await getAuthUser(req, res);
+    
+    const {id, note_id} = req.query;
+
+    const data = await noteHistory.destroy({ where: { notes_id: note_id, id } });
+
     return Response.resWith202(res, data);
   } catch (error) {
 
@@ -315,5 +419,7 @@ module.exports = {
   deleteOne,
   getByUser,
   createNote,
-  getUserNote
+  getUserNote,
+  editUserNote,
+  deleteUserNote
 };

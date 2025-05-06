@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      fb_user_id: {
+      fb_ig_user_id: {
         type: DataTypes.STRING,
         allowNull: false,
       },
