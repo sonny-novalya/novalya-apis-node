@@ -6,9 +6,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      fb_ig_user_id: {
-        type: DataTypes.STRING,
-        allowNull: false,
+      fb_user_id: {
+        type: DataTypes.STRING
+      },
+      fb_user_e2ee_id: {
+        type: DataTypes.STRING
+      },
+      insta_user_id: {
+        type: DataTypes.STRING
       },
       first_name: {
         type: DataTypes.STRING
