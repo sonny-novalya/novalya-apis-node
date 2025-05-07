@@ -204,9 +204,9 @@ const createNote = async (req, res) => {
     if(notes_history.length > 0){
 
       const notesVariant = notes_history.map(async (notes) => {
-        const {note_id, discription} = notes
+        const {id, discription} = notes
 
-        if(note_id == 0){
+        if(id == 0){
           const noteRecord = await noteHistory.findOne({
             where: {
               description: discription,
@@ -223,7 +223,7 @@ const createNote = async (req, res) => {
         }else {
           const noteRecord = await noteHistory.findOne({
             where: {
-              id: note_id
+              id: id
             }
           })
   
@@ -234,7 +234,7 @@ const createNote = async (req, res) => {
               updatedAt: dateNow
             }
         
-            await noteHistory.update(noteData, { where: { id: note_id } });
+            await noteHistory.update(noteData, { where: { id: id } });
           }
         }
         
