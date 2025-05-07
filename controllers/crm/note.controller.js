@@ -9,24 +9,35 @@ const Response = require("../../helpers/response");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 
 note.hasMany(taggedUser, {
-  sourceKey: 'fb_ig_user_id',
+  sourceKey: 'fb_user_id',
   foreignKey: 'fb_user_id',
   as: 'taggedUsers' // use an alias
 });
 
+note.hasMany(taggedUser, {
+  sourceKey: 'fb_user_e2ee_id',
+  foreignKey: 'fb_user_e2ee_id',
+  as: 'taggedUsersE2ee' // use an alias
+});
+
 taggedUser.belongsTo(note, {
-  targetKey: 'fb_ig_user_id',
+  targetKey: 'fb_user_id',
   foreignKey: 'fb_user_id'
 });
 
+taggedUser.belongsTo(note, {
+  targetKey: 'fb_user_e2ee_id',
+  foreignKey: 'fb_user_e2ee_id'
+});
+
 note.hasMany(instaTaggedUser, {
-  sourceKey: 'fb_ig_user_id',
+  sourceKey: 'insta_user_id',
   foreignKey: 'insta_user_id',
   as: 'taggedUsersInsta' // use an alias
 });
 
 instaTaggedUser.belongsTo(note, {
-  targetKey: 'fb_ig_user_id',
+  targetKey: 'insta_user_id',
   foreignKey: 'insta_user_id'
 });
 
@@ -58,12 +69,16 @@ const createNote = async (req, res) => {
       notes_history,
       is_primary,
       selected_tag_stage_ids,
+      fb_user_id = null,
+      fb_e2ee_id = null,
+      insta_user_id = null,
       type = "facebook"
     } = req.body;
 
     let folderName = "notes";
     let date = Date.now()
     let imageUrl;
+    let whereClause;
 
     // CODE FOR ASSIGN OR EDIT TAGS FOR FB & IG
     if(type === "facebook" && selected_tag_stage_ids.length > 0){
@@ -74,7 +89,7 @@ const createNote = async (req, res) => {
   
         // tag_id: tag_id,   add this for multi tagging
 
-        let whereClause;
+        
         if (!fb_user_id) {
           whereClause = {
             user_id: user_id,
@@ -171,12 +186,18 @@ const createNote = async (req, res) => {
     }
     
     // CODE FOR CREATE OR EDIT NOTES
-    let social_user_id = type === "facebook" ? req.body.fb_user_id : req.body.insta_user_id;
+    // let social_user_id = type === "facebook" ? req.body.fb_user_id : req.body.insta_user_id;
 
-    let noteWhereClause = {
-      user_id,
-      fb_ig_user_id: social_user_id
+    let noteWhereClause ;
+    if(type === "facebook"){
+      noteWhereClause = whereClause
+    }else{
+      noteWhereClause = {
+        user_id,
+        insta_user_id: insta_user_id
+      }
     }
+  
     let noteId = 0;
     
     const existingNotes = await note.findOne({where: noteWhereClause});
@@ -189,6 +210,9 @@ const createNote = async (req, res) => {
       profession,
       short_description,
       Socials,
+      fb_user_id: fb_user_id || null,
+      fb_user_e2ee_id: fb_e2ee_id || null,
+      insta_user_id : insta_user_id || null,
       type
     }
 
@@ -196,7 +220,7 @@ const createNote = async (req, res) => {
       await note.update(noteData, { where: noteWhereClause });
       noteId = existingNotes?.id;
     }else{
-      const createdNote = await note.create({ ...noteData, user_id, fb_ig_user_id :social_user_id });
+      const createdNote = await note.create({ ...noteData, user_id });
       noteId = createdNote.id;
     }
 
@@ -240,20 +264,6 @@ const createNote = async (req, res) => {
         
       });
       await Promise.all(notesVariant);
-      ////// BELOW IS THE 2ND OPTION TO CREATE NOTES /////////
-
-      // const notesVariant = notes_history.map((note) => ({
-      //   description: note,
-      //   notes_id: noteId,
-      // }));
-
-      // noteAllData = await noteHistory.destroy({
-      //   where: {
-      //     notes_id: noteId,
-      //   }
-      // });
-
-      // await noteHistory.bulkCreate(notesVariant);
       
     }
     
@@ -271,35 +281,127 @@ const getUserNote = async (req, res) => {
   try {
     
     const user_id = await getAuthUser(req, res);
-    const {fb_user_id = null, insta_user_id = null, type = "facebook"} = req.body;
-    const social_user_id = type === "facebook" ? fb_user_id : insta_user_id
-    const taggedUserDb = type === "facebook" ? taggedUser : instaTaggedUser
-    const databaseAlies = type === "facebook" ? "taggedUsers" : "taggedUsersInsta"
+    const {fb_user_id = null, fb_e2ee_id = null, insta_user_id = null, type = "facebook"} = req.body;
 
-    const fetchParams = {
-      where: {
-        fb_ig_user_id: social_user_id,
-        user_id: user_id,
-      },
-      include: [
-        {
-          model: taggedUserDb,
-          as: databaseAlies, // use the same alias as above
-          required: false, // true if you want only notes with tagged users
-          where: {
-            user_id // filters only taggedUsers by user_id
+    const include = [
+      {
+        model: noteHistory,
+        as: 'noteHistories',
+        required: false
+      }
+    ];
+    
+    let whereClause;
+    
+    if (type === "facebook") {
+      if (fb_user_id && fb_e2ee_id) {
+        whereClause = {
+          user_id: user_id,
+          [Op.or]: [
+            { fb_user_id },
+            { fb_user_e2ee_id: fb_e2ee_id }
+          ]
+        };
+    
+        include.push(
+          {
+            model: taggedUser,
+            as: "taggedUsers",
+            required: false,
+            where: {
+              user_id,
+              fb_user_id
+            }
+          },
+          {
+            model: taggedUser,
+            as: "taggedUsersE2ee",
+            required: false,
+            where: {
+              user_id,
+              fb_user_e2ee_id: fb_e2ee_id
+            }
           }
-        },
-        {
-          model: noteHistory,
-          as: 'noteHistories', // make sure alias matches association
+        );
+    
+      } else if (fb_user_id) {
+        whereClause = {
+          user_id,
+          fb_user_id
+        };
+    
+        include.push({
+          model: taggedUser,
+          as: "taggedUsers",
           required: false,
+          where: {
+            user_id,
+            fb_user_id
+          }
+        });
+    
+      } else if (fb_e2ee_id) {
+        whereClause = {
+          user_id,
+          fb_user_e2ee_id: fb_e2ee_id
+        };
+    
+        include.push({
+          model: taggedUser,
+          as: "taggedUsersE2ee",
+          required: false,
+          where: {
+            user_id,
+            fb_user_e2ee_id: fb_e2ee_id
+          }
+        });
+      }
+    } else {
+      whereClause = {
+        user_id,
+        insta_user_id
+      };
+    
+      include.push({
+        model: instaTaggedUser,
+        as: "taggedUsersInsta",
+        required: false,
+        where: {
+          user_id,
+          insta_user_id
         }
-      ]
+      });
+    }
+    
+    const fetchParams = {
+      where: whereClause,
+      include
     };
 
     const data = await note.findAll(fetchParams);
-    return Response.resWith202(res, "Opration completed" ,data);
+
+    if (!data || data.length === 0 || !data[0]) {
+      return Response.resWith202(res, "Opration completed", []);
+    }
+
+    const noteData = JSON.parse(JSON.stringify(data[0])); // deep clone to break Sequelize reference issues
+
+    let finalTaggedUsers = [];
+
+    if (Array.isArray(noteData.taggedUsers) && noteData.taggedUsers.length > 0) {
+      finalTaggedUsers = noteData.taggedUsers;
+    } else if (Array.isArray(noteData.taggedUsersE2ee) && noteData.taggedUsersE2ee.length > 0) {
+      finalTaggedUsers = noteData.taggedUsersE2ee;
+    }
+
+    // Clean up the object
+    delete noteData.taggedUsers;
+    delete noteData.taggedUsersE2ee;
+
+    // Add final key
+    noteData.taggedUsers = finalTaggedUsers;
+
+    return Response.resWith202(res, "Opration completed" ,[noteData]);
   } catch (error) {
 
     console.log('error', error);    
