@@ -203,20 +203,41 @@ const createNote = async (req, res) => {
     // CODE FOR TO CREATE NOTES HISTORY OR VARIANTS
     if(notes_history.length > 0){
 
-      const notesVariant = notes_history.map(async (note) => {
-        const noteRecord = await noteHistory.findOne({
-          where: {
-            description: note,
-            notes_id: noteId
-          }
-        })
+      const notesVariant = notes_history.map(async (notes) => {
+        const {note_id, discription} = notes
 
-        if(!noteRecord){
-          await noteHistory.create({
-            description: note,
-            notes_id: noteId
-          });
+        if(note_id == 0){
+          const noteRecord = await noteHistory.findOne({
+            where: {
+              description: discription,
+              notes_id: noteId
+            }
+          })
+  
+          if(!noteRecord){
+            await noteHistory.create({
+              description: discription,
+              notes_id: noteId
+            });
+          }
+        }else {
+          const noteRecord = await noteHistory.findOne({
+            where: {
+              id: note_id
+            }
+          })
+  
+          if(noteRecord){
+            const dateNow = new Date().toISOString().replace('T', ' ').substring(0, 19)
+            const noteData = {
+              description: discription,
+              updatedAt: dateNow
+            }
+        
+            await noteHistory.update(noteData, { where: { id: note_id } });
+          }
         }
+        
       });
       await Promise.all(notesVariant);
       ////// BELOW IS THE 2ND OPTION TO CREATE NOTES /////////
@@ -278,7 +299,7 @@ const getUserNote = async (req, res) => {
     };
 
     const data = await note.findAll(fetchParams);
-    return Response.resWith202(res, data);
+    return Response.resWith202(res, "Opration completed" ,data);
   } catch (error) {
 
     console.log('error', error);    
