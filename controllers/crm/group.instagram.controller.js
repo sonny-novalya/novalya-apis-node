@@ -79,7 +79,7 @@ const getAll = async (req, res) => {
     const user_id = authUser;
     const whereOptions = user_id ? { user_id: user_id } : {};
 
-    const data = await tag.findAll({
+    const tags = await tag.findAll({
       where: whereOptions,
       include: [
         { model: campaign },
@@ -87,11 +87,40 @@ const getAll = async (req, res) => {
       ],
       order: [["order_num", "DESC"]],
     });
+
+    const enrichedTags = await Promise.all(
+      tags.map(async (tag) => {
+        // Count taggedUsers for this tag
+        const usersTagsCount = await taggedusers.count({
+          where: { tag_id: tag.id },
+        });
+
+        // Add count to each stage
+        const enrichedStages = await Promise.all(
+          (tag.stage || []).map(async (stageItem) => {
+            const usersStageCount = await taggedusers.count({
+              where: { stage_id: stageItem.id },
+            });
+
+            return {
+              ...stageItem.toJSON(),
+              usersStageCount,
+            };
+          })
+        );
+
+        return {
+          ...tag.toJSON(),
+          usersTagsCount,
+          stage: enrichedStages,
+        };
+      })
+    );
     
     return Response.resWith202(
       res,
       "Opration completed",
-      data
+      enrichedTags
     );
   } catch (error) {
     return Response.resWith422(res, error.message);

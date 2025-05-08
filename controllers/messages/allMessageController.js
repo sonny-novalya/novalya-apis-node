@@ -283,6 +283,81 @@ exports.getAllMessages = async (req, res) => {
 };
 
 
+exports.getAllMessagesOnly = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { visibility_type, page, limit, search } = req.body;
+
+    const categoryInfo = await Category.findOne({
+      where: { user_id, name: "My message" }
+    });
+
+    let messages = [];
+    if (categoryInfo) {
+      let whereClause = {
+        user_id,
+        category_id: categoryInfo.id
+      };
+
+      // [Op.contains]: [type]
+      if (visibility_type) {
+        const visibilityTypes = JSON.parse(visibility_type);
+        whereClause.visibility_type = {
+          [Op.or]: visibilityTypes.map(type => ({
+            [Op.like]: `%${type}%`
+          }))
+        };
+      }
+
+      const queryOptions = {
+        where: whereClause,
+        include: [
+          {
+            model: db.Category,
+            as: "category",
+          }
+        ],
+        distinct: true
+      };
+
+      if (limit && page) {
+        const limitNumber = parseInt(limit);
+        const pageNumber = parseInt(page);
+        const offset = (pageNumber - 1) * limitNumber;
+
+        queryOptions.limit = limitNumber;
+        queryOptions.offset = offset;
+      }
+
+      messages = await Message.findAll(queryOptions);
+    }
+
+    return res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error.message);
+    return res.status(500).json({ error:  "Failed to fetch messages"});
+  }
+};
+
+exports.getMessageVariantData = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { message_id } = req.body;
+
+    var variant_data = [];
+    var variant_data = await MessageVariant.findAll({
+      where: { "message_id": message_id }
+    });
+
+    return res.status(200).json(variant_data);
+  } catch (error) {
+    
+    console.error("Error fetching messages:", error);
+    return res.status(500).json({ error: "Failed to fetch messages" });
+  }
+};
+
+
 exports.getTemplateMessages = async (req, res) => {
   try {
     const user_id = req.authUser;
