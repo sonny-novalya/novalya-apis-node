@@ -12,6 +12,10 @@ const routes = [
     { method: 'delete', path: '/delete-categories/:id', handler: messageController.deleteCategories },
     { method: 'get', path: '/messages', handler: messageController.getAllMessages },
     { method: 'post', path: '/messages', handler: messageController.getAllMessages },
+
+    { method: 'post', path: '/get-all-messages', handler: messageController.getAllMessagesOnly },
+    { method: 'post', path: '/get-variant-data', handler: messageController.getMessageVariantData },
+
     { method: 'post', path: '/create-messages', handler: messageController.createMessages },
     { method: 'post', path: '/update-messages/:id', handler: messageController.updateMessage },
     { method: 'delete', path: '/delete-messages/:id', handler: messageController.deleteMessage },
