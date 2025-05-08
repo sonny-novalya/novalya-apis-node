@@ -228,19 +228,19 @@ const createNote = async (req, res) => {
     if(notes_history.length > 0){
 
       const notesVariant = notes_history.map(async (notes) => {
-        const {id, discription} = notes
+        const {id, description} = notes
 
         if(id == 0){
           const noteRecord = await noteHistory.findOne({
             where: {
-              description: discription,
+              description: description,
               notes_id: noteId
             }
           })
   
-          if(!noteRecord){
+          if(!noteRecord && description){
             await noteHistory.create({
-              description: discription,
+              description: description,
               notes_id: noteId
             });
           }
@@ -251,10 +251,10 @@ const createNote = async (req, res) => {
             }
           })
   
-          if(noteRecord){
+          if(noteRecord && description){
             const dateNow = new Date().toISOString().replace('T', ' ').substring(0, 19)
             const noteData = {
-              description: discription,
+              description: description,
               updatedAt: dateNow
             }
         
@@ -378,7 +378,22 @@ const getUserNote = async (req, res) => {
       include
     };
 
-    const data = await note.findAll(fetchParams);
+    let data = await note.findAll(fetchParams);
+    // const taggedUsers = await taggedUser.findAll(fetchParams);
+
+    if(data.length == 0){
+      if (type === "facebook") {
+        data = await taggedUser.findAll({
+          where: whereClause
+        });
+      }else{
+        data = await instaTaggedUser.findAll({
+          where: whereClause
+        }); 
+      }
+    }
+
+    // return Response.resWith202(res, "Opration completed" ,data);
 
     if (!data || data.length === 0 || !data[0]) {
       return Response.resWith202(res, "Opration completed", []);
@@ -417,12 +432,12 @@ const editUserNote = async (req, res) => {
     if(!user_id){
       return Response.resWith422(res, "Invalid user");
     }
-    const {note_id, discription, id} = req.body;
+    const {note_id, description, id} = req.body;
 
     const dateNow = new Date().toISOString().replace('T', ' ').substring(0, 19)
 
     const noteData = {
-      description: discription,
+      description: description,
       updatedAt: dateNow
     }
 
@@ -436,7 +451,7 @@ const editUserNote = async (req, res) => {
   }
 };
 
-const deleteUserNote = async (req, res) => {
+const deleteUserNoteVariants = async (req, res) => {
   try {
 
     const user_id = await getAuthUser(req, res);
@@ -445,7 +460,24 @@ const deleteUserNote = async (req, res) => {
 
     const data = await noteHistory.destroy({ where: { notes_id: note_id, id } });
 
-    return Response.resWith202(res, data);
+    return Response.resWith202(res, "opration completed", data);
+  } catch (error) {
+
+    console.log('error', error);    
+    return Response.resWith422(res, error.message);
+  }
+};
+
+const deleteNote = async (req, res) => {
+  try {
+
+    const user_id = await getAuthUser(req, res);
+    
+    const {id} = req.query;
+
+    const data = await note.destroy({ where: { id } });
+
+    return Response.resWith202(res, "opration completed",data);
   } catch (error) {
 
     console.log('error', error);    
@@ -544,5 +576,6 @@ module.exports = {
   createNote,
   getUserNote,
   editUserNote,
-  deleteUserNote
+  deleteUserNoteVariants,
+  deleteNote
 };

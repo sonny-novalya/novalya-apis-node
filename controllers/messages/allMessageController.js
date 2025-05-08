@@ -12,6 +12,7 @@ const Response = require("../../helpers/response");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 
 
+
 exports.getAllCategories = async (req, res) => {
   try {
     const user_id = req.authUser;
@@ -286,56 +287,67 @@ exports.getAllMessages = async (req, res) => {
 exports.getAllMessagesOnly = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { visibility_type, page, limit, search } = req.body;
+    const { visibility_type, page = 1, limit = 10, search, sort_by = "id", sort_order = "DESC" } = req.body;
+
+    const offset = (page - 1) * limit;
 
     const categoryInfo = await Category.findOne({
       where: { user_id, name: "My message" }
     });
 
-    let messages = [];
-    if (categoryInfo) {
-      let whereClause = {
-        user_id,
-        category_id: categoryInfo.id
-      };
-
-      // [Op.contains]: [type]
-      if (visibility_type) {
-        const visibilityTypes = JSON.parse(visibility_type);
-        whereClause.visibility_type = {
-          [Op.or]: visibilityTypes.map(type => ({
-            [Op.like]: `%${type}%`
-          }))
-        };
-      }
-
-      const queryOptions = {
-        where: whereClause,
-        include: [
-          {
-            model: db.Category,
-            as: "category",
-          }
-        ],
-        distinct: true
-      };
-
-      if (limit && page) {
-        const limitNumber = parseInt(limit);
-        const pageNumber = parseInt(page);
-        const offset = (pageNumber - 1) * limitNumber;
-
-        queryOptions.limit = limitNumber;
-        queryOptions.offset = offset;
-      }
-
-      messages = await Message.findAll(queryOptions);
+    if (!categoryInfo) {
+      return Response.resWith202(res, { messages: [], total: 0, page, limit });
     }
 
-    return res.status(200).json(messages);
+    let whereClause = {
+      user_id,
+      category_id: categoryInfo.id
+    };
+
+    // Search condition
+    if (search) {
+      whereClause.title = { [Op.like]: `%${search}%` }; 
+    }
+
+    // Handle visibility_type
+    if (visibility_type) {
+      const visibilityTypes = Array.isArray(visibility_type) ? visibility_type : [visibility_type]; 
+    
+      const conditions = visibilityTypes.map(type => `JSON_CONTAINS(visibility_type, ${sequelize.escape(`"${type}"`)})`).join(' OR ');
+    
+      whereClause.visibility_type = sequelize.literal(`(${conditions})`);
+    }
+
+    // Validate and apply sorting
+    const validSortFields = ["title", "id"];
+    const validSortOrders = ["ASC", "DESC"];
+    const orderBy = validSortFields.includes(sort_by) ? sort_by : "id";
+    const orderDirection = validSortOrders.includes(sort_order.toUpperCase()) ? sort_order.toUpperCase() : "DESC";
+
+
+    const { rows: messages, count: total } = await Message.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: db.Category,
+          as: "category",
+        }
+      ],
+      order: [[orderBy, orderDirection]],
+      limit,
+      offset,
+      distinct: true,
+    });
+
+    return Response.resWith202(res, "opration completed", {
+      messages,
+      total,
+      page,
+      limit
+    });
   } catch (error) {
-    console.error("Error fetching messages:", error.message);
-    return res.status(500).json({ error:  "Failed to fetch messages"});
+    console.error("try-catch-error:", error);
+    return Response.resWith422(res, error.message);
   }
 };
 
@@ -349,11 +361,11 @@ exports.getMessageVariantData = async (req, res) => {
       where: { "message_id": message_id }
     });
 
-    return res.status(200).json(variant_data);
+    return Response.resWith202(res, "opration completed", variant_data)
   } catch (error) {
     
     console.error("Error fetching messages:", error);
-    return res.status(500).json({ error: "Failed to fetch messages" });
+    return Response.resWith422(res, "Failed to fetch messages");
   }
 };
 
@@ -453,6 +465,81 @@ exports.getTemplateMessagesData = async (req, res) => {
   } catch (error) {
     console.error("try-catch-error:", error);
     return Response.resWith422(res, error.message);
+  }
+};
+
+
+exports.getNewTemplateMessagesData = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const user_id_new = 0;
+
+    const categoryInfo = await CategoryTemplate.findAll({
+      where: { user_id: user_id_new },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    // console.log("categoryInfo--336:", categoryInfo);
+    
+    const categoryIds = categoryInfo.map(cat => cat.id);
+    // console.log("categoryIds--336:", categoryIds);
+
+    if (!categoryIds.length) {
+      return Response.resWith202(res, []);
+    }
+
+    const messages = await MessageTemplate.findAll({
+      where: {
+        user_id: user_id_new,
+        category_id: { [Op.in]: categoryIds }
+      },
+      include: [
+        {
+          model: db.CategoryTemplate,
+          as: "category",
+          attributes: ['id', 'name'], 
+        }
+      ],
+    });
+
+    const results = [];
+
+    for (const msg of messages) {
+      const favorite = await TemplateFavorite.findOne({
+        where: {
+          user_id: user_id,
+          template_id: msg.id,
+          favorite: 1,
+        },
+      });
+
+      msg.favorite = (favorite) ? true : false;
+    }
+
+    return Response.resWith202(res, messages);
+
+  } catch (error) {
+    console.error("try-catch-error:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
+exports.getNewTemplatesVariants = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { message_template_id } = req.body;
+
+    var variant_data = [];
+    var variant_data = await MessageVariantTemplate.findAll({
+      where: { "message_id": message_template_id }
+    });
+
+    return Response.resWith202(res, "opration completed", variant_data)
+  } catch (error) {
+    
+    console.error("Error fetching messages:", error);
+    return Response.resWith422(res, "Failed to fetch messages");
   }
 };
 

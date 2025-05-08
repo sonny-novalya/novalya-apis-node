@@ -15,6 +15,8 @@ const routes = [
 
     { method: 'post', path: '/get-all-messages', handler: messageController.getAllMessagesOnly },
     { method: 'post', path: '/get-variant-data', handler: messageController.getMessageVariantData },
+    { method: "post", path: "/get-new-templates-data", handler: messageController.getNewTemplateMessagesData},
+    { method: "post", path: "/get-new-templates-variants", handler: messageController.getNewTemplatesVariants},
 
     { method: 'post', path: '/create-messages', handler: messageController.createMessages },
     { method: 'post', path: '/update-messages/:id', handler: messageController.updateMessage },

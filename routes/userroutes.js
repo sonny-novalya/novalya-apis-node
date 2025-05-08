@@ -170,7 +170,8 @@ router
 router.post("/note/", noteController.placeNote);
 router.post("/create-note", noteController.createNote);
 router.post("/edit-user-note", noteController.editUserNote);
-router.post("/delete-user-note", noteController.deleteUserNote);
+router.post("/delete-user-note-variants", noteController.deleteUserNoteVariants);
+router.post("/delete-note", noteController.deleteNote);
 router.post("/get-user-note", noteController.getUserNote);
 router.post("/get-all-note", noteController.getAll);
 
