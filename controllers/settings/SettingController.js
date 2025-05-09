@@ -1,11 +1,13 @@
+const crypto = require("crypto");
 const { MessageData, Section, Sequelize} = require("../../Models");
 const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
 const Response = require("../../helpers/response");
 const { checkAuthorization, Qry } = require("../../helpers/functions");
+require("dotenv").config();
 
-self.getEnckeys = async (req, res) => {
+self.getEnckeysOld = async (req, res) => {
   try {
     const key = "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"; // Original key
     const bravoEncodedKey = Buffer.from(key).toString("base64"); // Base64 encode
@@ -17,6 +19,27 @@ self.getEnckeys = async (req, res) => {
     return Response.resWith422(res, "something went wrong");
   }
 };
+
+self.getEnckeys = async (req, res) => {
+  try {
+    const apiKey = process.env.BRAVO_KEY;
+    const secretKey = process.env.ENCRYPT_SECRET_KEY; // Must be 32 bytes (256 bits) for AES-256
+    const iv = crypto.randomBytes(16); // 16 bytes IV
+
+    const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(secretKey, 'hex'), iv);
+    let encrypted = cipher.update(apiKey, "utf8", "base64");
+    encrypted += cipher.final("base64");
+
+    return Response.resWith202(res, "success", {
+      key: encrypted,
+      iv: iv.toString("base64") // Send IV to frontend
+    });
+  } catch (error) {
+    console.error("Encryption error:", error);
+    return Response.resWith422(res, "something went wrong");
+  }
+};
+
 
 // UTM Data POST API
 self.saveUtmData = async (req, res) => {
