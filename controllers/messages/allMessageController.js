@@ -528,11 +528,11 @@ exports.getNewTemplateMessagesData = async (req, res) => {
 exports.getNewTemplatesVariants = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { message_template_id } = req.body;
+    const { template_id } = req.body;
 
     var variant_data = [];
     var variant_data = await MessageVariantTemplate.findAll({
-      where: { "message_id": message_template_id }
+      where: { "message_id": template_id }
     });
 
     return Response.resWith202(res, "opration completed", variant_data)
