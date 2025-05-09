@@ -30,10 +30,13 @@ module.exports = (sequelize, DataTypes) => {
       profession: {
         type: DataTypes.STRING
       },
-      Socials: {
+      socials: {
         type: DataTypes.TEXT
       },
       short_description: {
+        type: DataTypes.TEXT,
+      },
+      description: {
         type: DataTypes.TEXT,
       },
       type: {
