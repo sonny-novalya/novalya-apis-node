@@ -168,13 +168,12 @@ router
   .delete("/section/:id", sectionController.deleteOne);
 
 // note
-router.post("/note/", noteController.placeNote);
-router.post("/create-note", noteController.createNote);
-router.post("/edit-user-note", noteController.editUserNote);
-router.post("/delete-user-note-variants", noteController.deleteUserNoteVariants);
+router.post("/note/", noteController.placeNote); // old code of notes
+router.post("/create-note", noteController.createFbNote);
+router.post("/create-insta-note", noteController.createInstaNote);
 router.post("/delete-note", noteController.deleteNote);
 router.post("/get-user-note", noteController.getUserNote);
-router.post("/get-all-note", noteController.getAll);
+router.post("/get-all-note", noteController.getAll); // old code of notes
 
 router
   .get("/note/:id", noteController.getOne)
