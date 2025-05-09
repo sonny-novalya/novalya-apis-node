@@ -3,7 +3,7 @@ const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
 const Response = require("../../helpers/response");
-
+const { checkAuthorization, Qry } = require("../../helpers/functions");
 
 self.getEnckeys = async (req, res) => {
   try {
