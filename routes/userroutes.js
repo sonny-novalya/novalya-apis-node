@@ -246,6 +246,7 @@ router.post("/updateprofilepicture", UserController.updateprofilepicture);
 
 router.post("/get-enc-keys", SettingController.getEnckeys);
 router.post("/save-utm-data", SettingController.saveUtmData);
+router.post("/update-capture-page", SettingController.updateCapturePage);
 
 
 module.exports = router;

@@ -58,5 +58,50 @@ self.saveUtmData = async (req, res) => {
   }
 };
 
+self.updateCapturePage = async (req, res) => {
+  try {
+    const { email, first_name, last_name, plan, plan_period, sponsor, country, plan_id } = req.body;
+
+    if (!email || !first_name) {
+      return Response.resWith422(res, "Email and First Name are required");
+    }
+
+    const emailExists = await Qry(`SELECT 1 FROM usersdata WHERE email = ? LIMIT 1`, [email]);
+
+    if (emailExists.length > 0) {
+      
+      return Response.resWith422(res, "Email already exists");
+    }
+
+    //Check if user already exists in capture_page_data
+    const captureData = await Qry(`SELECT sponsor FROM capture_page_data WHERE email = ? AND first_name = ? LIMIT 1`, [email, first_name]);
+
+    if (captureData.length > 0) {
+      const sponsorCode = sponsor === "NOVALYA" ? captureData[0].sponsor : sponsor;
+
+      await Qry(
+        `UPDATE capture_page_data 
+         SET sponsor = ?, plan_id = ?, plan = ?, plan_period = ? 
+         WHERE email = ? AND first_name = ?`,
+        [sponsorCode, plan_id, plan, plan_period, email, first_name]
+      );
+
+      return Response.resWith202(res, "success");
+    }
+
+    //Insert new record
+    await Qry(
+      `INSERT INTO capture_page_data (first_name, last_name, email, sponsor, plan_id, plan, plan_period, country) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [first_name, last_name, email, sponsor, plan_id, plan, plan_period, country]
+    );
+
+    return Response.resWith202(res, "success");
+  } catch (error) {
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
+  }
+};
+
 
 module.exports = self;
