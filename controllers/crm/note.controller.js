@@ -168,6 +168,7 @@ const createFbNote = async (req, res) => {
       }
     }else{ // create user notes
       postData.user_id = user_id
+      postData.createdAt = date;
       const columns = []
       const values = []
       for (const [key, value] of Object.entries(postData)) {
