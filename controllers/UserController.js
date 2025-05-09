@@ -377,6 +377,7 @@ exports.defaultTagAndMessage = async (req, res) => {
 };
 
 exports.register = async (req, res) => {
+
   const randomCode = randomToken(10);
   const emailToken = randomToken(90);
   const postData = req.body;
@@ -411,10 +412,7 @@ exports.register = async (req, res) => {
     salt: salt, // Pass the generated salt
   };
   const hashedPassword = bcrypt.hashSync(password, options.cost);
-  const encryptedPassword = crypto.AES.encrypt(
-    hashedPassword,
-    encryptionKey
-  ).toString();
+  const encryptedPassword = crypto.AES.encrypt(hashedPassword, encryptionKey).toString();
 
   try {
     const selectUsernameQuery = `SELECT * FROM usersdata WHERE email = ?`;
@@ -426,32 +424,21 @@ exports.register = async (req, res) => {
 
       if ((existingUserWebsite == null || existingUserWebsite == '') && domain == 'app') {
 
-        return res.json({
-          status: "error",
-          message: "The username you entered is already taken",
-        });
+        return Response.resWith422(res, "The username you entered is already taken");
       }
 
       if (existingUserWebsite != null && existingUserWebsite == domain) {
 
-        return res.json({
-          status: "error",
-          message: "The username you entered is already taken as a reseller user",
-        });
+        return Response.resWith422(res, "The username you entered is already taken as a reseller user");
       }
     }
 
     if (selectUsernameResult.length > 0) {
-      return res.json({
-        status: "error",
-        message: "The email you entered is already taken",
-      });
+      return Response.resWith422(res, "The email you entered is already taken");
     }
 
     const selectParentUserDetails = `SELECT * FROM usersdata WHERE website = ?`;
-    const selectParentUserDetailsResult = await Qry(selectParentUserDetails, [
-      domain,
-    ]);
+    const selectParentUserDetailsResult = await Qry(selectParentUserDetails, [domain]);
 
     var parent_id = 0;
     let reseller_website = "";
@@ -477,37 +464,20 @@ exports.register = async (req, res) => {
     if (selectEmailResult.length > 0) {
       var existingUserWebsiteForEmail = selectEmailResult[0].website;
 
-      if ((existingUserWebsiteForEmail == null || existingUserWebsiteForEmail == "") &&
-        domain == "app"
-      ) {
-        return res.json({
-          status: "error",
-          message: "An account with this email address already exists",
-        });
+      if ((existingUserWebsiteForEmail == null || existingUserWebsiteForEmail == "") && domain == "app") {
+        return Response.resWith422(res, "An account with this email address already exists");
       }
 
       if (existingUserWebsiteForEmail != null && existingUserWebsiteForEmail == domain) {
-        return res.json({
-          status: "error",
-          message:
-            "An account with this email address already exists as a reseller user",
-        });
+        return Response.resWith422(res, "An account with this email address already exists as a reseller user");
       }
     }
 
     const selectSponsorQuery = `SELECT * FROM usersdata WHERE randomcode = ?`;
     const selectSponsorResult = await Qry(selectSponsorQuery, [sponsorid]);
 
-    if (
-      !sponsorid ||
-      !selectSponsorResult ||
-      selectSponsorResult.length === 0
-    ) {
-      res.json({
-        status: "error",
-        message: "Invalid sponsor name",
-      });
-      return;
+    if (!sponsorid || !selectSponsorResult || selectSponsorResult.length === 0 ) {
+      return Response.resWith422(res, "Invalid sponsor name");
     }
 
     const createSubscription = () => {
@@ -529,24 +499,11 @@ exports.register = async (req, res) => {
               company: company,
               cf_sponsor_email: selectSponsorResult[0].email,
               cf_sponsor_username: selectSponsorResult[0].username,
-              // cf_cguv_accepted: "True",
               cf_username: username,
-              // cf_date_of_birth: birthday,
               cf_random_code: randomCode,
               cf_sponsor_random_code: sponsorid,
               cf_email_token: emailToken,
-              // cf_first_name: firstname,
-              // cf_last_name: lastname,
-              // cf_email: email,
-              // cf_mobile: mobile,
-              // cf_address1: address1,
-              // cf_password: password,
-              // cf_country: country,
               cf_language: language,
-              // cf_company: company,
-              // cf_zip_code: zip_code,
-              // cf_city: city,
-              // cf_birthday: birthday,
               cf_cf_parent_id: parent_id ? parent_id : 0,
               cf_reseller_website: reseller_website,
             },
@@ -561,8 +518,7 @@ exports.register = async (req, res) => {
               phone: mobile,
               company: company,
             },
-            redirect_url: reseller_website
-              ? reseler_weblink
+            redirect_url: reseller_website ? reseler_weblink
               : weblink + "registration-complete?planId=" + item_price_id,
             cancel_url: reseller_website ? reseler_weblink : weblink + "login/",
             // Conditionally include the coupon_ids parameter
@@ -588,22 +544,15 @@ exports.register = async (req, res) => {
                 VALUES (?, ?)`,
         [randomCode, encryptedPassword]
       );
-      res.json({
-        status: "success",
-        redirect_url: subscriptionResult.hosted_page.url,
-      });
+
+      return Response.resWith202(res, "success", {"redirect_url": subscriptionResult.hosted_page.url});
     } catch (error) {
-      res.json({
-        status: "error",
-        message: error?.message,
-      });
-      return;
+      console.error("Error occurred:", error); 
+      return Response.resWith422(res, "something went wrong");
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      errordetails: error,
-    });
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
   }
 };
 
@@ -1284,15 +1233,10 @@ exports.singleUserData = async (req, res) => {
       userdbData.sponsorusername = sponsordbData.sponsorusername;
     }
 
-    res.json({
-      status: "success",
-      data: userdbData,
-    });
+    return Response.resWith202(res, "success", userdbData);
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
   }
 };
 
@@ -4763,60 +4707,68 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     let eventType = postData?.event_type;
     const invoiceStatus = postData?.content?.invoice?.status;
     let entityType = postData?.content?.invoice?.line_items[0]?.entity_type;
+    let entityType2 = postData?.content?.invoice?.line_items[1]?.entity_type;
     const customerId = postData?.content?.customer?.id;
-    const billingPeriodUnit =
-      postData?.content?.subscription?.billing_period_unit;
+    const billingPeriodUnit = postData?.content?.subscription?.billing_period_unit;
     const billingPeriod = postData?.content?.subscription?.billing_period;
-    const planID =
-      postData?.content?.subscription?.subscription_items?.item_price_id;
+    let planID = postData?.content?.subscription?.subscription_items[0]?.item_price_id;
+    let planID2 = postData?.content?.subscription?.subscription_items[1]?.item_price_id;
+    const created_at = postData?.content?.subscription?.created_at;
     const activated_at = postData?.content?.subscription?.activated_at;
     const activatedAt = postData?.content?.subscription?.started_at;
+    const billingStartAt = postData?.content?.subscription?.current_term_start;
     const nextBillingAt = postData?.content?.subscription?.next_billing_at;
     const failedReason = postData?.content?.transaction?.error_text;
-    const entityId = postData?.content?.invoice?.line_items[0]?.entity_id;
+    let entityId = postData?.content?.invoice?.line_items[0]?.entity_id;
+    let entityId2 = postData?.content?.invoice?.line_items[1]?.entity_id;
     let currencyCode = postData?.content?.subscription?.currency_code;
+    let currencyCode2 = postData?.content?.invoice?.currency_code;
     let pkgName = postData?.content?.invoice?.line_items[0]?.description;
     let amount = postData?.content?.invoice?.amount_paid / 100;
     let ac_amount = amount * (40/100);
     let trialStatus = postData?.content?.subscription?.status;
     let cancelled_at = postData?.content?.subscription?.cancelled_at;
     const planPrice = postData?.content?.subscription?.subscription_items?.[0]?.unit_price /100;
+    let trial_end = postData?.content?.subscription?.trial_end || 0;
+    let trial_start =  postData?.content?.subscription?.trial_start || 0;
+    const course_plans =  ['Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR',
+    'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-USD',
+    'Formation-Leads-en-RDV-Qualifies-Basic-Plan-EUR-Monthly',
+    'Formation-Leads-en-RDV-Qualifies-Basic-Plan-USD-Monthly',
+    'Formation-Leads-en-RDV-Qualifies-Unlimited-Plan-EUR-Yearly'
+  ];
+    const nac_now = new Date();
+    const nac_cutoff = new Date(Date.UTC(2025, 4, 1, 0, 0, 0));
 
-    if(postData?.content?.invoice?.line_items[0]?.entity_type == "charge_item_price" || postData?.content?.invoice?.line_items[1]?.entity_type == "charge_item_price"){
 
-      if(postData?.content?.invoice?.line_items[0]?.entity_id == "Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR"){
-
-        entityType = postData?.content?.invoice?.line_items[0]?.entity_type;
-        entityId = postData?.content?.invoice?.line_items[0]?.entity_id;
-        currencyCode = postData?.content?.invoice?.currency_code;
-        console.log('first', entityType);
-      }
-
-      if(postData?.content?.invoice?.line_items[1]?.entity_id == "Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR"){
-
-        entityType = postData?.content?.invoice?.line_items[1]?.entity_type;
-        entityId = postData?.content?.invoice?.line_items[1]?.entity_id;
-        currencyCode = postData?.content?.invoice?.currency_code;
+    //optimize condition
+    if (entityType === "charge_item_price" || entityType2 === "charge_item_price") {
+      if (course_plans.includes(entityId)) {
+        currencyCode = currencyCode2;
+        planID = planID || entityId;
+      } else if (course_plans.includes(entityId2)) {
+        entityType = entityType2;
+        entityId = entityId2;
+        currencyCode = currencyCode2;
+        planID = planID2;
+        trial_end = postData?.content?.subscription?.trial_end || 0;
+        trial_start =  postData?.content?.subscription?.trial_start || 0;
+        planID = planID || entityId;
       }
     }
 
-    const selectPackageDataQuery = `SELECT * FROM new_packages WHERE customerid = ? and type = ?`;
-    const selectPackageDataResult = await Qry(selectPackageDataQuery, [
-      customerId,
-      "package",
-    ]);
-
     const selectUserDataQuery = `SELECT * FROM usersdata WHERE customerid = ?`;
     const selectUserDataResult = await Qry(selectUserDataQuery, [customerId]);
+    const userData = selectUserDataResult?.[0];
+    const selectPlansResult = await Qry(`SELECT * FROM plans WHERE plan_id = ?`, [planID]);
+    const planData = selectPlansResult?.[0];
+    const pakageName = planData?.limits;
+    const numericplanid = planData?.id;
 
-    const insertDummyQry = `insert into dummy(d_data) values (?)`;
-    await Qry(insertDummyQry, JSON.stringify(postData));
-
-    //gd-info not working
-    const getLimitsQry = `SELECT * FROM plans WHERE plan_id = ?`;
-    const getLimitsData = await Qry(getLimitsQry, [planID]);
-    const pakageName = getLimitsData[0]?.limits;
-
+    //Save Json Payload
+    // const insertDummyQry = `insert into dummy(d_data) values (?)`;
+    // await Qry(insertDummyQry, JSON.stringify(postData));
+    
     if (eventType === "subscription_cancellation_scheduled") {
       await Qry(
         "update new_packages set cancellation_date = ?, is_cancellation_scheduled = 1 where customerid = ? and type = ?",
@@ -4826,11 +4778,10 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     
     // Event start subscription cancelled
     if (eventType === "subscription_cancelled") {
-      let planId = postData?.content?.subscription?.subscription_items[0]?.item_price_id;
-      if (planId === "Affiliate-Fee-EUR-Yearly" || planId === "Affiliate-Fee-USD-Yearly") {
+      if (planID.includes('Affiliate-Fee')) {
         await Qry(
           "update usersdata set user_type = ? where id = ?",
-          ["Normal", selectUserDataResult[0]?.id]
+          ["Normal", userData?.id]
         );
       } else {
         await Qry(
@@ -4839,21 +4790,17 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         );
         await Qry(
           "update usersdata set login_status = ?, subscription_status = ? where id = ?",
-          ["Block", eventType, selectUserDataResult[0]?.id]
+          ["Block", eventType, userData?.id]
         );
       }
     }
     // Event end subscription cancelled
 
     // Event start subscription renewed
-    if (eventType === "subscription_renewed") {
-      if (entityId === "Affiliate-Fee-EUR-Yearly" || entityId === "Affiliate-Fee-USD-Yearly") {
-        // do nothing
-      } else {
-
+    if (eventType === "subscription_renewed" && !planID.includes('Affiliate-Fee')) {
         await Qry(
           "update usersdata set for_renewal = ?, activated_at=? where id = ?",
-          ["subscription_renewed", activated_at, selectUserDataResult[0]?.id]
+          ["subscription_renewed", activated_at, userData?.id]
         );
 
         await Qry(
@@ -4867,79 +4814,55 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           no_insta_prospection=0, 
           no_insta_crm=0 
           where user_id = ?`,
-          [selectUserDataResult[0]?.id]
+          [userData?.id]
         );
-      }
     }
     // charge update status after charge
     // Event start payment refunded
     if (eventType === "payment_refunded") {
-      let refunded_amount = postData?.content?.credit_note?.amount_refunded / 100;
-      amount = refunded_amount;
 
-      if (!currencyCode)
-        currencyCode = postData?.content?.invoice?.currency_code;
+      amount = postData?.content?.credit_note?.amount_refunded / 100;
+      currencyCode = !currencyCode?postData?.content?.invoice?.currency_code:currencyCode;
 
-      if (
-        entityId === "Affiliate-Fee-EUR-Yearly" ||
-        entityId === "Affiliate-Fee-USD-Yearly"
-      ) {
-        //do nothing
-      } else {
-        const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-        const selectPlansResult = await Qry(selectPlansQuery, [entityId]);
+      if (!planID.includes('Affiliate-Fee')) {
 
-        let subDomain = (selectPlansResult[0] && selectPlansResult[0].subdomain) ? selectPlansResult[0].subdomain :'app';
-
-        let userTrialStatus = selectUserDataResult[0]?.trial_status;
+        let subDomain = planData?.subdomain?planData.subdomain:'app';
+        let userTrialStatus = userData?.trial_status;
+        let if_pro = true;
 
         if (subDomain === "app" && userTrialStatus === "Inactive") {
           // start level bonus
-          let i = 1;
-          let s_id = selectUserDataResult[0]?.sponsorid;
-          while (i <= 2 && s_id !== 0) {
-            const sponsorData = await Qry(
-              "SELECT * FROM usersdata WHERE id = ?",
-              [s_id]
-            );
-
-            await Qry(
-              "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-              [
-                s_id,
-                selectUserDataResult[0]?.id,
-                0,
-                ``,
-                `Level ${i} Bonus Deducted`,
-                eventType,
-                currencyCode,
-                amount,
-              ]
-            );
-
-            if (sponsorData[0].sponsorid == 0) {
-              if (i === 1) {
-                await Qry(
-                  "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                  [
-                    0,
-                    selectUserDataResult[0]?.id,
-                    0,
-                    ``,
-                    `Level 2 Bonus Deducted`,
-                    eventType,
-                    currencyCode,
-                    amount,
-                  ]
-                );
+          let s_id = userData.sponsorid;
+          for (let i = 1; i <= 2 && s_id !== 0; i++) {
+              if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+                break;
               }
-
-              s_id = 0;
-            } else {
-              s_id = sponsorData[0].sponsorid;
-            }
-
-            i++;
+              const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+              if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+                if_pro = false;
+                break;
+              }
+              await Qry(
+                  "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  [
+                      s_id,
+                      userData.id,
+                      0,
+                      entityId,
+                      `Level ${i} Bonus Deducted`,
+                      eventType,
+                      currencyCode,
+                      amount,
+                      planID,
+                      billingPeriodUnit,
+                      billingPeriod,
+                      activatedAt,
+                      nextBillingAt,
+                      formatDateTimeFromTimestamp(cancelled_at),
+                      formatDateTimeFromTimestamp(cancelled_at),
+                  ]
+              );
+              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
           }
           // end level bonus
         }
@@ -4950,22 +4873,23 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         );
         await Qry(
           "update usersdata set login_status = ?, subscription_status = ? where id = ?",
-          ["Block", eventType, selectUserDataResult[0]?.id]
+          ["Block", eventType, userData.id]
         );
+
+        if(if_pro && subDomain === "app" && userTrialStatus === "Inactive"){
+          const { id: ac_user_id, sponsorid: ac_sponsor_id } = userData;
+          await insert_affiliate_commission(ac_user_id,numericplanid,ac_sponsor_id,amount,ac_amount,currencyCode,"deduction");
+        }
       }
     }
     // Event end payment refunded
 
     // Event start payment failed
-    if (eventType === "payment_failed") {
-      if (entityType === "plan_item_price") {
-        if (
-          entityId === "Affiliate-Fee-EUR-Yearly" ||
-          entityId === "Affiliate-Fee-USD-Yearly"
-        ) {
+    if (eventType === "payment_failed" && entityType === "plan_item_price") {
+        if (planID.includes('Affiliate-Fee')) {
           await Qry(
             "update usersdata set user_type = ? where id = ?",
-            ["Normal", selectUserDataResult[0]?.id]
+            ["Normal", userData?.id]
           );
         } else {
           await Qry(
@@ -4974,102 +4898,65 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           );
           await Qry(
             "update usersdata set subscription_status = ?, for_renewal = ? where id = ?",
-            [eventType, eventType, selectUserDataResult[0]?.id]
+            [eventType, eventType, userData?.id]
           );
         }
-      }
     }
     // Event end payment failed
 
     // Event start payment succeedd
     if (eventType === "payment_succeeded" && invoiceStatus === "paid") {
       // start code of payment succeedd
-      if (entityId === "Affiliate-Fee-EUR-Yearly" || entityId === "Affiliate-Fee-USD-Yearly") {
-        await Qry(
-          "update usersdata set user_type = ? where id = ?",
-          ["Distributor", selectUserDataResult[0]?.id]
-        );
+      if (planID && planID.includes('Affiliate-Fee')) {
+        await Qry("update usersdata set user_type = ? where id = ?",["Distributor", userData.id]);
       } else {
         // start for normal renewal
-        if (
-          selectUserDataResult &&
-          selectUserDataResult[0] &&
-          selectUserDataResult[0]?.for_renewal === "subscription_renewed" &&
-          !entityId.includes('German-Event') &&
-          selectUserDataResult[0]?.subscription_status !== "payment_failed"
-        ) {
-          const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-          const selectPlansResult = await Qry(selectPlansQuery, [entityId]);
-          let subDomain = selectPlansResult[0]?.subdomain;
-
+        if(
+          userData &&
+          userData.for_renewal === "subscription_renewed" &&
+          userData.subscription_status !== "payment_failed" &&
+          !entityId.includes("German-Event"))
+        {
+          console.log("in renewal")
+          let subDomain = planData?.subdomain?planData.subdomain:'app';
           if (subDomain === "app") {
-            // start level bonus
-            let i = 1;
-            let s_id = selectUserDataResult[0]?.sponsorid;
-            while (i <= 2 && s_id !== 0) {
-              const sponsorData = await Qry(
-                "SELECT * FROM usersdata WHERE id = ?",
-                [s_id]
-              );
-
-              if (!currencyCode || currencyCode == null) {
-
-                currencyCode = postData?.content?.invoice?.currency_code
-              }
-
-              await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                  s_id,
-                  selectUserDataResult[0]?.id,
-                  0,
-                  ``,
-                  `Level ${i} Bonus`,
-                  "subscription_renewed",
-                  currencyCode,
-                  amount,
-                  planID,
-                  billingPeriodUnit,
-                  billingPeriod,
-                  activatedAt,
-                  nextBillingAt,
-                ]
-              );
-
-              if (sponsorData[0].sponsorid == 0) {
-                if (i === 1) {
-                  await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                      0,
-                      selectUserDataResult[0]?.id,
-                      0,
-                      ``,
-                      `Level 2 Bonus`,
-                      "subscription_renewed",
-                      currencyCode,
-                      amount,
-                      planID,
-                      billingPeriodUnit,
-                      billingPeriod,
-                      activatedAt,
-                      nextBillingAt,
-                    ]
-                  );
+            let s_id = userData.sponsorid;
+            for (let i = 1; i <= 2 && s_id !== 0; i++) {
+                if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+                  break;
                 }
-                s_id = 0;
-              } else {
-                s_id = sponsorData[0].sponsorid;
-              }
-
-              i++;
+                const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+                if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+                  break;
+                }
+                await Qry(
+                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        s_id,
+                        userData.id,
+                        0,
+                        entityId,
+                        `Level ${i} Bonus`,
+                        "subscription_renewed",
+                        currencyCode,
+                        amount,
+                        planID,
+                        billingPeriodUnit,
+                        billingPeriod,
+                        activatedAt,
+                        nextBillingAt,
+                        formatDateTimeFromTimestamp(billingStartAt),
+                        formatDateTimeFromTimestamp(billingStartAt),
+                    ]
+                );
+                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
             }
-            // end level bonus 
           }
 
           await Qry(
-            "update new_packages set activatedAt = ?, nextBillingAt = ?, status = ? where customerid = ? and type = ?",
+            "update new_packages set amount=?, activatedAt = ?, nextBillingAt = ?, status = ? where customerid = ? and type = ?",
             [
+              amount,
               activatedAt,
               nextBillingAt,
               "subscription_renewed",
@@ -5079,95 +4966,69 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           );
 
 
-          if(billingPeriod){
-            var billingPeriod1 = billingPeriod;
-          }else {
-            var billingPeriod1 = selectUserDataResult[0]?.plan_period;
-          }
-            
-          const updateUserData = await Qry(
-            "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=? where id = ?",
+          let billingPeriodAlt = billingPeriod?billingPeriod:userData?.plan_period;
+          await Qry(
+            "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=?, updatedat=? where id = ?",
             [
               billingPeriodUnit,
-              billingPeriod1,
+              billingPeriodAlt,
               pakageName,
               "subscription_renewed",
               "",
               "Inactive",
               activated_at,
               nextBillingAt,
-              selectUserDataResult[0]?.id,
+              formatDateTimeFromTimestamp(billingStartAt),
+              userData?.id,
             ]
           );
         }
 
-        // start for payment failed renewal
-        if (
-          selectUserDataResult[0]?.subscription_status === "payment_failed" &&
-          selectUserDataResult[0]?.subscription_status !== "subscription_renewed"
-        ) {
-          const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-          const selectPlansResult = await Qry(selectPlansQuery, [entityId]);
-          let subDomain = selectPlansResult[0].subdomain;
-          let eventType1 = eventType;
 
-          if (selectUserDataResult[0]?.trial_status === "Active") {
-            eventType1 = "subscription_activated";
-          }
+        console.log("on 5725")
+        // start for payment failed renewal
+        if (userData.subscription_status === "payment_failed") {
+          let subDomain = planData?.subdomain?planData.subdomain:'app';
+          let eventTypeAlt = userData.trial_status === "Active"?"subscription_activated":eventType;
 
           if (subDomain === "app") {
-            // start level bonus
-            let i = 1;
-            let s_id = selectUserDataResult[0]?.sponsorid;
-            while (i <= 2 && s_id !== 0) {
-              const sponsorData = await Qry(
-                "SELECT * FROM usersdata WHERE id = ?",
-                [s_id]
-              );
-
-              await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                  s_id,
-                  selectUserDataResult[0]?.id,
-                  0,
-                  ``,
-                  `Level ${i} Bonus`,
-                  eventType1,
-                  currencyCode,
-                  amount,
-                ]
-              );
-
-              if (sponsorData[0].sponsorid == 0) {
-                if (i === 1) {
-                  await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                      0,
-                      selectUserDataResult[0]?.id,
-                      0,
-                      ``,
-                      `Level 2 Bonus`,
-                      eventType1,
-                      currencyCode,
-                      amount,
-                    ]
-                  );
+            let s_id = userData.sponsorid;
+            for (let i = 1; i <= 2 && s_id !== 0; i++) {
+                if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+                  break;
                 }
-                s_id = 0;
-              } else {
-                s_id = sponsorData[0].sponsorid;
-              }
-
-              i++;
+                const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+                if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+                  break;
+                }
+                await Qry(
+                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        s_id,
+                        userData.id,
+                        0,
+                        entityId,
+                        `Level ${i} Bonus`,
+                        eventType,
+                        currencyCode,
+                        amount,
+                        planID,
+                        billingPeriodUnit,
+                        billingPeriod,
+                        activatedAt,
+                        nextBillingAt,
+                        formatDateTimeFromTimestamp(billingStartAt),
+                        formatDateTimeFromTimestamp(billingStartAt),
+                    ]
+                );
+                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
             }
-            // end level bonus
           }
 
           await Qry(
-            "update new_packages set activatedAt = ?, nextBillingAt = ?, status = ? where customerid = ? and type = ?",
+            "update new_packages set amount=?, activatedAt = ?, nextBillingAt = ?, status = ? where customerid = ? and type = ?",
             [
+              amount,
               activatedAt,
               nextBillingAt,
               "subscription_renewed",
@@ -5176,13 +5037,9 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             ]
           );
 
-          let subscription_status_usersdata = eventType1;
-          if (subscription_status_usersdata === "payment_succeeded") {
-            subscription_status_usersdata = "subscription_renewed";
-          }
-
+          let subscription_status_usersdata = eventTypeAlt === "payment_succeeded"?"subscription_renewed":eventTypeAlt;
           await Qry(
-            "update usersdata set sub_type = ?, plan_period = ?, plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=? where id = ?",
+            "update usersdata set sub_type = ?, plan_period = ?, plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, updatedat=? where id = ?",
             [
               billingPeriodUnit,
               billingPeriod,
@@ -5191,27 +5048,104 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               "",
               "Inactive",
               activated_at,
-              selectUserDataResult[0]?.id,
+              formatDateTimeFromTimestamp(billingStartAt),
+              userData.id,
             ]
           );
         }
 
-        if (selectUserDataResult[0]?.trial_status == 'Active') {
+        if (userData.trial_status == 'Active') {
           //update to inactive
           await Qry(
             "update usersdata set trial = ?, trial_status = ? where id = ?",
             [
               "No",
               "Inactive",
-              selectUserDataResult[0]?.id,
+              userData.id,
             ]
           );
         }
         // end for payment failed renewal
 
+        let ps_affiliate_commission = true;
+        if (entityType === "charge_item_price" && invoiceStatus == "paid" && trial_start === 0) {
+          ps_affiliate_commission = false;
+          if(userData?.id && userData?.id != null && userData?.id != undefined && course_plans.includes(entityId)){ //for course
+            await Qry(
+              "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
+              [
+                userData?.id,
+                pkgName,
+                entityId
+              ]
+            );
+
+            let subDomain = planData?.subdomain?planData.subdomain:'app';
+            let if_pro = true;
+            console.log("on 5822")
+            if (subDomain === "app") {
+              let s_id = userData.sponsorid;
+              for (let i = 1; i <= 2 && s_id !== 0; i++) {
+                  if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+                    break;
+                  }
+                  const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+                  if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+                    console.log("on 5831 break")
+                    if_pro = false;
+                    break;
+                  }
+                  await Qry(
+                      "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                      [
+                          s_id,
+                          userData.id,
+                          0,
+                          entityId,
+                          `Level ${i} Bonus`,
+                          eventType,
+                          currencyCode,
+                          amount,
+                          planID
+                      ]
+                  );
+                  s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+              }
+            }
+
+            if(if_pro && subDomain === "app"){
+              const { id: ac_user_id, sponsorid: ac_sponsor_id } = userData;
+              await insert_affiliate_commission(ac_user_id,numericplanid,ac_sponsor_id,amount,ac_amount,currencyCode,"addition");
+            }
+          } else { // for tickets
+            const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
+            const getChargeResult = await Qry(getChargeQry, [userData?.id]);
+
+            const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+            const getTicketResult = await Qry(getTicketQry, 1);
+
+            let TicketCount = getTicketResult[0]?.total_tickets_sold
+            TicketCount = TicketCount + 1;
+
+            const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
+            const count = isAlreadyCharge;
+
+            if (userData?.id) {
+              await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
+                [count, userData?.id]
+              );
+            }
+            await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
+              [TicketCount, 1]
+            );
+          }
+        }
+
         //Affilate payment addition
-        const { id: ac_user_id, sponsorid: ac_sponsor_id } = selectUserDataResult[0];
-        insert_affiliate_commission(ac_user_id,ac_sponsor_id,amount,ac_amount,currencyCode);
+        if(ps_affiliate_commission ){
+          const { id: ac_user_id, sponsorid: ac_sponsor_id } = userData;
+          await insert_affiliate_commission(ac_user_id,numericplanid,ac_sponsor_id,amount,ac_amount,currencyCode,"addition");
+        }
       }
       // end code of payment succeedd
     }
@@ -5219,180 +5153,119 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
     // Event start update customer info
     if (eventType === "customer_changed") {
-      const customerId = postData?.content?.customer?.id;
-      const firstName = postData?.content?.customer?.first_name;
-      const lastName = postData?.content?.customer?.last_name;
-      const email = postData?.content?.customer?.email;
-      const mobile = postData?.content?.customer?.phone;
-      const updatedBy = "api_chargebee"; // Set the value of updated_by
-
-      let query = "UPDATE `usersdata` SET";
+      const customer = postData?.content?.customer;
+      const { id: customerId, first_name, last_name, email, phone: mobile } = customer || {};
+      const updatedBy = "api_chargebee";
+    
+      if (!customerId) return; // Ensure customerId exists
+    
+      const updates = [];
       const params = [];
-
-      if (firstName) {
-        query += " `firstname`= ?,";
-        params.push(firstName);
+    
+      if (first_name) {
+        updates.push("`firstname` = ?");
+        params.push(first_name);
       }
-
-      if (lastName) {
-        query += " `lastname`= ?,";
-        params.push(lastName);
+    
+      if (last_name) {
+        updates.push("`lastname` = ?");
+        params.push(last_name);
       }
-
+    
       if (email) {
-        query += " `email`= ?,";
+        updates.push("`email` = ?");
         params.push(email);
       }
-
+    
       if (mobile) {
-        query += " `mobile`= ?,";
+        updates.push("`mobile` = ?");
         params.push(mobile);
       }
-
-      // Add the `updated_by` column
-      query += " `updated_by`= ?,";
-
-      // Remove the trailing comma and add the WHERE clause
-      query = query.replace(/,$/, "") + " WHERE customerid = ?";
-
-      // Add `updatedBy` and `customerId` to the params array
+    
+      updates.push("`updated_by` = ?");
       params.push(updatedBy, customerId);
-
+    
+      const query = `UPDATE \`usersdata\` SET ${updates.join(", ")} WHERE customerid = ?`;
+    
       await Qry(query, params);
     }
     // Event end update customer info
 
-    // Event start subscription changed
-    if (eventType === "subscription_changed") {
-      const totalAmount =
-        postData?.content?.subscription?.subscription_items[0]?.amount / 100;
-      let planId =
-        postData?.content?.subscription?.subscription_items[0]?.item_price_id;
+    // Event start subscription changed OR subscription reactivated
+    if (eventType === "subscription_changed" || eventType === "subscription_reactivated") {
+      const totalAmount = postData?.content?.subscription?.subscription_items[0]?.amount / 100;
+      let subDomain = planData?.subdomain?planData.subdomain:'app';
+      let connections = planData?.connections;
+      let limitsName = planData?.limits;
+      let trialStatus = userData?.trial_status;
 
-      const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-      const selectPlansResult = await Qry(selectPlansQuery, [planId]);
+      if (!planID.includes('Affiliate-Fee')) {
 
-      let subDomain = (selectPlansResult && selectPlansResult[0] && selectPlansResult[0].subdomain) ? selectPlansResult[0].subdomain : "";
-      let connections = selectPlansResult[0]?.connections;
-      let limitsName = selectPlansResult[0]?.limits;
-      let trialStatus = selectUserDataResult[0]?.trial_status;
+        if (subDomain === "app" && trialStatus !== "Active" && amount) {
+          // start level bonus
+  
+            // check already entry for sponser L1
+            const currentDateNow = new Date();
+            const startOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth(), 1);
+            const endOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth() + 1, 0, 23, 59, 59);
 
-      console.log('subDomain--9644', subDomain);
-      console.log('trialStatus--9644', trialStatus);
-      console.log('amount--9644', amount);
-      console.log('selectUserDataResult[0]?.id--9647', selectUserDataResult[0]?.id);
-
-      if (subDomain === "app" && trialStatus !== "Active" && amount) {
-        // start level bonus
-        let i = 1;
-        let s_id = selectUserDataResult[0]?.sponsorid;
-        while (i <= 2 && s_id !== 0) {
-          const sponsorData = await Qry(
-            "SELECT * FROM usersdata WHERE id = ?",
-            [s_id]
-          );
-
-          // check already entry for sponser L1
-          const currentDateNow = new Date();
-          const startOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth(), 1);
-          const endOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth() + 1, 0, 23, 59, 59);
-
-          const existingTransaction = await Qry(
-            "SELECT id, paid_amount FROM transactions WHERE receiverid = ? AND senderid = ? AND createdat BETWEEN ? AND ?",
-            [s_id, selectUserDataResult[0]?.id, startOfMonth, endOfMonth]
-          );
-
-          if (existingTransaction.length > 0) {
-            await Qry(
-              "UPDATE transactions SET paid_amount = ?, event_type=? WHERE id = ?",
-              [
-                amount,
-                eventType,
-                existingTransaction[0].id
-              ]
-            );
-          } else {
-
-            await Qry(
-              "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              [
-                s_id,
-                selectUserDataResult[0]?.id,
-                0,
-                ``,
-                `Level ${i} Bonus`,
-                eventType,
-                currencyCode,
-                amount,
-                planID,
-                billingPeriodUnit,
-                billingPeriod,
-                activatedAt,
-                nextBillingAt,
-              ]
-            );
-          }
-          // 
-
-          if (sponsorData[0]?.sponsorid == 0) {
-            if (i === 1) {
-              await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                  0,
-                  selectUserDataResult[0]?.id,
-                  0,
-                  ``,
-                  `Level 2 Bonus`,
-                  eventType,
-                  currencyCode,
-                  amount,
-                  planID,
-                  billingPeriodUnit,
-                  billingPeriod,
-                  activatedAt,
-                  nextBillingAt,
-                ]
+            let s_id = userData.sponsorid;
+            for (let i = 1; i <= 2 && s_id !== 0; i++) {
+              if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+                break;
+              }
+              let existingTransaction = await Qry(
+                "SELECT id, paid_amount FROM transactions WHERE receiverid = ? AND senderid = ? AND createdat BETWEEN ? AND ?",
+                [s_id, userData?.id, startOfMonth, endOfMonth]
               );
+              const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+              if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+                break;
+              }
+              if (existingTransaction.length > 0) {
+                await Qry(
+                  "UPDATE transactions SET paid_amount = ?, event_type=? WHERE id = ?",
+                  [
+                    amount,
+                    eventType,
+                    existingTransaction[0].id
+                  ]
+                );
+              }else{
+                await Qry(
+                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        s_id,
+                        userData.id,
+                        0,
+                        entityId,
+                        `Level ${i} Bonus`,
+                        eventType,
+                        currencyCode,
+                        amount,
+                        planID,
+                        billingPeriodUnit,
+                        billingPeriod,
+                        activatedAt,
+                        nextBillingAt,
+                        formatDateTimeFromTimestamp(billingStartAt),
+                        formatDateTimeFromTimestamp(billingStartAt),
+                    ]
+                );
+              }
+              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
             }
-
-            s_id = 0;
-          } else {
-            s_id = sponsorData[0]?.sponsorid;
-          }
-
-          i++;
+          // end level bonus
         }
-        // end level bonus
-      }
-
-      if (!planId.includes('Affiliate-Fee')) {
-
-        await Qry(
-          "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, activated_at=? WHERE id = ?",
-          [
-            currencyCode,
-            connections,
-            billingPeriodUnit,
-            billingPeriod,
-            limitsName,
-            planPrice,
-            "",
-            activated_at,
-            selectUserDataResult[0]?.id,
-          ]
-        );
 
         //start plan limits
-        let limitsQueury;
-        limitsQueury = await Qry(
+        let limitsQueury = await Qry(
           "SELECT * from chargbee_packages_limits WHERE pkg_id = ?",
           [limitsName]
         );
 
         let limitsData = limitsQueury[0];
-
-        const updateUsersLimits = await Qry(
+        await Qry(
           "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ?, fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ? where userid = ?",
           [
             limitsData.fb_no_crm_group,
@@ -5415,49 +5288,95 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             limitsData.insta_messages,
             limitsData.ai_credits_new,
             limitsData.tags_pipelines,
-            selectUserDataResult[0]?.id,
+            userData?.id,
           ]
         );
-
         //end plan limits
 
+        if(eventType === "subscription_changed"){
+          await Qry(
+            "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, activated_at=?, connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ? WHERE id = ?",
+            [
+              currencyCode,
+              connections,
+              billingPeriodUnit,
+              billingPeriod,
+              limitsName,
+              planPrice,
+              "",
+              activated_at,
+              "On",
+              "On",
+              "On",
+              "On",
+              userData?.id,
+            ]
+          );
 
+          await Qry(
+            "update new_packages set pkg_name = ?, amount = ?, planid = ?, activatedAt = ?, nextBillingAt = ?, sub_type = ? where customerid = ? and type = ?",
+            [
+              pkgName,
+              totalAmount,
+              planID,
+              activatedAt,
+              nextBillingAt,
+              billingPeriodUnit,
+              customerId,
+              "package",
+            ]
+          );
+
+        }else if(eventType === "subscription_reactivated"){
+          await Qry(
+            "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, subscription_status = ?, connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ?, login_status = ? WHERE id = ?",
+            [
+              currencyCode,
+              connections,
+              billingPeriodUnit,
+              billingPeriod,
+              limitsName,
+              planPrice,
+              "",
+              eventType,
+              "On",
+              "On",
+              "On",
+              "On",
+              "Unblock",
+              userData?.id
+            ]
+          );
+
+          await Qry(
+            "update new_packages set pkg_name = ?, amount = ?, planid = ?, activatedAt = ?, nextBillingAt = ?, sub_type = ?, status=? where customerid = ? and type = ?",
+            [
+              pkgName,
+              totalAmount,
+              planID,
+              activatedAt,
+              nextBillingAt,
+              billingPeriodUnit,
+              customerId,
+              "package",
+              eventType
+            ]
+          );
+    
+          if (postData?.content?.subscription?.status == 'in_trial') {
+            var trial_start_date = postData?.content?.subscription?.trial_start;
+            var trial_end_date = postData?.content?.subscription?.trial_end;
+            await Qry(
+              "update usersdata set trial = ?, trial_status=?, trial_start = ?, trial_end = ? where id = ?",
+              ['Yes','Active', trial_start_date, trial_end_date, userData?.id]
+            );
+          }
+        }
       }
-
-      // Check if pkgName is not defined
-      if (!pkgName) {
-        // Safely access postData.content.unbilled_charges
-        const unbilledCharges = postData?.content?.unbilled_charges;
-
-        // Check if unbilledCharges is an array and has at least one element
-        if (Array.isArray(unbilledCharges) && unbilledCharges.length > 0)
-          pkgName = unbilledCharges[0]?.description;
-
-        // If pkgName is still not defined, set it to planId
-        if (!pkgName) pkgName = planId;
-      }
-
-      await Qry(
-        "update new_packages set pkg_name = ?, amount = ?, planid = ?, activatedAt = ?, nextBillingAt = ?, sub_type = ? where customerid = ? and type = ?",
-        [
-          pkgName,
-          totalAmount,
-          planId,
-          activatedAt,
-          nextBillingAt,
-          billingPeriodUnit,
-          customerId,
-          "package",
-        ]
-      );
-
-      await Qry(
-        "update usersdata set connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ?, activated_at=? where id = ?",
-        ["On", "On", "On", "On", activated_at, selectUserDataResult[0]?.id]
-      );
     }
     // Event end subscription changed
 
+    console.log(eventType,invoiceStatus,trialStatus)
     // Event start subscription Created
     if (eventType === "subscription_created" && (invoiceStatus === "paid" || trialStatus === "in_trial")) {
 
@@ -5472,91 +5391,59 @@ exports.ipnChagrbeWebhook = async (req, res) => {
       const address1 = postData?.content?.customer?.billing_address?.line1;
       const country = postData?.content?.customer?.billing_address?.country;
       const language = postData?.content?.customer?.cf_language;
-      let company = postData?.content?.customer?.cf_company;
+      let company = postData?.content?.customer?.cf_company || "";
       const zip_code = postData?.content?.billing_address?.zip;
       const city = postData?.content?.customer?.billing_address?.city;
       const birthday = "";
       let amount = postData?.content?.invoice?.amount_paid / 100;
-      let planId = postData?.content?.subscription?.subscription_items[0]?.item_price_id;
       const subscriptionId = postData?.content?.subscription?.id;
       const subscriptionStatus = "Active";
       const subscriptionType = postData?.content?.subscription?.billing_period_unit;
       const subscriptionPeriod = postData?.content?.subscription?.billing_period;
-      let maskedNumber = postData?.content?.card?.masked_number;
+      let maskedNumber = postData?.content?.card?.masked_number || "";
       let parent_id = postData?.content?.customer?.cf_cf_parent_id;
-      let reseller_website = postData?.content?.customer?.cf_reseller_website;
-      if (!planId.includes('Affiliate-Fee')) {
+      let reseller_website = postData?.content?.customer?.cf_reseller_website || 'app';
 
-        if (reseller_website && reseller_website != undefined && reseller_website != '') {
-          reseller_website = reseller_website;
-        } else {
-          reseller_website = 'app';
-        }
-        const selectUserDataduplicateQuery = `SELECT COUNT(*) as total 
-                                              FROM usersdata 
-                                              WHERE (username = ? OR email = ?) AND website = 'nuskin'`;
+      if (!planID.includes('Affiliate-Fee')) {
 
         const selectUserDataduplicateResult = await Qry(
-          selectUserDataduplicateQuery,
+          `SELECT COUNT(*) as total FROM usersdata WHERE (username = ? OR email = ?) AND website = ?`,
           [customerId, email, reseller_website]
         );
-
         if (selectUserDataduplicateResult[0].total === 0) {
-          if (!company) {
-            company = "";
-          }
-
-          if (!maskedNumber) {
-            maskedNumber = "";
-          }
-
-          const date = new Date().toISOString().slice(0, 19).replace("T", " ");
-
-          let encryptedPassword;
-
-          const selectSponsorQuery = `SELECT * FROM usersdata WHERE randomcode = ?`;
-          const selectSponsorResult = await Qry(selectSponsorQuery, [
+          const selectSponsorResult = await Qry(`SELECT * FROM usersdata WHERE randomcode = ?`, [
             sponsorRnadomCode,
           ]);
-          let userSponsorId = selectSponsorResult[0].id;
-          let l2SponsorId = selectSponsorResult[0]?.sponsorid || 0;
 
-          const selectRandomCodeQuery11 = `SELECT * FROM password WHERE randomcode = ?`;
-          const selectRandomeCodeResult = await Qry(selectRandomCodeQuery11, [
+          let userSponsorId = selectSponsorResult[0]?.id || 1;
+          let l2SponsorId = parseInt(selectSponsorResult[0]?.sponsorid) ?? 0;
+          const selectRandomeCodeResult = await Qry(`SELECT * FROM password WHERE randomcode = ?`, [
             randomCode,
           ]);
 
-          encryptedPassword = selectRandomeCodeResult[0].password;
+          let encryptedPassword = selectRandomeCodeResult[0]?.password || null;
+        
+          let subDomain = planData?.subdomain?planData.subdomain:'app';
+          let connections = planData?planData.connections : 0;
+          let limitsName = planData?.limits || "Basic";
+          let referral_side = selectSponsorResult[0].referral_side;
 
-          const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-          const selectPlansResult = await Qry(selectPlansQuery, [planId]);
+          let trial = trialStatus === "in_trial" ? "Yes" : "No";
+          let trial_status = trialStatus === "in_trial" ? "Active" : "Inactive";
+          trial_end = trialStatus === "in_trial" ? trial_end : 0;
+          trial_start = trialStatus === "in_trial" ? trial_start : 0;
+          amount = trialStatus === "in_trial" ? 0 : amount;
 
-          let subDomain = selectPlansResult[0].subdomain;
-          let connections = (selectPlansResult && selectPlansResult[0]) ? selectPlansResult[0].connections : 0;
-          let limitsName = selectPlansResult[0].limits;
-          let trialStatus = selectPlansResult[0].trial;
-
-          let trial;
-          let trial_end = 0;
-          let trial_start = 0;
-          if (trialStatus === "Yes") {
-            trial = "Active";
-            trial_end = postData?.content?.subscription?.trial_end;
-            trial_start = postData?.content?.subscription?.trial_start;
-            amount = 0;
-          } else {
-            trial = "Inactive";
-          }
-
-          let newUserId;
+          console.log(trial,trialStatus,entityId)
+          
           const insertResult = await Qry(
-            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               mobile,
               userSponsorId,
               l2SponsorId,
-              selectSponsorResult[0].referral_side,
+              referral_side,
               email,
               encryptedPassword,
               email,
@@ -5582,14 +5469,18 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               connections,
               parent_id,
               reseller_website,
-              trialStatus,
               trial,
+              trial_status,
               trial_start,
               trial_end,
-              activated_at
+              activated_at,
+              currencyCode,
+              subscriptionStatus,
+              formatDateTimeFromTimestamp(created_at),
+              formatDateTimeFromTimestamp(created_at)
             ]
           );
-          newUserId = insertResult.insertId;
+          let newUserId = insertResult.insertId;
 
           if (newUserId) {
             try {
@@ -5597,101 +5488,85 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             } catch (error) { }
           }
 
-          const updateRandomCode = await Qry(
+          await Qry(
             "update password set status = ? where id = ?",
             ["Approved", selectRandomeCodeResult[0].id]
           );
 
-          const insertPackageResult = await Qry(
-            `INSERT INTO new_packages(userid, amount, subscriptionid, customerid, currency, planid, activatedAt, nextBillingAt, status, pkg_name, sub_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          await Qry(
+            `INSERT INTO new_packages(userid, amount, subscriptionid, customerid, currency, planid, activatedAt, nextBillingAt, status, pkg_name, sub_type, dat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               newUserId,
               amount,
               subscriptionId,
               customerId,
               currencyCode,
-              planId,
+              planID,
               activatedAt,
               nextBillingAt,
               subscriptionStatus,
-              pkgName,
+              limitsName,
               subscriptionType,
+              formatDateTimeFromTimestamp(created_at)
             ]
           );
 
-          if (subDomain === "app" && trialStatus === "No") {
-            // start level bonus
-            let i = 1;
+          if (subDomain === "app" && trial === "No") {
             let s_id = userSponsorId;
-            while (i <= 2 && s_id !== 0) {
-              const sponsorData = await Qry(
-                "SELECT * FROM usersdata WHERE id = ?",
-                [s_id]
-              );
-
-              const insertTransactionData = await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                  s_id,
-                  newUserId,
-                  0,
-                  ``,
-                  `Level ${i} Bonus`,
-                  eventType,
-                  currencyCode,
-                  amount,
-                  planID,
-                  billingPeriodUnit,
-                  billingPeriod,
-                  activatedAt,
-                  nextBillingAt,
-                ]
-              );
-
-              if (sponsorData[0].sponsorid == 0) {
-                if (i === 1) {
-                  await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                      0,
-                      newUserId,
-                      0,
-                      ``,
-                      `Level 2 Bonus`,
-                      eventType,
-                      currencyCode,
-                      amount,
-                      planID,
-                      billingPeriodUnit,
-                      billingPeriod,
-                      activatedAt,
-                      nextBillingAt,
-                    ]
-                  );
+            let aftbl_sid = s_id;
+            let if_pro = true;
+            for (let i = 1; i <= 2 && s_id !== 0; i++) {
+              console.log('entityId--6258:'+i, entityId);
+              console.log('entityId--6258'+i, course_plans.includes(entityId));
+              console.log('entityId--6258'+i, nac_now);
+              console.log('entityId--6258'+i, nac_cutoff);
+              
+              if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+                  console.log('in if--6264'+i);
+                  break;
                 }
-
-                s_id = 0;
-              } else {
-                s_id = sponsorData[0].sponsorid;
-              }
-
-              i++;
+                const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+                console.log('sponsorData--6268',sponsorData);
+                console.log('sponsorData--6268', typeof sponsorData[0]?.user_type);
+                if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+                  console.log('in if_pro--6264:'+i);
+                  if_pro = false;
+                  break;
+                }
+                var transaction_insert = await Qry(
+                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        s_id,
+                        newUserId,
+                        0,
+                        entityId,
+                        `Level ${i} Bonus`,
+                        eventType,
+                        currencyCode,
+                        amount,
+                        planID,
+                        billingPeriodUnit,
+                        billingPeriod,
+                        activatedAt,
+                        nextBillingAt,
+                        formatDateTimeFromTimestamp(created_at),
+                        formatDateTimeFromTimestamp(created_at),
+                    ]
+                );
+                console.log('transaction_insert--6288', transaction_insert);
+                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
             }
-            // end level bonus
-          }
-
-          await Qry(
-            "UPDATE usersdata SET `currency` = ? WHERE id = ?",
-            [currencyCode, newUserId]
-          );
-
+            
+            if(if_pro){
+              await insert_affiliate_commission(newUserId,numericplanid,aftbl_sid,amount,ac_amount,currencyCode,"addition");
+            }
+          }    
+        
           //start plan limits
-          let limitsQueury;
-          limitsQueury = await Qry(
+          let limitsQueury = await Qry(
             "SELECT * from chargbee_packages_limits WHERE pkg_id = ?",
             [limitsName]
           );
-
           let limitsData = limitsQueury[0];
 
           await Qry(
@@ -5723,11 +5598,45 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           );
 
           //end plan limits
-
           await Qry(
             "update usersdata set connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ? where id = ?",
             ["On", "On", "On", "On", newUserId]
           );
+
+          // eventTypeValue === "charge"
+          if (entityType === "charge_item_price" && invoiceStatus == "paid" && trial === "No") {
+            if(userData?.id && userData?.id != null && userData?.id != undefined && course_plans.includes(entityId)){ //for course
+              await Qry(
+                "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
+                [
+                  userData?.id,
+                  pkgName,
+                  entityId
+                ]
+              );
+            } else { // for tickets
+              const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
+              const getChargeResult = await Qry(getChargeQry, [userData?.id]);
+
+              const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+              const getTicketResult = await Qry(getTicketQry, 1);
+
+              let TicketCount = getTicketResult[0]?.total_tickets_sold
+              TicketCount = TicketCount + 1;
+
+              const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
+              const count = isAlreadyCharge;
+
+              if (userData?.id) {
+                await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
+                  [count, userData?.id]
+                );
+              }
+              await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
+                [TicketCount, 1]
+              );
+            }
+          }
         }
       }
     }
@@ -5735,297 +5644,105 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
     // Event start subscription activated (trial subscription)
     if (eventType === "subscription_activated" && invoiceStatus === "paid") {
-      const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-      const selectPlansResult = await Qry(selectPlansQuery, [entityId]);
 
-      let subDomain = selectPlansResult[0].subdomain;
-
+      let subDomain = planData?.subdomain?planData.subdomain:'app';
       if (subDomain === "app") {
-        // start level bonus
-        let i = 1;
-        let s_id = selectUserDataResult[0]?.sponsorid;
-        while (i <= 2 && s_id !== 0) {
-          const sponsorData = await Qry(
-            "SELECT * FROM usersdata WHERE id = ?",
-            [s_id]
-          );
-
-          await Qry(
-            "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-              s_id,
-              selectUserDataResult[0]?.id,
-              0,
-              ``,
-              `Level ${i} Bonus`,
-              eventType,
-              currencyCode,
-              amount,
-              planID,
-              billingPeriodUnit,
-              billingPeriod,
-              activatedAt,
-              nextBillingAt,
-            ]
-          );
-
-          if (sponsorData && sponsorData[0] && sponsorData[0].sponsorid == 0) {
-            if (i === 1) {
-              await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                  0,
-                  selectUserDataResult[0]?.id,
-                  0,
-                  ``,
-                  `Level 2 Bonus`,
-                  eventType,
-                  currencyCode,
-                  amount,
-                  planID,
-                  billingPeriodUnit,
-                  billingPeriod,
-                  activatedAt,
-                  nextBillingAt,
-                ]
-              );
+        let s_id = userData.sponsorid;
+        for (let i = 1; i <= 2 && s_id !== 0; i++) {
+            if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
+              break;
             }
-            s_id = 0;
-          } else {
-            s_id = (sponsorData && sponsorData[0]) ? sponsorData[0].sponsorid : 0;
-          }
-
-          i++;
+            const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
+            if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
+              break;
+            }
+            await Qry(
+                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    s_id,
+                    userData.id,
+                    0,
+                    entityId,
+                    `Level ${i} Bonus`,
+                    eventType,
+                    currencyCode,
+                    amount,
+                    planID,
+                    billingPeriodUnit,
+                    billingPeriod,
+                    activatedAt,
+                    nextBillingAt,
+                    formatDateTimeFromTimestamp(activated_at),
+                    formatDateTimeFromTimestamp(activated_at),
+                ]
+            );
+            s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
         }
-        // end level bonus
       }
 
       await Qry(
         "update new_packages set activatedAt = ?, nextBillingAt = ?, status = ? where customerid = ? and type = ?",
-        [activatedAt, nextBillingAt, "Active", customerId, "package"]
+        [activatedAt, nextBillingAt, eventType, customerId, "package"]
       );
 
       await Qry(
-        "update usersdata set sub_type = ? ,plan_period = ? , plan_pkg = ?, subscription_status = ?, trial_status = ?, activated_at=? where id = ?",
+        "update usersdata set sub_type = ? ,plan_period = ? , plan_pkg = ?, subscription_status = ?, trial = ?, trial_status = ?, activated_at=?, updatedat=? where id = ?",
         [
           billingPeriodUnit,
           billingPeriod,
           pakageName,
           eventType,
+          "No",
           "Inactive",
           activated_at,
-          selectUserDataResult[0]?.id,
+          formatDateTimeFromTimestamp(activated_at),
+          userData.id,
         ]
       );
+
+      // eventTypeValue === "charge"
+      if (entityType === "charge_item_price" && invoiceStatus == "paid") {
+        if(userData?.id && userData?.id != null && userData?.id != undefined && course_plans.includes(entityId)){ //for course
+          await Qry(
+            "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
+            [
+              userData?.id,
+              pkgName,
+              entityId
+            ]
+          );
+        } else { // for tickets
+          const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
+          const getChargeResult = await Qry(getChargeQry, [userData?.id]);
+
+          const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+          const getTicketResult = await Qry(getTicketQry, 1);
+
+          let TicketCount = getTicketResult[0]?.total_tickets_sold
+          TicketCount = TicketCount + 1;
+
+          const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
+          const count = isAlreadyCharge;
+
+          if (userData?.id) {
+            await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
+              [count, userData?.id]
+            );
+          }
+          await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
+            [TicketCount, 1]
+          );
+        }
+      }
     }
     // Event end subscription activated (trial subscription)
 
-    // Event for subscription reactivated
-    if (eventType === "subscription_reactivated") {
-      const totalAmount =
-        postData?.content?.subscription?.subscription_items[0]?.amount / 100;
-      let planId =
-        postData?.content?.subscription?.subscription_items[0]?.item_price_id;
-
-      const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-      const selectPlansResult = await Qry(selectPlansQuery, [planId]);
-
-      let subDomain = selectPlansResult[0].subdomain;
-      let connections = selectPlansResult[0].connections;
-      let limitsName = selectPlansResult[0].limits;
-      let trialStatus = selectUserDataResult[0]?.trial_status;
-
-      if (subDomain === "app" && trialStatus !== "Active" && amount) {
-        // start level bonus
-        let i = 1;
-        let s_id = selectUserDataResult[0]?.sponsorid;
-        while (i <= 2 && s_id !== 0) {
-          const sponsorData = await Qry(
-            "SELECT * FROM usersdata WHERE id = ?",
-            [s_id]
-          );
-
-          // check already entry for sponser L1
-          const currentDateNow = new Date();
-          const startOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth(), 1);
-          const endOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth() + 1, 0, 23, 59, 59);
-
-          const existingTransaction = await Qry(
-            "SELECT id, paid_amount FROM transactions WHERE receiverid = ? AND senderid = ? AND createdat BETWEEN ? AND ?",
-            [s_id, selectUserDataResult[0]?.id, startOfMonth, endOfMonth]
-          );
-
-          if (existingTransaction.length > 0) {
-            await Qry(
-              "UPDATE transactions SET paid_amount = ?, event_type=? WHERE id = ?",
-              [
-                amount,
-                eventType,
-                existingTransaction[0].id
-              ]
-            );
-          } else {
-            await Qry(
-              "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              [
-                s_id,
-                selectUserDataResult[0]?.id,
-                0,
-                ``,
-                `Level ${i} Bonus`,
-                eventType,
-                currencyCode,
-                amount,
-                planID,
-                billingPeriodUnit,
-                billingPeriod,
-                activatedAt,
-                nextBillingAt,
-              ]
-            );
-          }
-
-          if (sponsorData[0]?.sponsorid == 0) {
-            if (i === 1) {
-              await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                  0,
-                  selectUserDataResult[0]?.id,
-                  0,
-                  ``,
-                  `Level 2 Bonus`,
-                  eventType,
-                  currencyCode,
-                  amount,
-                  planID,
-                  billingPeriodUnit,
-                  billingPeriod,
-                  activatedAt,
-                  nextBillingAt,
-                ]
-              );
-            }
-
-            s_id = 0;
-          } else {
-            s_id = sponsorData[0]?.sponsorid;
-          }
-          i++;
-        }
-        // end level bonus
-      }
-
-      await Qry(
-        "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, subscription_status = ? WHERE id = ?",
-        [
-          currencyCode,
-          connections,
-          billingPeriodUnit,
-          billingPeriod,
-          limitsName,
-          planPrice,
-          "",
-          eventType,
-          selectUserDataResult[0]?.id,
-        ]
-      );
-
-      //start plan limits
-      let limitsQueury;
-      limitsQueury = await Qry(
-        "SELECT * from chargbee_packages_limits WHERE pkg_id = ?",
-        [limitsName]
-      );
-
-      let limitsData = limitsQueury[0];
-
-      await Qry(
-        "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ?, fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ? where userid = ?",
-        [
-          limitsData.fb_no_crm_group,
-          limitsData.fb_no_stages_group,
-          limitsData.fb_no_friend_request,
-          limitsData.fb_no_crm_message,
-          limitsData.fb_no_ai_comment,
-          limitsData.fb_advanced_novadata,
-          limitsData.fb_no_friend_requests_received,
-          limitsData.fb_no_of_birthday_wishes,
-          limitsData.inst_no_crm_group,
-          limitsData.inst_no_stages_group,
-          limitsData.inst_no_friend_request,
-          limitsData.inst_no_crm_message,
-          limitsData.inst_no_ai_comment,
-          limitsData.inst_advanced_novadata,
-          limitsData.inst_no_friend_requests_received,
-          limitsData.inst_no_of_birthday_wishes,
-          limitsData.fb_messages,
-          limitsData.insta_messages,
-          limitsData.ai_credits_new,
-          limitsData.tags_pipelines,
-          selectUserDataResult[0]?.id,
-        ]
-      );
-
-      //end plan limits
-
-      // Check if pkgName is not defined
-      if (!pkgName) {
-        // Safely access postData.content.unbilled_charges
-        const unbilledCharges = postData?.content?.unbilled_charges;
-
-        // Check if unbilledCharges is an array and has at least one element
-        if (Array.isArray(unbilledCharges) && unbilledCharges.length > 0)
-          pkgName = unbilledCharges[0]?.description;
-
-        // If pkgName is still not defined, set it to planId
-        if (!pkgName) pkgName = planId;
-      }
-
-      await Qry(
-        "update new_packages set pkg_name = ?, amount = ?, planid = ?, activatedAt = ?, nextBillingAt = ?, sub_type = ? where customerid = ? and type = ?",
-        [
-          pkgName,
-          totalAmount,
-          planId,
-          activatedAt,
-          nextBillingAt,
-          billingPeriodUnit,
-          customerId,
-          "package",
-        ]
-      );
-
-      await Qry(
-        "update usersdata set connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ?, login_status = ? where id = ?",
-        ["On", "On", "On", "On", "Unblock", selectUserDataResult[0]?.id]
-      );
-
-
-      if (postData?.content?.subscription?.status == 'in_trial') {
-
-        var trial_start_date = postData?.content?.subscription?.trial_start;
-        var trial_end_date = postData?.content?.subscription?.trial_end;
-
-        await Qry(
-          "update usersdata set trial_status=?, trial_start = ?, trial_end = ?, login_status = ?, activated_at=? where id = ?",
-          ['Active', trial_start_date, trial_end_date, "Unblock", activated_at, selectUserDataResult[0]?.id]
-        );
-      }
-
-    }
-
     //Event start subscription paused
     if (eventType === "subscription_paused") {
-      let planId = postData?.content?.subscription?.subscription_items[0]?.item_price_id;
-
-      if (
-        planId === "Affiliate-Fee-EUR-Yearly" ||
-        planId === "Affiliate-Fee-USD-Yearly"
-      ) {
+      if (planID.includes('Affiliate-Fee')) {
         await Qry(
           "update usersdata set user_type = ? where id = ?",
-          ["Normal", selectUserDataResult[0]?.id]
+          ["Normal", userData?.id]
         );
       } else {
         await Qry(
@@ -6034,7 +5751,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         );
         await Qry(
           "update usersdata set login_status = ?, subscription_status = ? where id = ?",
-          ["Block", eventType, selectUserDataResult[0]?.id]
+          ["Block", eventType, userData?.id]
         );
       }
     }
@@ -6042,15 +5759,11 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     // Event for subscription resumed
     if (eventType === "subscription_resumed") {
       const totalAmount = postData?.content?.subscription?.subscription_items[0]?.amount / 100;
-      let planId = postData?.content?.subscription?.subscription_items[0]?.item_price_id;
-
-      const selectPlansQuery = `SELECT * FROM plans WHERE plan_id = ?`;
-      const selectPlansResult = await Qry(selectPlansQuery, [planId]);
-      let connections = selectPlansResult[0].connections;
-      let limitsName = selectPlansResult[0].limits;
+      let connections = planData.connections;
+      let limitsName = planData.limits;
 
       await Qry(
-        "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, subscription_status = ? WHERE id = ?",
+        "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, subscription_status = ?, connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ?, login_status = ?, activated_at=? WHERE id = ?",
         [
           currencyCode,
           connections,
@@ -6060,110 +5773,37 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           planPrice,
           "",
           eventType,
-          selectUserDataResult[0]?.id,
+          "On",
+          "On",
+          "On",
+          "On",
+          "Unblock",
+          activated_at,
+          userData?.id
         ]
       );
 
-      // Check if pkgName is not defined
-      if (!pkgName) {
-        // Safely access postData.content.unbilled_charges
-        const unbilledCharges = postData?.content?.unbilled_charges;
-
-        // Check if unbilledCharges is an array and has at least one element
-        if (Array.isArray(unbilledCharges) && unbilledCharges.length > 0)
-          pkgName = unbilledCharges[0]?.description;
-
-        // If pkgName is still not defined, set it to planId
-        if (!pkgName) pkgName = planId;
-      }
-
       await Qry(
-        "update new_packages set pkg_name = ?, amount = ?, planid = ?, activatedAt = ?, nextBillingAt = ?, sub_type = ? where customerid = ? and type = ?",
+        "update new_packages set pkg_name = ?, amount = ?, planid = ?, activatedAt = ?, nextBillingAt = ?, sub_type = ?, status = ? where customerid = ? and type = ?",
         [
           pkgName,
           totalAmount,
-          planId,
+          planID,
           activatedAt,
           nextBillingAt,
           billingPeriodUnit,
           customerId,
           "package",
+          eventType
         ]
       );
-
-      await Qry(
-        "update usersdata set connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ?, login_status = ?, activated_at=? where id = ?",
-        ["On", "On", "On", "On", "Unblock", activated_at, selectUserDataResult[0]?.id]
-      );
     }
 
-    // eventTypeValue === "charge"
-    if (entityType === "charge_item_price" && invoiceStatus == "paid") {
-      const selectUserDataQueryEvent = `SELECT * FROM usersdata WHERE customerid = ?`;
-      const selectUserEvent = await Qry(selectUserDataQueryEvent, [customerId]);
+    return Response.resWith202(res, "success", eventType);
+  } catch (error) {
 
-      if(selectUserEvent[0]?.id && selectUserEvent[0]?.id != null && selectUserEvent[0]?.id != undefined &&
-        (entityId == 'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR' ||
-          entityId == 'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-USD' ||
-          entityId == 'Formation-Leads-en-RDV-Qualifies-Basic-Plan-EUR-Monthly' || 
-          entityId == 'Formation-Leads-en-RDV-Qualifies-Basic-Plan-USD-Monthly'
-        )){ //for course
-        
-        const insert_course = await Qry(
-          "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
-          [
-            selectUserEvent[0]?.id,
-            pkgName,
-            entityId
-          ]
-        );
-
-
-        await Qry(
-          "INSERT INTO transactions (receiverid, senderid,  details, type, event_type, currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [
-            selectUserDataResult[0]?.sponsorid,
-            selectUserDataResult[0]?.id,
-            entityId,
-            `Level 1 Bonus`,
-            eventType,
-            currencyCode,
-            amount,
-          ]
-        );
-
-      } else { // for tickets
-        const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
-        const getChargeResult = await Qry(getChargeQry, [selectUserEvent[0]?.id]);
-
-        const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
-        const getTicketResult = await Qry(getTicketQry, 1);
-
-        let TicketCount = getTicketResult[0]?.total_tickets_sold
-        TicketCount = TicketCount + 1;
-
-        const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
-        const count = isAlreadyCharge;
-
-        if (selectUserEvent[0]?.id) {
-
-          await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
-            [count, selectUserEvent[0]?.id]
-          );
-        }
-        await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
-          [TicketCount, 1]
-        );
-      }
-    }
-
-    res.status(200).json({
-      status: "success",
-      message: eventType,
-    });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({ status: "error", message: e.message });
+    console.error("webhook error:", error); 
+    return Response.resWith422(res, error.message);
   }
 };
 

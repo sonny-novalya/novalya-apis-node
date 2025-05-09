@@ -23,6 +23,7 @@ const messageController = require("../controllers/crm/message.controller");
 const sectionController = require("../controllers/crm/section.controller");
 const noteController = require("../controllers/crm/note.controller");
 const stageController = require("../controllers/crm/stage.controller");
+const SettingController = require("../controllers/settings/SettingController");
 
 router.post("/login", UserController.login);
 router.post("/manualsignin", UserController.manualSignIn);
@@ -241,5 +242,10 @@ router.post("/set-l2-sponsor-id", UserController.setL2SponsorId);
 router.post("/chargeBeeDatta", UserController.chargeBeeDatta);
 router.get("/cronjob_affiliate_calculation", UserController.cronjobAffiliateCalculation);
 router.post("/updateprofilepicture", UserController.updateprofilepicture);
+
+
+router.post("/get-enc-keys", SettingController.getEnckeys);
+router.post("/save-utm-data", SettingController.saveUtmData);
+
 
 module.exports = router;
