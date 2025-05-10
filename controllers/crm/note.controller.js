@@ -177,6 +177,8 @@ const createFbNote = async (req, res) => {
         values.push(`'${sanitizedValue}'`);
       }
       const createQuery = `INSERT INTO notes (${columns.join(", ")}) VALUES (${values.join(", ")})`;
+      console.log('createQuery:180', createQuery);
+      
       const createResult = await Qry(createQuery);
 
       if (createResult) {

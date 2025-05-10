@@ -1188,6 +1188,63 @@ exports.affiliateCustomers = async (req, res) => {
   }
 };
 
+exports.affiliateActivityLogs = async (req, res) => {
+  try {
+    const auth_user = await checkAuthorization(req, res);
+    if (!auth_user) return;
+
+    const { page = 1, limit = 10, search = '', sort_by = 'user_logs.id', sort_order = 'DESC' } = req.body;
+
+    const offset = (page - 1) * limit;
+
+    let whereClause = `WHERE 1=1`;
+    const params = [];
+
+    if (search) {
+      whereClause += ` AND (user.first_name LIKE ? OR user.last_name LIKE ? OR user.email LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    //for sposor
+    whereClause += ` AND user.sponsor_id = ?`;
+    params.push(auth_user.id);
+
+    // total count query
+    const countQuery = `SELECT COUNT(*) AS total FROM usersdata user
+      LEFT JOIN user_logs ON user.id = user_logs.user_id
+      ${whereClause}`;
+    const countResult = await Qry(countQuery, params);
+    const total_count = countResult[0]?.total || 0;
+
+    // data query
+    const dataQuery = `
+      SELECT user.first_name, user.last_name, user.email, user_logs.created_at
+      FROM usersdata user
+      LEFT JOIN user_logs ON user.id = user_logs.user_id
+      ${whereClause}
+      ORDER BY ${sort_by} ${sort_order}
+      LIMIT ? OFFSET ?
+    `;
+
+    params.push(parseInt(limit), parseInt(offset));
+
+    const logs_data = await Qry(dataQuery, params);
+
+    const final_response = {
+      activity_logs: logs_data,
+      total_count: total_count,
+      current_page: parseInt(page),
+      per_page: parseInt(limit),
+    };
+
+    return Response.resWith202(res, "success", final_response);
+  } catch (error) {
+    console.error("Error occurred:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
+
 exports.ticketCount = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
@@ -1550,9 +1607,7 @@ exports.updateSubscription = async (req, res) => {
     const date = new Date().toISOString().slice(0, 19).replace("T", " ");
     //subscription item details
     const item_price_id = CleanHTMLData(CleanDBData(postData.item_price_id));
-    const subscription_id = CleanHTMLData(
-      CleanDBData(postData.subscription_id)
-    );
+    const subscription_id = CleanHTMLData(CleanDBData(postData.subscription_id));
 
     const selectUsernameQuery = `SELECT * FROM usersdata WHERE id = ?`;
     const selectUsernameResult = await Qry(selectUsernameQuery, [authUser]);
@@ -1581,8 +1636,7 @@ exports.updateSubscription = async (req, res) => {
           ],
           redirect_url: redirect_url,
           cancel_url: cancel_url,
-        })
-          .request(function (error, result) {
+        }).request(function (error, result) {
             if (error) {
               //handle error
               reject(error);
@@ -1595,23 +1649,20 @@ exports.updateSubscription = async (req, res) => {
 
     let subscriptionResult;
     try {
+
       subscriptionResult = await updateSubscription();
-      res.json({
-        status: "success",
-        data: subscriptionResult,
-      });
+      return Response.resWith202(res, "success", subscriptionResult);
     } catch (error) {
-      res.json({
-        status: "error",
-        message: error?.message,
-      });
-      return;
+
+      console.error("Error occurred:", error); 
+      var message = (error?.message) ? error?.message : "something went wrong"
+      return Response.resWith422(res, message);
     }
   } catch (error) {
-    res.json({
-      status: "error",
-      errordetails: error,
-    });
+
+    console.error("Error occurred:", error); 
+    var message = (error?.message) ? error?.message : "something went wrong"
+    return Response.resWith422(res, message);
   }
 };
 
@@ -4701,6 +4752,12 @@ exports.registrationissue11 = async (req, res) => {
   }
 };
 
+async function insertUserLogs(sponsor_id=0, user_id=0, message=''){
+  const insert = await Qry("insert into user_logs(sponsor_id, user_id, message) values (?, ?, ?)",
+    [sponsor_id, user_id, message]
+  );
+}
+
 exports.ipnChagrbeWebhook = async (req, res) => {
   try {
     const postData = req.body;
@@ -5381,8 +5438,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     if (eventType === "subscription_created" && (invoiceStatus === "paid" || trialStatus === "in_trial")) {
 
       const randomCode = postData?.content?.customer?.cf_random_code;
-      const sponsorRnadomCode =
-        postData?.content?.customer?.cf_sponsor_random_code;
+      const sponsorRnadomCode = postData?.content?.customer?.cf_sponsor_random_code;
       const emailToken = postData?.content?.customer?.cf_email_token;
       const firstname = postData?.content?.customer?.first_name;
       const lastname = postData?.content?.customer?.last_name;
@@ -5555,12 +5611,15 @@ exports.ipnChagrbeWebhook = async (req, res) => {
                 );
                 console.log('transaction_insert--6288', transaction_insert);
                 s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
-            }
+                insertUserLogs(s_id, newUserId, 'plan created');
+              }
             
             if(if_pro){
               await insert_affiliate_commission(newUserId,numericplanid,aftbl_sid,amount,ac_amount,currencyCode,"addition");
             }
-          }    
+          } 
+          
+          
         
           //start plan limits
           let limitsQueury = await Qry(
