@@ -1226,6 +1226,9 @@ exports.affiliateActivityLogs = async (req, res) => {
       LIMIT ? OFFSET ?
     `;
 
+    console.log('dataQuery',dataQuery);
+    
+
     params.push(parseInt(limit), parseInt(offset));
 
     const logs_data = await Qry(dataQuery, params);
