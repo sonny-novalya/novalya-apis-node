@@ -1206,7 +1206,7 @@ exports.affiliateActivityLogs = async (req, res) => {
     }
 
     //for sposor
-    whereClause += ` AND user.sponsor_id = ?`;
+    whereClause += ` AND user_logs.sponsor_id = ?`;
     params.push(auth_user.id);
 
     // total count query
