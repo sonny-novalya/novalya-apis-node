@@ -1227,7 +1227,10 @@ exports.affiliateActivityLogs = async (req, res) => {
     `;
 
     params.push(parseInt(limit), parseInt(offset));
-    console.log('params',params);
+    console.log('whereClause.id',whereClause);
+    console.log('auth_user.id',auth_user.id);
+    console.log('limit',limit);
+    console.log('offset',offset);
     console.log('dataQuery',dataQuery);
     
 
