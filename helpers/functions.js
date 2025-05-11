@@ -4306,6 +4306,34 @@ async function get_dashboard_affiliate_summary(userid, userCurrency, conversionR
   };
 }
 
+function formatDateTimeFromTimestamp(timestamp, timeZone = 'UTC') {
+  const date = new Date(timestamp * 1000); // Convert from seconds to milliseconds
+
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+
+  const getPart = (type) => parts.find((p) => p.type === type)?.value;
+
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
+  const hour = getPart('hour');
+  const minute = getPart('minute');
+  const second = getPart('second');
+
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
+
 module.exports = {
   checkAuthorization,
   adminAuthorization,
@@ -4337,5 +4365,6 @@ module.exports = {
   newSalesFunction,
   createDefaultTagsAndMessages,
   total_payment_function_afcm_tbl,
-  get_dashboard_affiliate_summary
+  formatDateTimeFromTimestamp,
+  get_dashboard_affiliate_summary,
 };
