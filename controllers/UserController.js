@@ -1218,7 +1218,7 @@ exports.affiliateActivityLogs = async (req, res) => {
 
     // data query
     const dataQuery = `
-      SELECT user.firstname, user.lastname, user.email, user_logs.created_at
+      SELECT user.firstname, user.lastname, user.email, user_logs.created_at, user_logs.type, user_logs.message
       FROM usersdata user
       LEFT JOIN user_logs ON user.id = user_logs.user_id
       ${whereClause}
