@@ -1201,7 +1201,7 @@ exports.affiliateActivityLogs = async (req, res) => {
     const params = [];
 
     if (search) {
-      whereClause += ` AND (user.first_name LIKE ? OR user.last_name LIKE ? OR user.email LIKE ?)`;
+      whereClause += ` AND (user.firstname LIKE ? OR user.lastname LIKE ? OR user.email LIKE ?)`;
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
@@ -1218,7 +1218,7 @@ exports.affiliateActivityLogs = async (req, res) => {
 
     // data query
     const dataQuery = `
-      SELECT user.first_name, user.last_name, user.email, user_logs.created_at
+      SELECT user.firstname, user.lastname, user.email, user_logs.created_at
       FROM usersdata user
       LEFT JOIN user_logs ON user.id = user_logs.user_id
       ${whereClause}
