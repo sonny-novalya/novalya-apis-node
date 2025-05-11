@@ -1207,7 +1207,7 @@ exports.affiliateActivityLogs = async (req, res) => {
 
     //for sposor
     whereClause += ` AND user_logs.sponsor_id = ?`;
-    params.push(auth_user.id);
+    params.push(auth_user);
 
     // total count query
     const countQuery = `SELECT COUNT(*) AS total FROM usersdata user
@@ -1228,7 +1228,7 @@ exports.affiliateActivityLogs = async (req, res) => {
 
     params.push(parseInt(limit), parseInt(offset));
     console.log('whereClause.id',whereClause);
-    console.log('auth_user.id',auth_user.id);
+    console.log('auth_user.id',auth_user);
     console.log('limit',limit);
     console.log('offset',offset);
     console.log('dataQuery',dataQuery);
