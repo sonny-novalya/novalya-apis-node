@@ -638,6 +638,9 @@ exports.forgetpassword = async (req, res) => {
     };
 
     transporter.sendMail(mailOptions, async (err, info) => {
+      console.log('err-641:',err);
+      console.log('info-641:',info);
+      
       if (!err) {
         const updateQuery = `UPDATE usersdata SET emailtoken = ? WHERE email = ?`;
         const updateParams = [randomcode, email];
@@ -660,7 +663,7 @@ exports.forgetpassword = async (req, res) => {
       }
     });
   } catch (error) {
-    
+
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
   }
