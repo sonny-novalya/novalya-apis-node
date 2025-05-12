@@ -40,6 +40,7 @@ router.post("/userdata", UserController.userdata);
 router.post("/affiliate/kyc-data", AffiliateController.affiliateKycData);
 router.post("/refferedUsers", UserController.refferedUsers);
 router.post("/affiliate-customers", UserController.affiliateCustomers);
+router.post("/affiliate-activity-logs", UserController.affiliateActivityLogs);
 
 
 router.post("/ticketCount", UserController.ticketCount);
