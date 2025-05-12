@@ -610,11 +610,8 @@ exports.forgetpassword = async (req, res) => {
     const userData = selectUserResult[0];
 
     if (!userData || userData.email !== email) {
-      res.json({
-        status: "error",
-        message: "No account found with this email address",
-      });
-      return;
+
+      return Response.resWith422(res, "No account found with this email address");
     }
 
     const title = "Password reset requested on " + company_name;
@@ -652,28 +649,20 @@ exports.forgetpassword = async (req, res) => {
             { type: "user" }
           );
 
-          res.json({
-            status: "success",
-            message: "Email sent for password reset request. Please check your email.",
-          });
+          return Response.resWith202(res, "Email sent for password reset request. Please check your email.");
         } else {
-          res.json({
-            status: "error",
-            message: "Failed to update email token",
-          });
+          
+          return Response.resWith422(res, "Failed to update email token");
         }
       } else {
-        res.json({
-          status: "error",
-          message: "Failed to send email",
-        });
+
+        return Response.resWith422(res, "Failed to send email");
       }
     });
   } catch (error) {
-    res.json({
-      status: "error",
-      message: "Server error occurred",
-    });
+    
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
   }
 };
 
