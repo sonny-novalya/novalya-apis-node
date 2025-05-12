@@ -1,6 +1,7 @@
 const express = require("express");
 const { Qry, checkAuthorization 
 } = require("../helpers/functions");
+const chargebee = require("chargebee");
 const { insert_affiliate_commission } = require("../helpers/affiliate_helper");
 
 const Response = require("../helpers/response");
@@ -442,6 +443,69 @@ exports.ticketCount = async (req, res) => {
     });
   }
 };
+
+  exports.becomeAffiliate = async (req, res) => {
+  try {
+   const authUser = await checkAuthorization(req, res);// Assuming checkAuthorization function checks the authorization token
+    const postData = req.body;
+    //subscription item details
+    const customerid = postData.customerid
+
+    const selectUsernameQuery = `SELECT * FROM usersdata WHERE id = ?`;
+    const selectUsernameResult = await Qry(selectUsernameQuery, [authUser]);
+
+    let currency = selectUsernameResult[0].currency;
+    let item_price_id = `Affiliate-Fee-${currency}-Yearly`;
+
+    const affiliateSubscription = () => {
+      return new Promise((resolve, reject) => {
+        chargebee.hosted_page
+          .checkout_new_for_items({
+            subscription_items: [
+              {
+                item_price_id: item_price_id,
+                quantity: 1,
+              },
+            ],
+            customer: {
+              id: customerid,
+            },
+            redirect_url: weblink + "dashboard/",
+            cancel_url: weblink + "dashboard/",
+          })
+          .request(function (error, result) {
+            if (error) {
+              //handle error
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          });
+      });
+    };
+
+    let subscriptionResult;
+    try {
+      subscriptionResult = await affiliateSubscription();
+      Response.resWith202(res, "success", subscriptionResult)
+      // res.json({
+      //   status: "success",
+      //   data: subscriptionResult,
+      // });
+    } catch (error) {
+      res.json({
+        status: "error",
+        message: error?.message,
+      });
+      return;
+    }
+  } catch (error) {
+    res.json({
+      status: "error",
+      errordetails: error,
+    });
+  }
+}
 
 
 
