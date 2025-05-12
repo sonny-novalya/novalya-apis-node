@@ -5,13 +5,22 @@ const {
   randomToken,
 } = require("../../helpers/functions");
 const Response = require("../../helpers/response");
-const { Model } = require("sequelize");
+const { Model, fn, col, literal } = require("sequelize");
 const { Sequelize } = require("../../Models");
+const sequelize = db.sequelize
 const Op = Sequelize.Op;
 const tag = db.tag;
 const campaign = db.campaign;
 const stage = db.stage;
 const taggedusers = db.taggedusers;
+
+
+tag.hasMany(stage, { as: 'stages', foreignKey: 'tag_id' });
+stage.belongsTo(tag, { foreignKey: 'tag_id' });
+
+tag.hasMany(taggedusers, { foreignKey: 'tag_id', as: 'tagTaggedUsers' });
+stage.hasMany(taggedusers, { foreignKey: 'stage_id', as: 'stageTaggedUsers' });
+
 
 
 const placetag = async (req, res) => {
@@ -82,47 +91,115 @@ const getAll = async (req, res) => {
     const user_id = authUser;
     const whereOptions = user_id ? { user_id: user_id } : {};
 
-    const tags = await db.tag.findAll({
+    const tags = await tag.findAll({
       where: whereOptions,
       include: [
-        { model: db.campaign },
+        { model: campaign },
         { model: stage, as: "stage", order: [["stage_num", "ASC"]] },
       ],
       order: [["order_num", "DESC"]],
     });
 
-    // Step 2: Enrich each tag with taggedUser count and stage-level taggedUser count
-    const enrichedTags = await Promise.all(
-      tags.map(async (tag) => {
-        // Count taggedUsers for this tag
-        const taggedUsersCount = await taggedusers.count({
-          where: { tag_id: tag.id },
-        });
-
-        // Add count to each stage
-        const enrichedStages = await Promise.all(
-          (tag.stage || []).map(async (stageItem) => {
-            const taggedUsersStageCount = await taggedusers.count({
-              where: { stage_id: stageItem.id },
-            });
-
-            return {
-              ...stageItem.toJSON(),
-              taggedUsersStageCount,
-            };
-          })
-        );
-
-        return {
-          ...tag.toJSON(),
-          taggedUsersCount,
-          stage: enrichedStages,
-        };
-      })
+    const tagUserCounts = await sequelize.query(`
+      SELECT tag_id, COUNT(*) as taggedUsersCount
+      FROM taggedusers
+      WHERE user_id = :user_id
+      GROUP BY tag_id
+    `,
+    {
+      replacements: { user_id },
+      type: sequelize.QueryTypes.SELECT,
+    }
     );
+
+    const stageUserCounts = await sequelize.query(
+    `
+      SELECT stage_id, COUNT(*) as taggedUsersStageCount
+      FROM taggedusers
+      WHERE user_id = :user_id
+      GROUP BY stage_id
+    `,
+    {
+      replacements: { user_id },
+      type: sequelize.QueryTypes.SELECT,
+    }
+    );
+
+    // Handle empty tagUserCounts safely
+    const tagCountMap = {};
+    (tagUserCounts || []).forEach(row => {
+      if (row.tag_id) {
+        tagCountMap[row.tag_id] = parseInt(row.taggedUsersCount) || 0;
+      }
+    });
+
+    // Handle empty stageUserCounts safely
+    const stageCountMap = {};
+    (stageUserCounts || []).forEach(row => {
+      if (row.stage_id) {
+        stageCountMap[row.stage_id] = parseInt(row.taggedUsersStageCount) || 0;
+      }
+    });
+
+    // Step 5: Enrich tags with counts
+    const enrichedTags = tags.map(tagItem => {
+      const enrichedStages = (tagItem.stage || []).map(stageItem => ({
+        ...stageItem.toJSON(),
+        taggedUsersStageCount: stageCountMap[stageItem.id] || 0,
+      }));
+
+      return {
+        ...tagItem.toJSON(),
+        taggedUsersCount: tagCountMap[tagItem.id] || 0,
+        stage: enrichedStages,
+      };
+    });
 
 
     return Response.resWith202(res, 'success', enrichedTags);
+
+
+    // const tags = await db.tag.findAll({
+    //   where: whereOptions,
+    //   include: [
+    //     { model: db.campaign },
+    //     { model: stage, as: "stage", order: [["stage_num", "ASC"]] },
+    //   ],
+    //   order: [["order_num", "DESC"]],
+    // });
+
+    // // Step 2: Enrich each tag with taggedUser count and stage-level taggedUser count
+    // const enrichedTags = await Promise.all(
+    //   tags.map(async (tag) => {
+    //     // Count taggedUsers for this tag
+    //     const taggedUsersCount = await taggedusers.count({
+    //       where: { tag_id: tag.id },
+    //     });
+
+    //     // Add count to each stage
+    //     const enrichedStages = await Promise.all(
+    //       (tag.stage || []).map(async (stageItem) => {
+    //         const taggedUsersStageCount = await taggedusers.count({
+    //           where: { stage_id: stageItem.id },
+    //         });
+
+    //         return {
+    //           ...stageItem.toJSON(),
+    //           taggedUsersStageCount,
+    //         };
+    //       })
+    //     );
+
+    //     return {
+    //       ...tag.toJSON(),
+    //       taggedUsersCount,
+    //       stage: enrichedStages,
+    //     };
+    //   })
+    // );
+
+
+    // return Response.resWith202(res, 'success', enrichedTags);
   } catch (error) {
 
     console.log('error', error);    
