@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const apiKey = "";
+const apiKey = process.env.OPENAPIKEY;
 const chosenModel = "gpt-4o-mini";
 global.length = "";
 global.fbContent = "";
