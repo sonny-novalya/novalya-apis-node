@@ -5,7 +5,7 @@ const { getAuthUser } = require("../../helpers/functions");
 const Op = Sequelize.Op;
 const db = require("../../Models/crm");
 const sequelize =db.sequelize;
-
+const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 const taggedUser = db.instataggedusers;
 const tags = db.instatag;
 
@@ -24,13 +24,23 @@ const TagsController = {
       thread_id,
     } = req.body;
 
+    
 
     if (type === "add") {
+      let folderName = "insta-crm";
+      let dateImg = Date.now()
+      let imageUrl;
+
       if (!insta_user_id) {
         return Response.resWith422(res, "Missing or invalid parameters");
       }
 
       let tag_id = group_tag_id.join(", ");
+
+      if (profilePic) {
+
+        imageUrl = await UploadImageOnS3Bucket(profilePic, folderName, dateImg);
+      }
 
       const taggedUserData = {
         user_id,
@@ -38,7 +48,7 @@ const TagsController = {
         numeric_insta_id: insta_user_id,
         insta_image_id,
         insta_name,
-        profile_pic: profilePic,
+        profile_pic: imageUrl || "",
         is_primary: is_primary !== "" ? true : false,
         tag_id,
         stage_id,
