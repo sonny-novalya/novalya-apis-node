@@ -197,47 +197,94 @@ self.updateCapturePage = async (req, res) => {
       );
     }
 
-    // Brevo API Call
-    await axios.post(
-      BREVO_API_URL,
-      {
-        email,
-        attributes: {
-          FIRSTNAME: first_name,
-          LASTNAME: last_name || "",
-          SMS: sms,
-          OPT_IN: "YES",
-          SPONSORID: sponsorCode,
-          COUNTRY: country || "",
-          SPONSOR_EMAIL: sponsorEmail,
-          USERNAME: username,
-          LANGUAGE: language,
-          NOVALYA_PLAN_NAME: plan,
-          NOVALYA_PLAN_PERIOD: plan_period,
-          NOVALYA_CURRENCY_CODE: currency,
-          NOVALYA_PLAN_STATUS: plan_status,
-          NOVALYA_PLAN_AMOUNT: plan_amount,
-          NOVALYA_INVOICE_PAID: invoice_paid,
-          NOVALYA_PLAN_STATUS_UPDATE_DATE: plan_status_update_date,
-          UTM_CAMPAIGN: utm_data.utm_campaign || "",
-          UTM_MEDIUM: utm_data.utm_medium || "",
-          UTM_SOURCE: utm_data.utm_source || "",
-          UTM_TERM: utm_data.utm_term || "",
-          UTM_CONTENT: utm_data.utm_content || "",
-          RESELLER: reseller,
-          AFFILIATE_PRO: affiliate_pro
-        },
-        listIds: [70], 
-        updateEnabled: true
-      },
-      {
-        headers: {
-          accept: "application/json",
-          "api-key": brevoKey,
-          "content-type": "application/json"
-        }
-      }
-    );
+    setImmediate(() => {
+      Promise.all([
+        axios.post(
+          BREVO_API_URL,
+          {
+            email,
+            attributes: {
+              FIRSTNAME: first_name,
+              LASTNAME: last_name || "",
+              SMS: sms,
+              OPT_IN: "YES",
+              SPONSORID: sponsorCode,
+              COUNTRY: country || "",
+              SPONSOR_EMAIL: sponsorEmail,
+              USERNAME: username,
+              LANGUAGE: language,
+              NOVALYA_PLAN_NAME: plan,
+              NOVALYA_PLAN_PERIOD: plan_period,
+              NOVALYA_CURRENCY_CODE: currency,
+              NOVALYA_PLAN_STATUS: plan_status,
+              NOVALYA_PLAN_AMOUNT: plan_amount,
+              NOVALYA_INVOICE_PAID: invoice_paid,
+              NOVALYA_PLAN_STATUS_UPDATE_DATE: plan_status_update_date,
+              UTM_CAMPAIGN: utm_data.utm_campaign || "",
+              UTM_MEDIUM: utm_data.utm_medium || "",
+              UTM_SOURCE: utm_data.utm_source || "",
+              UTM_TERM: utm_data.utm_term || "",
+              UTM_CONTENT: utm_data.utm_content || "",
+              RESELLER: reseller,
+              AFFILIATE_PRO: affiliate_pro
+            },
+            listIds: [70],
+            updateEnabled: true
+          },
+          {
+            headers: {
+              accept: "application/json",
+              "api-key": brevoKey,
+              "content-type": "application/json"
+            }
+          }
+        )
+      ]).catch(err => {
+        console.error("Brevo API error:", err?.response?.data || err.message);
+      });
+    });
+
+    // // Brevo API Call
+    // await axios.post(
+    //   BREVO_API_URL,
+    //   {
+    //     email,
+    //     attributes: {
+    //       FIRSTNAME: first_name,
+    //       LASTNAME: last_name || "",
+    //       SMS: sms,
+    //       OPT_IN: "YES",
+    //       SPONSORID: sponsorCode,
+    //       COUNTRY: country || "",
+    //       SPONSOR_EMAIL: sponsorEmail,
+    //       USERNAME: username,
+    //       LANGUAGE: language,
+    //       NOVALYA_PLAN_NAME: plan,
+    //       NOVALYA_PLAN_PERIOD: plan_period,
+    //       NOVALYA_CURRENCY_CODE: currency,
+    //       NOVALYA_PLAN_STATUS: plan_status,
+    //       NOVALYA_PLAN_AMOUNT: plan_amount,
+    //       NOVALYA_INVOICE_PAID: invoice_paid,
+    //       NOVALYA_PLAN_STATUS_UPDATE_DATE: plan_status_update_date,
+    //       UTM_CAMPAIGN: utm_data.utm_campaign || "",
+    //       UTM_MEDIUM: utm_data.utm_medium || "",
+    //       UTM_SOURCE: utm_data.utm_source || "",
+    //       UTM_TERM: utm_data.utm_term || "",
+    //       UTM_CONTENT: utm_data.utm_content || "",
+    //       RESELLER: reseller,
+    //       AFFILIATE_PRO: affiliate_pro
+    //     },
+    //     listIds: [70], 
+    //     updateEnabled: true
+    //   },
+    //   {
+    //     headers: {
+    //       accept: "application/json",
+    //       "api-key": brevoKey,
+    //       "content-type": "application/json"
+    //     }
+    //   }
+    // );
 
     return Response.resWith202(res, "success");
   } catch (error) {
