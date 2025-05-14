@@ -119,8 +119,7 @@ exports.affiliateKycData = async (req, res) => {
     user.users_limits = limits;
     user.user_id = auth_user;
 
-    return Response.resWith202({ status: "success", user });
-
+    return Response.resWith202(res, "success", user);
   } catch (error) {
     console.error("Error occurred:", error);  
     return Response.resWith422(res, "Something went wrong");
