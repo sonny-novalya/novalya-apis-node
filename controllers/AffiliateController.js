@@ -6,8 +6,11 @@ const { insert_affiliate_commission } = require("../helpers/affiliate_helper");
 
 const Response = require("../helpers/response");
 
+require("dotenv").config();
+const weblink = process.env.webLink;
+const image_base_url = process.env.image_base_url;
 
-exports.affiliateKycData = async (req, res) => {
+exports.affiliateKycDataOld = async (req, res) => {
   try {
 
     const auth_user = await checkAuthorization(req, res);
@@ -46,6 +49,83 @@ exports.affiliateKycData = async (req, res) => {
     console.error("Error occurred:", error);  
     return Response.resWith422(res, "Something went wrong");
   }
+};
+
+
+exports.affiliateKycData = async (req, res) => {
+
+  try {
+    const auth_user = await checkAuthorization(req, res);
+    if (!auth_user) return;
+
+    const user_select_query = `
+      SELECT parent_id, isAlreadyCharge, isAffiliate, sub_type, plan_period, plan_pkg,
+            isChatActive, connection_type, sponsorid, username, randomcode, firstname, lastname,
+            email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus,
+            address1, company, country, createdat, login_status, lastlogin, lastip, referral_side,
+            kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country,
+            bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank,
+            novarank, connect_status, birthday_status, crm_status, unfollow_status,
+            outside_bank_account_country, outside_bank_account_title, outside_bank_account_number,
+            outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,
+            website, outside_bank_account_address, outside_bank_account_city,
+            outside_bank_account_zip_code, outside_bank_account_street,
+            bank_account_address, bank_account_city, bank_account_zip_code,
+            outside_payout_country, payout_country, subscription_status, language,
+            language_status, currency, trial, trial_status, trial_end
+      FROM usersdata WHERE id = ?
+    `;
+    const [user] = await Qry(user_select_query, [auth_user]);
+
+    // Sponsor Info
+    if (user.sponsorid !== 0) {
+      const [sponsor] = await Qry(`SELECT username AS sponsorusername FROM usersdata WHERE id = ?`, [user.sponsorid]);
+      user.sponsorusername = sponsor?.sponsorusername || "admin";
+    } else {
+      user.sponsorusername = "admin";
+    }
+
+    // Total Payout
+    const [{ totalpayout }] = await Qry(`SELECT COALESCE(SUM(amount), 0) AS totalpayout FROM transactions WHERE type = 'payout' AND receiverid = ?`, [auth_user]);
+    user.totalpayout = totalpayout;
+
+    // Active Referrals
+    const [{ count }] = await Qry(`SELECT COUNT(*) AS count FROM usersdata WHERE sponsorid = ? AND status = 'approved'`, [auth_user]);
+    user.activereferrals = count;
+
+    // URLs
+    user.referrallink = `${weblink}signup/${user.randomcode}`;
+    user.profilepictureurl = `${image_base_url}uploads/userprofile/${user.picture}`;
+    user.userProfileUrl = `${image_base_url}uploads/userprofile/${user.admin_logo}`;
+    user.favIconUrl = `${image_base_url}uploads/userprofile/${user.fav_icon}`;
+
+    // Plan Info
+    const [pkg] = await Qry(`SELECT planid, subscriptionid FROM new_packages WHERE userid = ? AND type = ?`, [auth_user, "package"]);
+    user.planId = pkg?.planid;
+    user.subscriptionId = pkg?.subscriptionid;
+
+    // Payout Requests
+    const [{ total: porequestcount }] = await Qry(`SELECT COUNT(*) as total FROM payout_information_request WHERE userid = ? AND status = ?`, [auth_user, "Pending"]);
+    user.porequestcount = porequestcount;
+
+    const kycReject = await Qry(`SELECT * FROM kyc WHERE userid = ? AND status = ? ORDER BY id DESC LIMIT 1`, [auth_user, "Rejected"]);
+    user.kycRejectcount = kycReject;
+
+    const poReject = await Qry(`SELECT * FROM payout_information_request WHERE userid = ? AND status = ? ORDER BY id DESC LIMIT 1`, [auth_user, "Rejected"]);
+    user.poRejectedCount = poReject;
+
+    // User Limits
+    const [limits] = await Qry(`SELECT * FROM users_limits WHERE userid = ?`, [auth_user]);
+    user.users_limits = limits;
+    user.user_id = auth_user;
+
+    return Response.resWith202({ status: "success", user });
+
+  } catch (error) {
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
+  }
+
 };
 
 exports.refferedUsers = async (req, res) => {
