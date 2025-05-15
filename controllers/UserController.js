@@ -1012,7 +1012,7 @@ exports.refferedUsers = async (req, res) => {
   }
 };
 
-exports.affiliateCustomers = async (req, res) => {
+exports.affiliateCustomersWithoutSearch = async (req, res) => {
   try {
     
     const { month, year } = req.body;
@@ -1180,6 +1180,203 @@ exports.affiliateCustomers = async (req, res) => {
     return Response.resWith422(res, error.message);
   }
 };
+
+exports.affiliateCustomers = async (req, res) => {
+  try {
+    const { month, year, search } = req.body;
+    const auth_user = await checkAuthorization(req, res);
+    if (!auth_user) return;
+
+    const sponsor_clause = `(u.sponsorid = ? OR u.l2_sponsorid = ?)`;
+    const base_params = [auth_user, auth_user];
+
+    const addDateAndSearchFilter = (query, alias, type = "default") => {
+      if (month && year) {
+        if (type === "less_equal") {
+          query += ` AND ${alias}.createdat <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))`;
+        } else {
+          query += ` AND MONTH(${alias}.createdat) = ? AND YEAR(${alias}.createdat) = ?`;
+        }
+      }
+
+      if (search && search.trim() !== "") {
+        query += ` AND (
+          u.firstname LIKE ? OR
+          u.lastname LIKE ? OR
+          u.email LIKE ?
+        )`;
+      }
+
+      return query;
+    };
+
+    const getDateAndSearchParams = (type = "default") => {
+      const params = [];
+      if (month && year) {
+        if (type === "less_equal") {
+          params.push(year, month);
+        } else {
+          params.push(month, year);
+        }
+      }
+
+      if (search && search.trim() !== "") {
+        const likeSearch = `%${search.trim()}%`;
+        params.push(likeSearch, likeSearch, likeSearch);
+      }
+
+      return params;
+    };
+
+    // New Trial Customers
+    let new_trial_query = `
+      SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date,
+             p.is_cancellation_scheduled,
+             s.email AS sponsor_email, CONCAT(s.firstname, ' ', s.lastname) AS sponsor_name,
+             l2.email AS l2_sponsor_email, CONCAT(l2.firstname, ' ', l2.lastname) AS l2_sponsor_name
+      FROM usersdata u
+      JOIN new_packages p ON u.id = p.userid
+      LEFT JOIN usersdata s ON u.sponsorid = s.id
+      LEFT JOIN usersdata l2 ON u.l2_sponsorid = l2.id
+      WHERE ${sponsor_clause}
+        AND u.createdat >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND u.subscription_status IN ('Active','payment_failed','subscription_cancelled','subscription_reactivated')
+        AND u.trial_status = 'Active'
+        AND p.planid NOT LIKE '%Affiliate-Fee%'`;
+
+    const new_trial_params = [...base_params, ...getDateAndSearchParams()];
+    new_trial_query = addDateAndSearchFilter(new_trial_query, 'u');
+    new_trial_query += ` ORDER BY u.id DESC`;
+    const new_trials = await Qry(new_trial_query, new_trial_params);
+
+    // Active Customers
+    let active_customer_query = `
+      SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date,
+             p.activatedAt, p.nextBillingAt, p.is_cancellation_scheduled,
+             s.email AS sponsor_email, CONCAT(s.firstname, ' ', s.lastname) AS sponsor_name,
+             l2.email AS l2_sponsor_email, CONCAT(l2.firstname, ' ', l2.lastname) AS l2_sponsor_name
+      FROM usersdata u
+      JOIN new_packages p ON u.id = p.userid AND u.subscription_status = p.status
+      LEFT JOIN usersdata s ON u.sponsorid = s.id
+      LEFT JOIN usersdata l2 ON u.l2_sponsorid = l2.id
+      WHERE ${sponsor_clause}
+        AND u.subscription_status IN (
+          'subscription_renewed', 'Active', 'subscription_changed',
+          'subscription_created', 'subscription_activated',
+          'payment_failed', 'subscription_reactivated', 'subscription_resumed'
+        )
+        AND u.trial_status = 'Inactive'
+        AND p.planid NOT LIKE '%Affiliate-Fee%'`;
+
+    const active_customer_params = [...base_params, ...getDateAndSearchParams('less_equal')];
+    active_customer_query = addDateAndSearchFilter(active_customer_query, 'u', 'less_equal');
+    active_customer_query += ` ORDER BY u.id DESC`;
+    const active_customers = await Qry(active_customer_query, active_customer_params);
+
+    // Trial Cancelled Users
+    let trial_cancelled_query = `
+      SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date, p.is_cancellation_scheduled,
+             s.email AS sponsor_email, CONCAT(s.firstname, ' ', s.lastname) AS sponsor_name,
+             l2.email AS l2_sponsor_email, CONCAT(l2.firstname, ' ', l2.lastname) AS l2_sponsor_name
+      FROM usersdata u
+      JOIN new_packages p ON u.id = p.userid
+      LEFT JOIN usersdata s ON u.sponsorid = s.id
+      LEFT JOIN usersdata l2 ON u.l2_sponsorid = l2.id
+      WHERE ${sponsor_clause}
+        AND u.subscription_status = 'subscription_cancelled'
+        AND u.trial_status = 'Active'
+        AND p.planid NOT LIKE '%Affiliate-Fee%'`;
+
+    const trial_cancelled_params = [...base_params];
+    if (month && year) {
+      trial_cancelled_query += ` AND YEAR(u.createdat) <= ? AND MONTH(u.createdat) <= ?`;
+      trial_cancelled_params.push(year, month);
+    }
+    if (search && search.trim() !== "") {
+      trial_cancelled_query += ` AND (
+        u.firstname LIKE ? OR
+        u.lastname LIKE ? OR
+        u.email LIKE ?
+      )`;
+      const likeSearch = `%${search.trim()}%`;
+      trial_cancelled_params.push(likeSearch, likeSearch, likeSearch);
+    }
+    trial_cancelled_query += ` ORDER BY u.id DESC`;
+    const trial_cancelled = await Qry(trial_cancelled_query, trial_cancelled_params);
+
+    // Customer Cancelled (non-trial)
+    let customer_cancelled_query = `
+      SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date, p.is_cancellation_scheduled,
+             s.email AS sponsor_email, CONCAT(s.firstname, ' ', s.lastname) AS sponsor_name,
+             l2.email AS l2_sponsor_email, CONCAT(l2.firstname, ' ', l2.lastname) AS l2_sponsor_name
+      FROM usersdata u
+      JOIN new_packages p ON u.id = p.userid
+      LEFT JOIN usersdata s ON u.sponsorid = s.id
+      LEFT JOIN usersdata l2 ON u.l2_sponsorid = l2.id
+      WHERE ${sponsor_clause}
+        AND u.subscription_status IN ('subscription_cancelled', 'subscription_paused')
+        AND u.trial_status = 'Inactive'
+        AND p.planid NOT LIKE '%Affiliate-Fee%'`;
+
+    const customer_cancelled_params = [...base_params];
+    if (month && year) {
+      customer_cancelled_query += ` AND YEAR(u.createdat) <= ? AND MONTH(u.createdat) <= ?`;
+      customer_cancelled_params.push(year, month);
+    }
+    if (search && search.trim() !== "") {
+      customer_cancelled_query += ` AND (
+        u.firstname LIKE ? OR
+        u.lastname LIKE ? OR
+        u.email LIKE ?
+      )`;
+      const likeSearch = `%${search.trim()}%`;
+      customer_cancelled_params.push(likeSearch, likeSearch, likeSearch);
+    }
+    customer_cancelled_query += ` ORDER BY u.id DESC`;
+    const customer_cancelled = await Qry(customer_cancelled_query, customer_cancelled_params);
+
+    // All Customers
+    let all_customer_query = `
+      SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date,
+             p.activatedAt, p.nextBillingAt, p.is_cancellation_scheduled,
+             s.email AS sponsor_email, CONCAT(s.firstname, ' ', s.lastname) AS sponsor_name,
+             l2.email AS l2_sponsor_email, CONCAT(l2.firstname, ' ', l2.lastname) AS l2_sponsor_name
+      FROM usersdata u
+      JOIN new_packages p ON u.id = p.userid
+      LEFT JOIN usersdata s ON u.sponsorid = s.id
+      LEFT JOIN usersdata l2 ON u.l2_sponsorid = l2.id
+      WHERE ${sponsor_clause}
+        AND p.planid NOT LIKE '%Affiliate-Fee%'`;
+
+    const all_customer_params = [...base_params, ...getDateAndSearchParams('less_equal')];
+    all_customer_query = addDateAndSearchFilter(all_customer_query, 'u', 'less_equal');
+    all_customer_query += ` ORDER BY u.id DESC`;
+    const all_customers = await Qry(all_customer_query, all_customer_params);
+
+    // Total Active User Count
+    const total_active_query = `
+      SELECT COUNT(*) AS totalCount
+      FROM usersdata
+      WHERE (sponsorid = ? OR l2_sponsorid = ?)
+      AND subscription_status NOT IN ('subscription_cancelled', 'payment_failed', 'subscription_paused')`;
+    const total_active_users = await Qry(total_active_query, base_params);
+
+    const final_response = {
+      new_trials,
+      active_customers,
+      trial_cancelled,
+      customer_cancelled,
+      all_customers,
+      total_users_count: total_active_users,
+    };
+
+    return Response.resWith202(res, "success", final_response);
+  } catch (error) {
+    console.error("Error occurred:", error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
 
 exports.affiliateActivityLogs = async (req, res) => {
   try {
