@@ -37,9 +37,11 @@ const TagsController = {
 
       let tag_id = group_tag_id.join(", ");
 
-      if (profilePic) {
+      if (profilePic && profilePic.includes("novalya-assets") != true) {
 
         imageUrl = await UploadImageOnS3Bucket(profilePic, folderName, dateImg);
+      }else{
+        imageUrl = profilePic
       }
 
       const taggedUserData = {
