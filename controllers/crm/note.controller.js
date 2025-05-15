@@ -124,6 +124,7 @@ const createFbNote = async (req, res) => {
           numeric_fb_id: fb_alphanumeric_id,
           fb_user_e2ee_id: fb_user_e2ee_id,
           is_e2ee,
+          user_note: req.body.short_description || null,
         };
 
         if (existingRecord) {
@@ -244,7 +245,8 @@ const createInstaNote = async (req, res) => {
           profile_pic: imageUrl,
           insta_image_id: null,
           numeric_insta_id: numeric_insta_id,
-          thread_id
+          thread_id,
+          user_note: req.body.short_description || null,
         };
 
         if (existingRecord) {
