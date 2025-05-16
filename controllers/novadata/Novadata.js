@@ -866,7 +866,6 @@ self.syncFbFriends = async (req, res) => {
     const user_id = req.authUser;
     const userDataArray = req.body.friends;
     const endCursor = req.body.end_cursor;
-    const status = req.body.status;
     const endCursorTypeFb = 'FB'
     const folderName = "fb-novatdata-sync"
     // await Novadata.destroy({ where: { user_id: user_id } });
@@ -895,7 +894,8 @@ self.syncFbFriends = async (req, res) => {
           image,
           name,
           url,
-          mutual_friend
+          mutual_friend,
+          status
 
         } = userData;
 
