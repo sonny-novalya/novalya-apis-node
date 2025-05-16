@@ -83,22 +83,34 @@ exports.getAllCards = async (req, res) => {
 
     const selectUserQuery = `SELECT customerid FROM usersdata where id = ?`;
     const selectUserResult = await Qry(selectUserQuery, [authUser]);
+    const customerId = selectUserResult[0]?.customerid;
 
-    chargebee.payment_source
-      .list({ "customer_id[is]": selectUserResult[0].customerid })
-      .request((error, result) => {
-        console.error("Chargebee result:", result);
-        if (error) {
-          console.error("Chargebee error:", error);
-          return Response.resWith500(res, "something went wrong");
-        }
+    if (!customerId) {
+      return Response.resWith422(res, "Customer not found");
+    }
 
-        const cards = result.list
-          .filter(item => item.payment_source.type === "card")
-          .map(item => item.payment_source.card);
+    const [customerRes, paymentSourcesRes] = await Promise.all([
+      chargebee.customer.retrieve(customerId).request(),  
+      chargebee.payment_source.list({ "customer_id[is]": customerId }).request()
+    ]);
 
-        return Response.resWith200(res, "cards fetched", cards);
+    const primaryId = customerRes.customer.primary_payment_source_id;
+    const cards = paymentSourcesRes.list
+      .filter(item => item.payment_source.type === "card")
+      .map(item => {
+        const ps = item.payment_source;
+        return {
+          id: ps.id,
+          brand: ps.card.brand,
+          last4: ps.card.last4,
+          expiry_month: ps.card.expiry_month,
+          expiry_year: ps.card.expiry_year,
+          masked_number: ps.card.masked_number,
+          is_primary: ps.id === primaryId
+        };
       });
+
+    return Response.resWith200(res, "cards fetched", cards);
   } catch (error) {
     console.error("error:", error);
     return Response.resWith422(res, "Soemthing went wrong");
