@@ -41,4 +41,18 @@ exports.resWith400 = (res, msg) => {
     });
 };
 
+exports.resWith200 = (res, msg, data = null) => {
+    return res.status(200).json({
+        status: 'success',
+        message: msg,
+        data: data,
+    });
+};
 
+exports.resWith500 = (res, msg, data = null) => {
+    return res.status(500).json({
+        status: 'error',
+        message: msg,
+        data: data,
+    });
+};

@@ -25,6 +25,9 @@ const noteController = require("../controllers/crm/note.controller");
 const stageController = require("../controllers/crm/stage.controller");
 const SettingController = require("../controllers/settings/SettingController");
 
+// Chargebee
+const chargeBeeController = require("../controllers/chargebee/chargeBeeController");
+
 router.post("/login", UserController.login);
 router.post("/manualsignin", UserController.manualSignIn);
 router.post("/defaultTagAndMessage", UserController.defaultTagAndMessage);
@@ -251,4 +254,12 @@ router.post("/update-capture-page", SettingController.updateCapturePage);
 // Affiliate
 
 router.post("/createaffiliateuser", AffiliateController.becomeAffiliate);
+
+// Chargebee
+router.get("/chargebee/list-invoices", chargeBeeController.getAllInvoices);
+router.post("/chargebee/download-invoices", chargeBeeController.downloadInvoice);
+router.post("/chargebee/card-listing", chargeBeeController.getAllCards);
+router.post("/chargebee/create-new-card", chargeBeeController.createNewCard);
+router.post("/chargebee/delete-card", chargeBeeController.deleteCard);
+
 module.exports = router;
