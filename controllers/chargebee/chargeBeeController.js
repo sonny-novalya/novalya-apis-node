@@ -12,11 +12,15 @@ exports.getAllInvoices = async (req, res) => {
     const authUser = await checkAuthorization(req, res);
     if (!authUser) return Response.resWith401(res, "Unauthorized");
 
+    const selectUserQuery = `SELECT customerid FROM usersdata where id = ?`;
+    const selectUserResult = await Qry(selectUserQuery, [authUser]);
+
     // Fetch all invoices from Chargebee
     chargebee.invoice
       .list({
         limit: req.query.limit || 5,
         "sort_by[asc]": "date",
+        "customer_id[is]": selectUserResult[0].customerid
       })
       .request((error, result) => {
         if (error) {
@@ -34,6 +38,8 @@ exports.getAllInvoices = async (req, res) => {
             date: invoice.date,
             total: invoice.total,
             amount_paid: invoice.amount_paid,
+            type: invoice.line_items[0].entity_id,
+            currency_code: invoice.currency_code,
           };
         });
 
@@ -78,17 +84,20 @@ exports.getAllCards = async (req, res) => {
     const selectUserQuery = `SELECT customerid FROM usersdata where id = ?`;
     const selectUserResult = await Qry(selectUserQuery, [authUser]);
 
-    chargebee.card.retrieve(selectUserResult[0].customerid)
+    chargebee.payment_source
+      .list({ "customer_id[is]": selectUserResult[0].customerid })
       .request((error, result) => {
         console.error("Chargebee result:", result);
         if (error) {
           console.error("Chargebee error:", error);
-          return Response.resWith200(res, "something went wrong");
+          return Response.resWith500(res, "something went wrong");
         }
 
-        var final_response = (result && result.card) ? result.card : [];
+        const cards = result.list
+          .filter(item => item.payment_source.type === "card")
+          .map(item => item.payment_source.card);
 
-        return Response.resWith200(res, "cards fetched", final_response);
+        return Response.resWith200(res, "cards fetched", cards);
       });
   } catch (error) {
     console.error("error:", error);
