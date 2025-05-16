@@ -257,6 +257,7 @@ router.post("/createaffiliateuser", AffiliateController.becomeAffiliate);
 
 // Chargebee
 router.get("/chargebee/list-invoices", chargeBeeController.getAllInvoices);
+router.post("/chargebee/download-invoices", chargeBeeController.downloadInvoice);
 router.post("/chargebee/card-listing", chargeBeeController.getAllCards);
 router.post("/chargebee/create-new-card", chargeBeeController.createNewCard);
 router.post("/chargebee/delete-card", chargeBeeController.deleteCard);

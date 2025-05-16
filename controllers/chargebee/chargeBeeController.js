@@ -45,6 +45,31 @@ exports.getAllInvoices = async (req, res) => {
   }
 };
 
+exports.downloadInvoice = async(req, res) => {
+  try {
+    const authUser = await checkAuthorization(req, res);
+    if(!authUser) return Response.resWith401(res, "Unauthorized");
+
+    const{ invoice_id } = req.body;
+    if(!invoice_id){
+      return Response.resWith400(res, "Invoice ID is required");
+    }
+
+    chargebee.invoice.pdf(invoice_id).request((error, result) => {
+      if (error) {
+        console.error("Chargebee PDF error:", error);
+        return Response.resWith500(res, "Failed to fetch invoice PDF");
+      }
+
+      const downloadUrl = result.download?.download_url;
+      return Response.resWith200(res, "Download URL fetched", { download_url: downloadUrl })
+    })
+  } catch (error) {
+    console.error("Invoice PDF fetch error:", err);
+    return Response.resWith500(res, "Unexpected error");
+  }
+}
+
 exports.getAllCards = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res);
