@@ -827,8 +827,8 @@ exports.userdata = async (req, res) => {
       const pkgSelectQuery = `SELECT * FROM new_packages WHERE userid = ? and type = ?`;
       const pkgSelectParams = [authUser, "package"];
       const pkgSelectResult = await Qry(pkgSelectQuery, pkgSelectParams);
-      let planId = pkgSelectResult[0].planid;
-      let subscriptionId = pkgSelectResult[0].subscriptionid;
+      let planId = pkgSelectResult[0]?.planid ?? "";
+      let subscriptionId = pkgSelectResult[0]?.subscriptionid ?? "";
 
       userdbData.subscriptionId = subscriptionId;
       userdbData.planId = planId;
