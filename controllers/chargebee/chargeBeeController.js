@@ -122,7 +122,7 @@ exports.createNewCard = async (req, res) => {
     const authUser = await checkAuthorization(req, res);
     if (!authUser) return Response.resWith422(res, "Unauthorized");
 
-    const { card_no, cvv, expiry_year, expiry_month } = req.body;
+    const { card_no, cvv, expiry_year, expiry_month, first_name='', last_name='' } = req.body;
 
     if(!card_no || !cvv || !expiry_year || !expiry_month){
 
@@ -130,6 +130,8 @@ exports.createNewCard = async (req, res) => {
     }
 
     var cardData = {
+        "first_name" : first_name,
+        "last_name" : last_name,
         "number" : card_no,
         "cvv" : cvv,
         "expiry_year" : expiry_year,
