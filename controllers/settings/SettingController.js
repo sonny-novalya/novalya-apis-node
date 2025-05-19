@@ -27,6 +27,7 @@ self.getEnckeysOld = async (req, res) => {
 self.getEnckeys = async (req, res) => {
   try {
     const apiKey = process.env.BRAVO_KEY;
+    const crispKey = process.env.CRISP_KEY;
     const secretKey = process.env.ENCRYPT_SECRET_KEY; // Must be 32 bytes (256 bits) for AES-256
     const iv = crypto.randomBytes(16); // 16 bytes IV
 
@@ -34,8 +35,12 @@ self.getEnckeys = async (req, res) => {
     let encrypted = cipher.update(apiKey, "utf8", "base64");
     encrypted += cipher.final("base64");
 
+    let encryptedCrisp = cipher.update(crispKey, "utf8", "base64");
+    encryptedCrisp += cipher.final("base64");
+
     return Response.resWith202(res, "success", {
       br_key: encrypted,
+      crisp_key: encryptedCrisp,
       iv: iv.toString("base64") // Send IV to frontend
     });
   } catch (error) {
