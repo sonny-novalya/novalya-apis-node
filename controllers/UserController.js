@@ -86,7 +86,7 @@ exports.login = async (req, res) => {
   const { website = false } = req.body;
   const username1 = CleanHTMLData(CleanDBData(postData.username));
   const password = CleanHTMLData(CleanDBData(postData.password));
-  let username = unescape(encodeURIComponent(username1));
+  let username = decodeURIComponent(encodeURIComponent(username1));
 
   username = username.toLowerCase();
   try {
