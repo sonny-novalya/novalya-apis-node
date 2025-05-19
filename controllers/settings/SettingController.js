@@ -39,7 +39,7 @@ self.getEnckeys = async (req, res) => {
     encryptedCrisp += cipher.final("base64");
 
     return Response.resWith202(res, "success", {
-      br_key: encrypted,
+      // br_key: encrypted,
       crisp_key: encryptedCrisp,
       iv: iv.toString("base64") // Send IV to frontend
     });
