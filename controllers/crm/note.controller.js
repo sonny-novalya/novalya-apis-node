@@ -446,12 +446,25 @@ const getUserNote = async (req, res) => {
     delete noteData.taggedUsers;
     delete noteData.taggedUsersE2ee;
 
+    // Extract and merge all descriptions
+    let descriptions = [];
+    data.forEach(item => {
+      const raw = item.get({ plain: true });
+      if (raw.description) {
+        try {
+          let parsed = JSON.parse(raw.description.replace(/\\"/g, '"'));
+          if (Array.isArray(parsed)) {
+            descriptions = descriptions.concat(parsed);
+          }
+        } catch (e) {
+          console.warn(`Invalid JSON in description for note ID ${raw.id}:`, raw.description);
+        }
+      }
+    });
+
     // Add final key
     noteData.taggedUsers = finalTaggedUsers;
-    if(noteData?.description){
-      let noteDescription = noteData.description.replace(/\\"/g, '"')
-      noteData.description = JSON.parse(noteDescription)
-    }
+    noteData.description = descriptions;
     if(noteData?.socials){
       let noteSocials = noteData.socials.replace(/\\"/g, '"')
       noteData.socials = noteSocials
