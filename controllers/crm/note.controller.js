@@ -106,9 +106,11 @@ const createFbNote = async (req, res) => {
 
         // tag_id: tag_id,   add this for multi tagging
 
-        if (profile_pic) {
+        if (profile_pic && profile_pic.includes("novalya-assets") != true) {
 
           imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+        }else{
+          imageUrl = profile_pic;
         }
 
         const existingRecord = await taggedUser.findOne({ where: whereClause });
@@ -229,9 +231,11 @@ const createInstaNote = async (req, res) => {
 
         // tag_id: tag_id,   add this for multi tagging
 
-        if(profile_pic) {
+        if(profile_pic && profile_pic.includes("novalya-assets") != true) {
 
           imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+        }else{
+          imageUrl = profile_pic;
         }
 
         const existingRecord = await instaTaggedUser.findOne({where : whereClause});
