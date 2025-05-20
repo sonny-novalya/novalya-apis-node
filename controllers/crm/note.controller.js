@@ -163,7 +163,7 @@ const createFbNote = async (req, res) => {
       const updateResult = await Qry(updateQuery);
 
       if (updateResult) {
-        return Response.resWith202(res, "opration completed", updateResult);
+        return Response.resWith202(res, "Operation Completed", updateResult);
       } else {
         return Response.resWith422(res, "An error occurred while updating the notes");
       }
@@ -183,7 +183,7 @@ const createFbNote = async (req, res) => {
       const createResult = await Qry(createQuery);
 
       if (createResult) {
-        return Response.resWith202(res, "opration completed", createResult);
+        return Response.resWith202(res, "Operation Completed", createResult);
       } else {
         return Response.resWith422(res, "An error occurred while creating the notes");
       }
@@ -284,7 +284,7 @@ const createInstaNote = async (req, res) => {
       const updateResult = await Qry(updateQuery);
 
       if (updateResult) {
-        return Response.resWith202(res, "opration completed", updateResult);
+        return Response.resWith202(res, "Operation Completed", updateResult);
       } else {
         return Response.resWith422(res, "An error occurred while updating the notes");
       }
@@ -302,7 +302,7 @@ const createInstaNote = async (req, res) => {
       const createResult = await Qry(createQuery);
 
       if (createResult) {
-        return Response.resWith202(res, "opration completed", createResult);
+        return Response.resWith202(res, "Operation Completed", createResult);
       } else {
         return Response.resWith422(res, "An error occurred while creating the notes");
       }
@@ -425,11 +425,11 @@ const getUserNote = async (req, res) => {
       let resData = {}
       type === "facebook" ? resData.taggedUsers = data : resData.taggedUsersInsta = data
       
-      return Response.resWith202(res, "Opration completed", [resData]);
+      return Response.resWith202(res, "Operation Completed", [resData]);
     }
 
     if (!data || data.length === 0 || !data[0]) {
-      return Response.resWith202(res, "Opration completed", []);
+      return Response.resWith202(res, "Operation Completed", []);
     }
 
     const noteData = JSON.parse(JSON.stringify(data[0])); // deep clone to break Sequelize reference issues
@@ -470,7 +470,7 @@ const getUserNote = async (req, res) => {
       noteData.socials = noteSocials
     }    
 
-    return Response.resWith202(res, "Opration completed", [noteData]);
+    return Response.resWith202(res, "Operation Completed", [noteData]);
   } catch (error) {
 
     console.log('error', error);
@@ -488,7 +488,7 @@ const deleteNote = async (req, res) => {
 
     const data = await note.destroy({ where: { id } });
 
-    return Response.resWith202(res, "opration completed", data);
+    return Response.resWith202(res, "Operation Completed", data);
   } catch (error) {
 
     console.log('error', error);
