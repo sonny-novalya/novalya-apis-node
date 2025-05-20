@@ -838,6 +838,19 @@ exports.userdata = async (req, res) => {
       let usersLimitsData = userLimitsSelectResult[0];
       userdbData.users_limits = usersLimitsData;
       userdbData.user_id = authUser;
+
+      // getting the eligibility of the user for upgrading plan
+      if(userdbData.trial_status === "Active"){
+        userdbData.eligibleForUpgrade = true;
+      } else{
+        const transactionSelect = await Qry(`
+          SELECT * FROM transactions WHERE senderid = ? 
+            AND plan_id LIKE '%formation-leads-en-rdv%' 
+            AND createdat >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
+        `, [userdbData.user_id]);
+
+        userdbData.eligibleForUpgrade = transactionSelect.length > 0 ? true : false;
+      }
       
       return Response.resWith202(res, "success", userdbData);
     }
