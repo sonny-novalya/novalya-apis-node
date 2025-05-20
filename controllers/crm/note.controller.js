@@ -127,6 +127,7 @@ const createFbNote = async (req, res) => {
           fb_user_e2ee_id: fb_user_e2ee_id,
           is_e2ee,
           user_note: req.body.short_description || null,
+          profession: req.body.profession || null
         };
 
         if (existingRecord) {
@@ -251,6 +252,7 @@ const createInstaNote = async (req, res) => {
           numeric_insta_id: numeric_insta_id,
           thread_id,
           user_note: req.body.short_description || null,
+          profession: req.body.profession || null
         };
 
         if (existingRecord) {
