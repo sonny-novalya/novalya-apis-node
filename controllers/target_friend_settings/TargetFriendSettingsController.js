@@ -155,12 +155,12 @@ self.getAllTargetSetting = async (req, res) => {
                 {
                   model: db.Message,
                   as: "newMessage",
-                  // include: [
-                  //   {
-                  //     model: db.MessageVariant,
-                  //     as: "variants",
-                  //   },
-                  // ],
+                  include: [
+                    {
+                      model: db.MessageVariant,
+                      as: "variants",
+                    },
+                  ],
                 },
                 {
                     model: Keyword,
