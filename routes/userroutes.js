@@ -118,6 +118,7 @@ router.get("/compaigns/:id", campaignController.getOne)
 // CRM
 router.post("/group", groupController.placetag);
 router.post("/facebook/get-all-groups", groupController.getAll);
+router.post("/facebook/get-groups-info", groupController.getGroupsInfo);
 router.post("/reorderGroup", groupController.reorderGroup);
 
 router
@@ -130,6 +131,7 @@ router
 router
   .post("/instagram/group", instagramGroupController.placetag)
   .post("/instagram/get-all-groups", instagramGroupController.getAll)
+  .post("/instagram/get-groups-info", instagramGroupController.getGroupsInfo)
   .get("/instagram/users", instagramGroupController.getAllUsers)
 
   .post("/instagram/reorderGroup", instagramGroupController.reorderGroup);
