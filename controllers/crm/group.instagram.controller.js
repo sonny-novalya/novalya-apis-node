@@ -186,6 +186,78 @@ const getAll = async (req, res) => {
   }
 };
 
+const getGroupsInfo = async (req, res) => {
+  try {
+    const query = req.query;
+    const authUser = await getAuthUser(req, res);
+    const user_id = authUser;
+    const whereOptions = user_id ? { user_id: user_id } : {};
+
+    const tags = await tag.findAll({
+      where: whereOptions,
+      order: [["order_num", "DESC"]]
+    });
+
+    const tagUserCounts = await sequelize.query(`
+      SELECT tag_id, COUNT(*) as userTagsCount
+      FROM instataggedusers
+      WHERE user_id = :user_id
+      GROUP BY tag_id
+    `,
+    {
+      replacements: { user_id },
+      type: sequelize.QueryTypes.SELECT,
+    }
+    );
+
+    const stageUserCounts = await sequelize.query(
+    `
+      SELECT stage_id, COUNT(*) as userStageCounts
+      FROM instataggedusers
+      WHERE user_id = :user_id
+      GROUP BY stage_id
+    `,
+    {
+      replacements: { user_id },
+      type: sequelize.QueryTypes.SELECT,
+    }
+    );
+
+    // Handle empty tagUserCounts safely
+    const tagCountMap = {};
+    (tagUserCounts || []).forEach(row => {
+      if (row.tag_id) {
+        tagCountMap[row.tag_id] = parseInt(row.userTagsCount) || 0;
+      }
+    });
+
+    // Handle empty stageUserCounts safely
+    const stageCountMap = {};
+    (stageUserCounts || []).forEach(row => {
+      if (row.stage_id) {
+        stageCountMap[row.stage_id] = parseInt(row.userStageCounts) || 0;
+      }
+    });
+
+    // Step 5: Enrich tags with counts
+    const enrichedTags = tags.map(tagItem => {
+      return {
+        ...tagItem.toJSON(),
+        userTagsCount: tagCountMap[tagItem.id] || 0
+      };
+    });
+
+    return Response.resWith202(
+      res,
+      "Opration completed",
+      enrichedTags
+    );
+
+  } catch (error) {
+    return Response.resWith422(res, error.message);
+  }
+};
+
 // const getAllUsers = async (req, res) => {
 //   try {
 //     const authUser = await getAuthUser(req, res);
@@ -355,6 +427,7 @@ const reorderGroup = async (req, res) => {
 module.exports = {
   placetag,
   getAll,
+  getGroupsInfo,
   getOne,
   updateOne,
   deleteOne,
