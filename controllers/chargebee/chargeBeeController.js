@@ -191,3 +191,35 @@ exports.deleteCard = async (req, res) => {
     return Response.resWith422(res, error.message || "Something went wrong");
   }
 };
+
+// calling this in userController for userdata
+exports.getUserSubscription = async(userid) => {
+  try {
+    const { list = [] } = await chargebee.subscription.list({
+      "customer_id[is]": userid
+    }).request();
+
+    const affiliateSub = list.find(entry =>
+      entry.subscription?.subscription_items?.some(item =>
+        item.item_price_id?.includes("Affiliate")
+      )
+    )?.subscription;
+
+    if (!affiliateSub  || !affiliateSub.next_billing_at){
+      return null;
+    }
+
+    const { id: subscription_id, next_billing_at, subscription_items } = affiliateSub;
+    const item_price_id = subscription_items?.[0]?.item_price_id || "";
+
+    return {
+      subscription_id,
+      next_billing_at: new Date(next_billing_at * 1000).toISOString(),
+      item_price_id
+    };
+
+  } catch (error) {
+    console.error("Get user subscription error:", error);
+    return null;
+  }
+};
