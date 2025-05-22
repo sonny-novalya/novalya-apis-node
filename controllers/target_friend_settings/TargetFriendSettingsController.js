@@ -2,6 +2,7 @@ const { TargetFriendSettings, Group, MessageData, Keyword, Section, Sequelize } 
 const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
+const Response = require("../../helpers/response");
 
 TargetFriendSettings.belongsTo(Group, { as: 'groupData', foreignKey: 'group_id' })
 
@@ -58,7 +59,7 @@ self.createTargetSetting = async (req, res) => {
                   group_id: group_id
                 },
               }).then(async (record) => {
-                res.status(200).json({ status: "success", data: record });
+                return Response.resWith202(res, "Operation Completed", record);
               });
             } else {
               const result = await TargetFriendSettings.create({
@@ -76,23 +77,15 @@ self.createTargetSetting = async (req, res) => {
                 pro_convo,
                 post_target
               });
-              res.status(200).json({ status: "success", data: result });
+              return Response.resWith202(res, "Operation Completed", result);
             }
           })
           .catch((error) => {
-            res.status(500).json({
-              status: "catch error",
-              error: error.message,
-              message: "An error occurred while creating target setting.",
-            });
+            return Response.resWith422(res, error.message);
           });
 
     } catch (error) {
-        res.status(500).json({
-          status: "catch error",
-          error: error.message,
-          message: "An error occurred while creating target setting.",
-        });
+        return Response.resWith422(res, error.message);
     }
 };
 
