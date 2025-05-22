@@ -77,6 +77,7 @@ const { Console } = require("console");
 const ProcessOldMessagesFunc = require("../utils/newMsgSchemaChange");
 const ProcessBase64ImageDataFunc = require("../utils/uploadImageDataToS3");
 const processL2SponsorId = require("../utils/processL2SponsorId");
+const chargeBeeController = require("../controllers/chargebee/chargeBeeController")
 
 const Response = require("../helpers/response");
 
@@ -851,6 +852,10 @@ exports.userdata = async (req, res) => {
 
         userdbData.eligibleForUpgrade = transactionSelect.length > 0 ? true : false;
       }
+
+      //getting user subscription details from chargebee
+      const subscriptionInfo = await chargeBeeController.getUserSubscription(userdbData.user_id);
+      userdbData.subscriptionInfo = subscriptionInfo || {};
       
       return Response.resWith202(res, "success", userdbData);
     }
