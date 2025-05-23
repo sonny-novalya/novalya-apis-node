@@ -1,4 +1,4 @@
-const { Group, Sequelize, ProspectionGrpFolders } = require("../../Models");
+const { Group, Sequelize, ProspectionGrpFolders, TargetFriendSettings } = require("../../Models");
 const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 const Response = require("../../helpers/response");
 const Op = Sequelize.Op;
@@ -554,11 +554,27 @@ self.getGroupByFolder = async (req, res)=>{
 
     const { rows: groups, count: total } = await Group.findAndCountAll(fetchParams);
 
+    const groupIds = groups.map(group => group.id.toString()); // convert to string to match `group_id` type
+
+    const settingsRecords = await TargetFriendSettings.findAll({
+      where: {
+        group_id: { [Op.in]: groupIds }
+      },
+      attributes: ['group_id']
+    });
+    
+    const groupIdsWithSettings = new Set(settingsRecords.map(r => r.group_id));
+
+    const enrichedGroups = groups.map(group => ({
+      ...group.toJSON(),
+      settings: groupIdsWithSettings.has(group.id.toString())
+    }))
+
     return Response.resWith202(
       res,
       "Opration completed",
       {
-        data: groups,
+        data: enrichedGroups,
         totalGrp: total,
         currentPage: page,
         totalPages: Math.ceil(total / limit)
