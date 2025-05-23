@@ -498,7 +498,9 @@ self.getGroupByFolder = async (req, res)=>{
         [Op.in]: ['member', 'things in common']
       }
     }else if(social_type == "fb_posts"){
-      whereOptions.group_type = "Post-Like"
+      whereOptions.group_type = {
+        [Op.in]: ["Post-Like", "Post"]
+      };
 
     }else if(social_type == "ig_followers"){
       whereOptions.group_type = "insta_profile"
