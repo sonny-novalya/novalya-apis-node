@@ -199,24 +199,19 @@ exports.getUserSubscription = async(userid) => {
       "customer_id[is]": userid
     }).request();
 
-    const affiliateSub = list.find(entry =>
-      entry.subscription?.subscription_items?.some(item =>
-        item.item_price_id?.includes("Affiliate")
-      )
-    )?.subscription;
-
-    if (!affiliateSub  || !affiliateSub.next_billing_at){
+    if (list.length === 0) {
       return null;
     }
 
-    const { id: subscription_id, next_billing_at, subscription_items } = affiliateSub;
-    const item_price_id = subscription_items?.[0]?.item_price_id || "";
+    const subscriptionData = list.map(entry => ({
+      subscription_id: entry.subscription?.id,
+      next_billing_at: entry.subscription?.next_billing_at
+        ? new Date(entry.subscription.next_billing_at * 1000).toISOString()
+        : null,
+      item_price_id: entry.subscription?.subscription_items?.[0]?.item_price_id || null
+    }));
 
-    return {
-      subscription_id,
-      next_billing_at: new Date(next_billing_at * 1000).toISOString(),
-      item_price_id
-    };
+    return subscriptionData;
 
   } catch (error) {
     console.error("Get user subscription error:", error);
