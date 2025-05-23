@@ -856,6 +856,7 @@ exports.userdata = async (req, res) => {
       //getting user subscription details from chargebee
       const subscriptionInfo = await chargeBeeController.getUserSubscription(userdbData.user_id);
       userdbData.subscriptionInfo = subscriptionInfo || [];
+      console.log(subscriptionInfo,"subscriptionInfo")
       
       return Response.resWith202(res, "success", userdbData);
     }
