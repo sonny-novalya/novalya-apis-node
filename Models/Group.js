@@ -38,6 +38,9 @@ module.exports = (sequelize, DataTypes) => {
         total_member: {
             type: DataTypes.TEXT,
         },
+        comment_member: {
+            type: DataTypes.TEXT,
+        },
         group_type: {
             type: DataTypes.TEXT,
         },

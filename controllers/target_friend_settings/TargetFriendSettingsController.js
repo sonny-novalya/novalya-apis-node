@@ -2,6 +2,7 @@ const { TargetFriendSettings, Group, MessageData, Keyword, Section, Sequelize } 
 const Op = Sequelize.Op;
 let self = {};
 const db = require("../../Models/crm");
+const Response = require("../../helpers/response");
 
 TargetFriendSettings.belongsTo(Group, { as: 'groupData', foreignKey: 'group_id' })
 
@@ -12,20 +13,14 @@ self.createTargetSetting = async (req, res) => {
         const user_id = req.authUser;
         const {
           group_id,
-          custom = null,
           message,
           norequest = "5",
           interval= "30-60",
           gender,
-          country,
-          search_index  = 1,
           prospect,
-          selectedinterval,
-          datevalue,
           keyword,
           action,
           prospection_type = "facebook",
-          stratagy = 0,
           pro_stratagy,
           pro_convo,
           post_target
@@ -45,16 +40,10 @@ self.createTargetSetting = async (req, res) => {
                   norequest,
                   interval,
                   gender,
-                  country,
-                  search_index,
                   prospect,
-                  selectedinterval,
-                  datevalue,
                   keyword,
                   action,
                   prospection_type,
-                  custom,
-                  stratagy,
                   pro_stratagy,
                   pro_convo,
                   post_target
@@ -70,7 +59,7 @@ self.createTargetSetting = async (req, res) => {
                   group_id: group_id
                 },
               }).then(async (record) => {
-                res.status(200).json({ status: "success", data: record });
+                return Response.resWith202(res, "Operation Completed", record);
               });
             } else {
               const result = await TargetFriendSettings.create({
@@ -80,39 +69,132 @@ self.createTargetSetting = async (req, res) => {
                 norequest,
                 interval,
                 gender,
-                country,
-                search_index,
                 prospect,
-                selectedinterval,
-                datevalue,
                 keyword,
                 action,
                 prospection_type,
-                custom,
-                stratagy,
                 pro_stratagy,
                 pro_convo,
                 post_target
               });
-              res.status(200).json({ status: "success", data: result });
+              return Response.resWith202(res, "Operation Completed", result);
             }
           })
           .catch((error) => {
-            res.status(500).json({
-              status: "catch error",
-              error: error.message,
-              message: "An error occurred while creating target setting.",
-            });
+            return Response.resWith422(res, error.message);
           });
 
     } catch (error) {
-        res.status(500).json({
-          status: "catch error",
-          error: error.message,
-          message: "An error occurred while creating target setting.",
-        });
+        return Response.resWith422(res, error.message);
     }
 };
+
+// self.createTargetSetting = async (req, res) => {
+//     try {
+//         const user_id = req.authUser;
+//         const {
+//           group_id,
+//           custom = null,
+//           message,
+//           norequest = "5",
+//           interval= "30-60",
+//           gender,
+//           country,
+//           search_index  = 1,
+//           prospect,
+//           selectedinterval,
+//           datevalue,
+//           keyword,
+//           action,
+//           prospection_type = "facebook",
+//           stratagy = 0,
+//           pro_stratagy,
+//           pro_convo,
+//           post_target
+//         } = req.body;
+//         TargetFriendSettings.findOne({
+//           where: {
+//             user_id: user_id,
+//             prospection_type: prospection_type,
+//             group_id: group_id
+//           },
+//         })
+//           .then(async (record) => {
+//             if (record) {
+//               const newTargetFriendSetting = await TargetFriendSettings.update(
+//                 {
+//                   message,
+//                   norequest,
+//                   interval,
+//                   gender,
+//                   country,
+//                   search_index,
+//                   prospect,
+//                   selectedinterval,
+//                   datevalue,
+//                   keyword,
+//                   action,
+//                   prospection_type,
+//                   custom,
+//                   stratagy,
+//                   pro_stratagy,
+//                   pro_convo,
+//                   post_target
+//                 },
+//                 {
+//                   where: { user_id, prospection_type, group_id },
+//                 }
+//               );
+//               TargetFriendSettings.findOne({
+//                 where: {
+//                   user_id: user_id,
+//                   prospection_type: prospection_type,
+//                   group_id: group_id
+//                 },
+//               }).then(async (record) => {
+//                 res.status(200).json({ status: "success", data: record });
+//               });
+//             } else {
+//               const result = await TargetFriendSettings.create({
+//                 user_id,
+//                 group_id,
+//                 message,
+//                 norequest,
+//                 interval,
+//                 gender,
+//                 country,
+//                 search_index,
+//                 prospect,
+//                 selectedinterval,
+//                 datevalue,
+//                 keyword,
+//                 action,
+//                 prospection_type,
+//                 custom,
+//                 stratagy,
+//                 pro_stratagy,
+//                 pro_convo,
+//                 post_target
+//               });
+//               res.status(200).json({ status: "success", data: result });
+//             }
+//           })
+//           .catch((error) => {
+//             res.status(500).json({
+//               status: "catch error",
+//               error: error.message,
+//               message: "An error occurred while creating target setting.",
+//             });
+//           });
+
+//     } catch (error) {
+//         res.status(500).json({
+//           status: "catch error",
+//           error: error.message,
+//           message: "An error occurred while creating target setting.",
+//         });
+//     }
+// };
 
 self.getAllTargetSetting = async (req, res) => {
     try {

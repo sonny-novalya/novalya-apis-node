@@ -35,6 +35,9 @@ module.exports = (sequelize, DataTypes) => {
       user_note: {
         type: DataTypes.TEXT,
       },
+      profession: {
+        type: DataTypes.TEXT,
+      },
       tag_id: {
         type: DataTypes.STRING,
       },

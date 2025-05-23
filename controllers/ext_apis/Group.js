@@ -11,7 +11,7 @@ const GroupController = {
     try {
       const user_id = req.user.id;
 
-      const { name, group_type, total_member, url, prospection_type, post_image  } =
+      const { name, group_type, total_member, comment_member, url, prospection_type, post_image  } =
         req.body;
 
       // Check if a group with the same URL already exists
@@ -33,6 +33,7 @@ const GroupController = {
         group_type: group_type,
         type: "",
         total_member: total_member,
+        comment_member: comment_member ?? null,
         url: url,
         prospection_type: prospection_type || null,
       };
@@ -49,7 +50,8 @@ const GroupController = {
 
       return Response.resWith202(res, "create success", create);
     } catch (error) {
-      return Response.resWith422(res, error);
+      const errorMessage = error?.message || JSON.stringify(error);
+      return Response.resWith422(res, errorMessage);
     }
   },
 
