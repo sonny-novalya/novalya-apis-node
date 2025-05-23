@@ -196,7 +196,7 @@ exports.deleteCard = async (req, res) => {
 exports.getUserSubscription = async(userid) => {
   try {
     const { list = [] } = await chargebee.subscription.list({
-      "customer_id[is]": userid
+      "customer_id[is]": "772WTUliLaf44ZK"
     }).request();
 
     if (list.length === 0) {
@@ -208,7 +208,9 @@ exports.getUserSubscription = async(userid) => {
       next_billing_at: entry.subscription?.next_billing_at
         ? new Date(entry.subscription.next_billing_at * 1000).toISOString()
         : null,
-      item_price_id: entry.subscription?.subscription_items?.[0]?.item_price_id || null
+      item_price_id: entry.subscription?.subscription_items?.[0]?.item_price_id || null,
+      currency_code: entry.subscription?.currency_code,
+      unit_price: entry.subscription?.subscription_items?.[0]?.unit_price || null,
     }));
 
     return subscriptionData;
