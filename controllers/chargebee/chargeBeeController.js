@@ -220,3 +220,22 @@ exports.getUserSubscription = async(userid) => {
     return null;
   }
 };
+
+exports.subscriptionAddon = async(subscriptionId, addonId, quantity = 1) => {
+  try {
+    const result = await chargebee.subscription.update(subscriptionId, {
+      addons: [
+        {
+          id: addonId,
+          quantity: quantity
+        }
+      ]
+    }).request();
+
+    console.log("Updated subscription with addon:", result.subscription);
+    return result.subscription;
+  } catch (error) {
+    console.error("Error adding addon:", error.message || error);
+    throw error;
+  }
+};
