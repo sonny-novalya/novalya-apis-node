@@ -235,7 +235,9 @@ exports.subscriptionAddon = async(req,res) => {
       console.log(addonId, quantity,userdbData.customerid,subscriptionId)
 
 chargebee.hosted_page.checkout_existing_for_items({
-  subscription_id: subscriptionId,
+    subscription: {
+    id: subscriptionId
+  },
   subscription_items: [
     {
       item_price_id: addonId,
