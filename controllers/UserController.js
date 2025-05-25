@@ -77,12 +77,11 @@ const { Console } = require("console");
 const ProcessOldMessagesFunc = require("../utils/newMsgSchemaChange");
 const ProcessBase64ImageDataFunc = require("../utils/uploadImageDataToS3");
 const processL2SponsorId = require("../utils/processL2SponsorId");
-const chargeBeeController = require("../controllers/chargebee/chargeBeeController")
+const chargeBeeController = require("../controllers/chargebee/chargeBeeController");
 
 const Response = require("../helpers/response");
 
 exports.login = async (req, res) => {
-
   const postData = req.body;
   const { website = false } = req.body;
   const username1 = CleanHTMLData(CleanDBData(postData.username));
@@ -91,7 +90,6 @@ exports.login = async (req, res) => {
 
   username = username.toLowerCase();
   try {
-
     let selectUserQuery = `SELECT * FROM usersdata WHERE (username = ? OR email=?)`;
     let selectUserResult = await Qry(selectUserQuery, [username, username1]);
 
@@ -104,9 +102,13 @@ exports.login = async (req, res) => {
       return;
     }
 
-    if (1 > 2 && website && website != 'app') {
+    if (1 > 2 && website && website != "app") {
       selectUserQuery = `SELECT * FROM usersdata WHERE (username = ? OR email=?) AND website=?`;
-      selectUserResult = await Qry(selectUserQuery, [username, username1, website]);
+      selectUserResult = await Qry(selectUserQuery, [
+        username,
+        username1,
+        website,
+      ]);
 
       const user = selectUserResult[0];
       const decryptedPassword = crypto.AES.decrypt(
@@ -114,7 +116,6 @@ exports.login = async (req, res) => {
         encryptionKey
       ).toString(crypto.enc.Utf8);
       const passwordMatch = bcrypt.compareSync(password, decryptedPassword);
-
 
       if (!passwordMatch) {
         res.status(401).json({
@@ -140,18 +141,19 @@ exports.login = async (req, res) => {
           message:
             "You are not able to logged in. Please contact with support.",
         });
-      } else if ((user.username === username || user.email === username1) && passwordMatch && website == user.website) {
-
-        if (user.usertype == 'reseller') {
-
+      } else if (
+        (user.username === username || user.email === username1) &&
+        passwordMatch &&
+        website == user.website
+      ) {
+        if (user.usertype == "reseller") {
           return res.status(401).json({
             status: "error",
             message: "Invalid User.",
           });
         }
-        const TokenName = user.username === username ? username : username1
+        const TokenName = user.username === username ? username : username1;
         logger.info(`User ${TokenName} login successfully`, { type: "user" });
-
 
         //   const insertQuery = INSERT INTO access_tokens (username, token, created_at, expire_at) VALUES (?, ?, ?, ?);
         //   const insertParams = [username, token, date, expireat];
@@ -177,7 +179,7 @@ exports.login = async (req, res) => {
         //res.cookie('userToken', token);
 
         if (updateLoginResult.affectedRows > 0) {
-          ProcessOldMessagesFunc([userdbData.id])
+          ProcessOldMessagesFunc([userdbData.id]);
           return res.status(200).json({
             status: "success",
             message: "Login Successfully",
@@ -186,7 +188,7 @@ exports.login = async (req, res) => {
           });
         }
       } else {
-        console.log('350', website);
+        console.log("350", website);
         return res.status(401).json({
           status: "error",
           message: "Invalid User.",
@@ -258,7 +260,8 @@ exports.login = async (req, res) => {
       } else if (user.emailstatus === "unverified") {
         return res.status(401).json({
           status: "error",
-          message: "Please verify your account first. We have sent you an email.",
+          message:
+            "Please verify your account first. We have sent you an email.",
         });
       } else if (
         user.subscription_status === "payment_failed" ||
@@ -276,9 +279,8 @@ exports.login = async (req, res) => {
         (user.username === username || user.email === username1) &&
         passwordMatch
       ) {
-        const TokenName = user.username === username ? username : username1
+        const TokenName = user.username === username ? username : username1;
         logger.info(`User ${TokenName} login successfully`, { type: "user" });
-
 
         const token = jwt.sign({ TokenName }, secretKey, { expiresIn: "10y" });
         const date = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -304,7 +306,7 @@ exports.login = async (req, res) => {
         //res.cookie('userToken', token);
 
         if (updateLoginResult.affectedRows > 0) {
-          ProcessOldMessagesFunc([userdbData.id])
+          ProcessOldMessagesFunc([userdbData.id]);
           return res.status(200).json({
             status: "success",
             message: "Login Successfully",
@@ -313,7 +315,7 @@ exports.login = async (req, res) => {
           });
         }
       } else {
-        console.log('480', website);
+        console.log("480", website);
         return res.status(401).json({
           status: "error",
           message: "Invalid User.",
@@ -321,14 +323,13 @@ exports.login = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log('login-error-486', error);
+    console.log("login-error-486", error);
     return res.status(401).json({
       status: "error",
       message: "Server error occurred",
     });
   }
 };
-
 
 exports.manualSignIn = async (req, res) => {
   const postData = req.body;
@@ -379,7 +380,6 @@ exports.defaultTagAndMessage = async (req, res) => {
 };
 
 exports.register = async (req, res) => {
-
   const randomCode = randomToken(10);
   const emailToken = randomToken(90);
   const postData = req.body;
@@ -414,24 +414,33 @@ exports.register = async (req, res) => {
     salt: salt, // Pass the generated salt
   };
   const hashedPassword = bcrypt.hashSync(password, options.cost);
-  const encryptedPassword = crypto.AES.encrypt(hashedPassword, encryptionKey).toString();
+  const encryptedPassword = crypto.AES.encrypt(
+    hashedPassword,
+    encryptionKey
+  ).toString();
 
   try {
     const selectUsernameQuery = `SELECT * FROM usersdata WHERE email = ?`;
     const selectUsernameResult = await Qry(selectUsernameQuery, [email]);
 
     if (selectUsernameResult.length > 0) {
-
       var existingUserWebsite = selectUsernameResult[0].website;
 
-      if ((existingUserWebsite == null || existingUserWebsite == '') && domain == 'app') {
-
-        return Response.resWith422(res, "The username you entered is already taken");
+      if (
+        (existingUserWebsite == null || existingUserWebsite == "") &&
+        domain == "app"
+      ) {
+        return Response.resWith422(
+          res,
+          "The username you entered is already taken"
+        );
       }
 
       if (existingUserWebsite != null && existingUserWebsite == domain) {
-
-        return Response.resWith422(res, "The username you entered is already taken as a reseller user");
+        return Response.resWith422(
+          res,
+          "The username you entered is already taken as a reseller user"
+        );
       }
     }
 
@@ -440,19 +449,23 @@ exports.register = async (req, res) => {
     }
 
     const selectParentUserDetails = `SELECT * FROM usersdata WHERE website = ?`;
-    const selectParentUserDetailsResult = await Qry(selectParentUserDetails, [domain]);
+    const selectParentUserDetailsResult = await Qry(selectParentUserDetails, [
+      domain,
+    ]);
 
     var parent_id = 0;
     let reseller_website = "";
 
-    if (selectParentUserDetailsResult &&
+    if (
+      selectParentUserDetailsResult &&
       selectParentUserDetailsResult[0] &&
       selectParentUserDetailsResult[0].website
     ) {
       reseller_website = selectParentUserDetailsResult[0].website;
 
-      if (reseller_website == 'nuskin') {
-        var reseler_weblink = "https://wcy-" + reseller_website + ".novalya.com/";
+      if (reseller_website == "nuskin") {
+        var reseler_weblink =
+          "https://wcy-" + reseller_website + ".novalya.com/";
       } else {
         var reseler_weblink = "https://" + reseller_website + ".novalya.com/";
       }
@@ -466,19 +479,36 @@ exports.register = async (req, res) => {
     if (selectEmailResult.length > 0) {
       var existingUserWebsiteForEmail = selectEmailResult[0].website;
 
-      if ((existingUserWebsiteForEmail == null || existingUserWebsiteForEmail == "") && domain == "app") {
-        return Response.resWith422(res, "An account with this email address already exists");
+      if (
+        (existingUserWebsiteForEmail == null ||
+          existingUserWebsiteForEmail == "") &&
+        domain == "app"
+      ) {
+        return Response.resWith422(
+          res,
+          "An account with this email address already exists"
+        );
       }
 
-      if (existingUserWebsiteForEmail != null && existingUserWebsiteForEmail == domain) {
-        return Response.resWith422(res, "An account with this email address already exists as a reseller user");
+      if (
+        existingUserWebsiteForEmail != null &&
+        existingUserWebsiteForEmail == domain
+      ) {
+        return Response.resWith422(
+          res,
+          "An account with this email address already exists as a reseller user"
+        );
       }
     }
 
     const selectSponsorQuery = `SELECT * FROM usersdata WHERE randomcode = ?`;
     const selectSponsorResult = await Qry(selectSponsorQuery, [sponsorid]);
 
-    if (!sponsorid || !selectSponsorResult || selectSponsorResult.length === 0 ) {
+    if (
+      !sponsorid ||
+      !selectSponsorResult ||
+      selectSponsorResult.length === 0
+    ) {
       return Response.resWith422(res, "Invalid sponsor name");
     }
 
@@ -520,7 +550,8 @@ exports.register = async (req, res) => {
               phone: mobile,
               company: company,
             },
-            redirect_url: reseller_website ? reseler_weblink
+            redirect_url: reseller_website
+              ? reseler_weblink
               : weblink + "registration-complete?planId=" + item_price_id,
             cancel_url: reseller_website ? reseler_weblink : weblink + "login/",
             // Conditionally include the coupon_ids parameter
@@ -547,13 +578,15 @@ exports.register = async (req, res) => {
         [randomCode, encryptedPassword]
       );
 
-      return Response.resWith202(res, "success", {"redirect_url": subscriptionResult.hosted_page.url});
+      return Response.resWith202(res, "success", {
+        redirect_url: subscriptionResult.hosted_page.url,
+      });
     } catch (error) {
-      console.error("Error occurred:", error); 
+      console.error("Error occurred:", error);
       return Response.resWith422(res, "something went wrong");
     }
   } catch (error) {
-    console.error("Error occurred:", error); 
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "something went wrong");
   }
 };
@@ -611,8 +644,10 @@ exports.forgetpassword = async (req, res) => {
     const userData = selectUserResult[0];
 
     if (!userData || userData.email !== email) {
-
-      return Response.resWith422(res, "No account found with this email address");
+      return Response.resWith422(
+        res,
+        "No account found with this email address"
+      );
     }
 
     const title = "Password reset requested on " + company_name;
@@ -639,9 +674,9 @@ exports.forgetpassword = async (req, res) => {
     };
 
     transporter.sendMail(mailOptions, async (err, info) => {
-      console.log('err-641:',err);
-      console.log('info-641:',info);
-      
+      console.log("err-641:", err);
+      console.log("info-641:", info);
+
       if (!err) {
         const updateQuery = `UPDATE usersdata SET emailtoken = ? WHERE email = ?`;
         const updateParams = [randomcode, email];
@@ -653,19 +688,19 @@ exports.forgetpassword = async (req, res) => {
             { type: "user" }
           );
 
-          return Response.resWith202(res, "Email sent for password reset request. Please check your email.");
+          return Response.resWith202(
+            res,
+            "Email sent for password reset request. Please check your email."
+          );
         } else {
-          
           return Response.resWith422(res, "Failed to update email token");
         }
       } else {
-
         return Response.resWith422(res, "Failed to send email");
       }
     });
   } catch (error) {
-
-    console.error("Error occurred:", error); 
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "something went wrong");
   }
 };
@@ -681,7 +716,6 @@ exports.resetpassword = async (req, res) => {
     const userData = selectUserResult[0];
 
     if (!userData || userData.email !== email) {
-
       return Response.resWith422(res, "Invalid account");
     }
 
@@ -694,35 +728,40 @@ exports.resetpassword = async (req, res) => {
       salt: salt, // Pass the generated salt
     };
     const hashedPassword = bcrypt.hashSync(password, options.cost);
-    const encryptedPassword = crypto.AES.encrypt(hashedPassword, encryptionKey).toString();
+    const encryptedPassword = crypto.AES.encrypt(
+      hashedPassword,
+      encryptionKey
+    ).toString();
 
     const updateQuery = `UPDATE usersdata SET password = ?, emailtoken = '', password_status = ? WHERE email = ?`;
     const updateParams = [encryptedPassword, 1, email];
     const updateResult = await Qry(updateQuery, updateParams);
 
-    logger.info(`User ${userData.username} has successfully update its password using email ${email}`,
+    logger.info(
+      `User ${userData.username} has successfully update its password using email ${email}`,
       { type: "user" }
     );
 
     if (updateResult.affectedRows > 0) {
-
-      if (userData.website == 'nuskin') {
-        var website = 'wcy-' + userData.website;
+      if (userData.website == "nuskin") {
+        var website = "wcy-" + userData.website;
       } else {
         var website = userData.website;
       }
 
-      return Response.resWith202(res, "Password updated successfully", { 'website': website });
+      return Response.resWith202(res, "Password updated successfully", {
+        website: website,
+      });
     } else {
-      logger.info(`User ${userData.username} has failed to update its password using email ${email}`,
+      logger.info(
+        `User ${userData.username} has failed to update its password using email ${email}`,
         { type: "user" }
       );
 
       return Response.resWith422(res, "Failed to update password");
     }
   } catch (error) {
-    
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -738,23 +777,23 @@ exports.validatEmailToken = async (req, res) => {
     const userData = selectUserResult[0];
 
     if (userData && userData.email === email && userData.emailtoken === token) {
-      logger.info(`Email token successfully verified for user ${userData.username}`,
+      logger.info(
+        `Email token successfully verified for user ${userData.username}`,
         { type: "user" }
       );
 
       return Response.resWith202(res, "Valid token");
     } else {
-
-      logger.info(`Email token verification failed for user ${userData.username}`,
+      logger.info(
+        `Email token verification failed for user ${userData.username}`,
         { type: "user" }
       );
-      
+
       return Response.resWith422(res, "Invalid token");
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
-     return Response.resWith422(res, "Something went wrong");
+    console.error("Error occurred:", error);
+    return Response.resWith422(res, "Something went wrong");
   }
 };
 
@@ -835,40 +874,46 @@ exports.userdata = async (req, res) => {
       userdbData.planId = planId;
 
       const userLimitsSelectQuery = `SELECT * FROM users_limits WHERE userid = ?`;
-      const userLimitsSelectResult = await Qry(userLimitsSelectQuery, [authUser]);
+      const userLimitsSelectResult = await Qry(userLimitsSelectQuery, [
+        authUser,
+      ]);
       let usersLimitsData = userLimitsSelectResult[0];
       userdbData.users_limits = usersLimitsData;
       userdbData.user_id = authUser;
 
       // getting the eligibility of the user for upgrading plan
-      if(userdbData.trial_status === "Active"){
+      if (userdbData.trial_status === "Active") {
         userdbData.eligibleForUpgrade = true;
-      } else{
-        const transactionSelect = await Qry(`
+      } else {
+        const transactionSelect = await Qry(
+          `
           SELECT * FROM transactions WHERE senderid = ? 
             AND plan_id LIKE '%formation-leads-en-rdv%' 
             AND createdat >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
-        `, [userdbData.user_id]);
+        `,
+          [userdbData.user_id]
+        );
 
-        userdbData.eligibleForUpgrade = transactionSelect.length > 0 ? true : false;
+        userdbData.eligibleForUpgrade =
+          transactionSelect.length > 0 ? true : false;
       }
 
       //getting user subscription details from chargebee
-      const subscriptionInfo = await chargeBeeController.getUserSubscription(userdbData.customerid);
+      const subscriptionInfo = await chargeBeeController.getUserSubscription(
+        userdbData.customerid
+      );
       userdbData.subscriptionInfo = subscriptionInfo || [];
-      
+
       return Response.resWith202(res, "success", userdbData);
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
 
 exports.refferedUsers = async (req, res) => {
   try {
-
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
       const selectReferralUsersQuery = `
@@ -1022,7 +1067,14 @@ exports.refferedUsers = async (req, res) => {
 
       res.status(200).json({
         status: "success",
-        data: { refferedUsers: newTrialUser, totalUsersCount, refferedCustomer: newCustomer, trialCanceledUsers, "payment_due": paymentFailedCustomer, cancelScheduledCustomer },
+        data: {
+          refferedUsers: newTrialUser,
+          totalUsersCount,
+          refferedCustomer: newCustomer,
+          trialCanceledUsers,
+          payment_due: paymentFailedCustomer,
+          cancelScheduledCustomer,
+        },
       });
     }
   } catch (e) {
@@ -1032,7 +1084,6 @@ exports.refferedUsers = async (req, res) => {
 
 exports.affiliateCustomersWithoutSearch = async (req, res) => {
   try {
-    
     const { month, year } = req.body;
     const auth_user = await checkAuthorization(req, res);
     if (!auth_user) return;
@@ -1071,7 +1122,7 @@ exports.affiliateCustomersWithoutSearch = async (req, res) => {
 
     const new_trial_params = [...base_params];
     if (month && year) {
-      new_trial_query = addDateFilter(new_trial_query, 'u');
+      new_trial_query = addDateFilter(new_trial_query, "u");
       new_trial_params.push(month, year);
     }
 
@@ -1099,12 +1150,19 @@ exports.affiliateCustomersWithoutSearch = async (req, res) => {
 
     const active_customer_params = [...base_params];
     if (month && year) {
-      active_customer_query = addDateFilter(active_customer_query, 'u', 'less_equal');
+      active_customer_query = addDateFilter(
+        active_customer_query,
+        "u",
+        "less_equal"
+      );
       active_customer_params.push(year, month);
     }
 
     active_customer_query += ` ORDER BY u.id DESC`;
-    const active_customers = await Qry(active_customer_query, active_customer_params);
+    const active_customers = await Qry(
+      active_customer_query,
+      active_customer_params
+    );
 
     //  Trial Cancelled Users
     let trial_cancelled_query = `
@@ -1127,7 +1185,10 @@ exports.affiliateCustomersWithoutSearch = async (req, res) => {
     }
 
     trial_cancelled_query += ` ORDER BY u.id DESC`;
-    const trial_cancelled = await Qry(trial_cancelled_query, trial_cancelled_params);
+    const trial_cancelled = await Qry(
+      trial_cancelled_query,
+      trial_cancelled_params
+    );
 
     // Customer Cancelled (non-trial)
     let customer_cancelled_query = `
@@ -1150,7 +1211,10 @@ exports.affiliateCustomersWithoutSearch = async (req, res) => {
     }
 
     customer_cancelled_query += ` ORDER BY u.id DESC`;
-    const customer_cancelled = await Qry(customer_cancelled_query, customer_cancelled_params);
+    const customer_cancelled = await Qry(
+      customer_cancelled_query,
+      customer_cancelled_params
+    );
 
     //  All Customers
     let all_customer_query = `
@@ -1167,7 +1231,7 @@ exports.affiliateCustomersWithoutSearch = async (req, res) => {
 
     const all_customer_params = [...base_params];
     if (month && year) {
-      all_customer_query = addDateFilter(all_customer_query, 'u', 'less_equal');
+      all_customer_query = addDateFilter(all_customer_query, "u", "less_equal");
       all_customer_params.push(year, month);
     }
 
@@ -1193,8 +1257,7 @@ exports.affiliateCustomersWithoutSearch = async (req, res) => {
 
     return Response.resWith202(res, "success", final_response);
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -1263,7 +1326,7 @@ exports.affiliateCustomers = async (req, res) => {
         AND p.planid NOT LIKE '%Affiliate-Fee%'`;
 
     const new_trial_params = [...base_params, ...getDateAndSearchParams()];
-    new_trial_query = addDateAndSearchFilter(new_trial_query, 'u');
+    new_trial_query = addDateAndSearchFilter(new_trial_query, "u");
     new_trial_query += ` ORDER BY u.id DESC`;
     const new_trials = await Qry(new_trial_query, new_trial_params);
 
@@ -1286,10 +1349,20 @@ exports.affiliateCustomers = async (req, res) => {
         AND u.trial_status = 'Inactive'
         AND p.planid NOT LIKE '%Affiliate-Fee%'`;
 
-    const active_customer_params = [...base_params, ...getDateAndSearchParams('less_equal')];
-    active_customer_query = addDateAndSearchFilter(active_customer_query, 'u', 'less_equal');
+    const active_customer_params = [
+      ...base_params,
+      ...getDateAndSearchParams("less_equal"),
+    ];
+    active_customer_query = addDateAndSearchFilter(
+      active_customer_query,
+      "u",
+      "less_equal"
+    );
     active_customer_query += ` ORDER BY u.id DESC`;
-    const active_customers = await Qry(active_customer_query, active_customer_params);
+    const active_customers = await Qry(
+      active_customer_query,
+      active_customer_params
+    );
 
     // Trial Cancelled Users
     let trial_cancelled_query = `
@@ -1320,7 +1393,10 @@ exports.affiliateCustomers = async (req, res) => {
       trial_cancelled_params.push(likeSearch, likeSearch, likeSearch);
     }
     trial_cancelled_query += ` ORDER BY u.id DESC`;
-    const trial_cancelled = await Qry(trial_cancelled_query, trial_cancelled_params);
+    const trial_cancelled = await Qry(
+      trial_cancelled_query,
+      trial_cancelled_params
+    );
 
     // Customer Cancelled (non-trial)
     let customer_cancelled_query = `
@@ -1351,7 +1427,10 @@ exports.affiliateCustomers = async (req, res) => {
       customer_cancelled_params.push(likeSearch, likeSearch, likeSearch);
     }
     customer_cancelled_query += ` ORDER BY u.id DESC`;
-    const customer_cancelled = await Qry(customer_cancelled_query, customer_cancelled_params);
+    const customer_cancelled = await Qry(
+      customer_cancelled_query,
+      customer_cancelled_params
+    );
 
     // All Customers
     let all_customer_query = `
@@ -1366,8 +1445,15 @@ exports.affiliateCustomers = async (req, res) => {
       WHERE ${sponsor_clause}
         AND p.planid NOT LIKE '%Affiliate-Fee%'`;
 
-    const all_customer_params = [...base_params, ...getDateAndSearchParams('less_equal')];
-    all_customer_query = addDateAndSearchFilter(all_customer_query, 'u', 'less_equal');
+    const all_customer_params = [
+      ...base_params,
+      ...getDateAndSearchParams("less_equal"),
+    ];
+    all_customer_query = addDateAndSearchFilter(
+      all_customer_query,
+      "u",
+      "less_equal"
+    );
     all_customer_query += ` ORDER BY u.id DESC`;
     const all_customers = await Qry(all_customer_query, all_customer_params);
 
@@ -1395,13 +1481,18 @@ exports.affiliateCustomers = async (req, res) => {
   }
 };
 
-
 exports.affiliateActivityLogs = async (req, res) => {
   try {
     const auth_user = await checkAuthorization(req, res);
     if (!auth_user) return;
 
-    const { page = 1, limit = 10, search = '', sort_by = 'user_logs.id', sort_order = 'DESC' } = req.body;
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      sort_by = "user_logs.id",
+      sort_order = "DESC",
+    } = req.body;
 
     const offset = (page - 1) * limit;
 
@@ -1435,13 +1526,11 @@ exports.affiliateActivityLogs = async (req, res) => {
     `;
 
     params.push(parseInt(limit), parseInt(offset));
-    console.log('whereClause.id',whereClause);
-    console.log('auth_user.id',auth_user);
-    console.log('limit',limit);
-    console.log('offset',offset);
-    console.log('dataQuery',dataQuery);
-    
-
+    console.log("whereClause.id", whereClause);
+    console.log("auth_user.id", auth_user);
+    console.log("limit", limit);
+    console.log("offset", offset);
+    console.log("dataQuery", dataQuery);
 
     const logs_data = await Qry(dataQuery, params);
 
@@ -1459,13 +1548,12 @@ exports.affiliateActivityLogs = async (req, res) => {
   }
 };
 
-
 exports.ticketCount = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
 
     if (authUser) {
-      const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+      const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`;
       const getTicketResult = await Qry(getTicketQry, 1);
       res.json({
         status: "success",
@@ -1507,7 +1595,7 @@ exports.singleUserData = async (req, res) => {
 
     return Response.resWith202(res, "success", userdbData);
   } catch (error) {
-    console.error("Error occurred:", error); 
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "something went wrong");
   }
 };
@@ -1616,12 +1704,10 @@ exports.lastWeekTransactions = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   const postData = req.body;
   try {
-
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
-
       const updates = [];
-      const date = new Date().toISOString().slice(0, 19).replace('T', ' ');;
+      const date = new Date().toISOString().slice(0, 19).replace("T", " ");
       postData.updatedat = date;
 
       for (const [key, value] of Object.entries(postData)) {
@@ -1643,16 +1729,16 @@ exports.updateUserProfile = async (req, res) => {
       });
 
       if (updateResult) {
-
         return Response.resWith202(res, "Profile updated successfully");
       } else {
-
-        return Response.resWith422(res, "Something went wrong. Please try again later.");
+        return Response.resWith422(
+          res,
+          "Something went wrong. Please try again later."
+        );
       }
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -1661,19 +1747,19 @@ exports.updatePassword = async (req, res) => {
   const postData = req.body;
 
   try {
-
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
     const oldpassword = CleanHTMLData(CleanDBData(postData.oldpassword));
     const newpassword = CleanHTMLData(CleanDBData(postData.newpassword));
     if (authUser) {
-
       const selectUserQuery = "SELECT * FROM usersdata WHERE id = ?";
       const selectUserResult = await Qry(selectUserQuery, [authUser]);
       const userData = selectUserResult[0];
 
       if (!userData || userData.id !== authUser) {
-
-        return Response.resWith422(res, "Invalid data contact support for this issue");
+        return Response.resWith422(
+          res,
+          "Invalid data contact support for this issue"
+        );
       }
 
       // Generate a salt for password hashing
@@ -1685,13 +1771,18 @@ exports.updatePassword = async (req, res) => {
         salt: salt, // Pass the generated salt
       };
       const hashedPassword = bcrypt.hashSync(newpassword, options.cost);
-     
-      const encryptedPassword = crypto.AES.encrypt(hashedPassword, encryptionKey).toString();
-      const decryptedPassword = crypto.AES.decrypt(userData.password,encryptionKey).toString(crypto.enc.Utf8);
+
+      const encryptedPassword = crypto.AES.encrypt(
+        hashedPassword,
+        encryptionKey
+      ).toString();
+      const decryptedPassword = crypto.AES.decrypt(
+        userData.password,
+        encryptionKey
+      ).toString(crypto.enc.Utf8);
       const passwordMatch = bcrypt.compareSync(oldpassword, decryptedPassword);
 
       if (!passwordMatch) {
-
         return Response.resWith422(res, "Incorrect Old Password");
       }
 
@@ -1699,16 +1790,17 @@ exports.updatePassword = async (req, res) => {
       const updateParams = [encryptedPassword, authUser];
       const updateResult = await Qry(updateQuery, updateParams);
 
-      logger.info(`User ${userData.username} has update password from manage profile`,{ type: "user" });
+      logger.info(
+        `User ${userData.username} has update password from manage profile`,
+        { type: "user" }
+      );
 
       if (updateResult.affectedRows > 0) {
-
         return Response.resWith202(res, "Password updated successfully");
       }
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -1822,36 +1914,38 @@ exports.updateSubscription = async (req, res) => {
     const date = new Date().toISOString().slice(0, 19).replace("T", " ");
     //subscription item details
     const item_price_id = CleanHTMLData(CleanDBData(postData.item_price_id));
-    const subscription_id = CleanHTMLData(CleanDBData(postData.subscription_id));
+    const subscription_id = CleanHTMLData(
+      CleanDBData(postData.subscription_id)
+    );
 
     const selectUsernameQuery = `SELECT * FROM usersdata WHERE id = ?`;
     const selectUsernameResult = await Qry(selectUsernameQuery, [authUser]);
 
     var website = selectUsernameResult[0].website;
 
-    if (website && website != null && website == 'nuskin') {
-
-      var redirect_url = 'https://wcy-nuskin.novalya.com/';
-      var cancel_url = 'https://wcy-nuskin.novalya.com/';
+    if (website && website != null && website == "nuskin") {
+      var redirect_url = "https://wcy-nuskin.novalya.com/";
+      var cancel_url = "https://wcy-nuskin.novalya.com/";
     } else {
-
       var redirect_url = weblink + "affiliate/";
       var cancel_url = weblink + "affiliate/";
     }
     const updateSubscription = () => {
       return new Promise((resolve, reject) => {
-        chargebee.hosted_page.checkout_existing_for_items({
-          subscription: {
-            id: subscription_id,
-          },
-          subscription_items: [
-            {
-              item_price_id: item_price_id,
+        chargebee.hosted_page
+          .checkout_existing_for_items({
+            subscription: {
+              id: subscription_id,
             },
-          ],
-          redirect_url: redirect_url,
-          cancel_url: cancel_url,
-        }).request(function (error, result) {
+            subscription_items: [
+              {
+                item_price_id: item_price_id,
+              },
+            ],
+            redirect_url: redirect_url,
+            cancel_url: cancel_url,
+          })
+          .request(function (error, result) {
             if (error) {
               //handle error
               reject(error);
@@ -1864,19 +1958,16 @@ exports.updateSubscription = async (req, res) => {
 
     let subscriptionResult;
     try {
-
       subscriptionResult = await updateSubscription();
       return Response.resWith202(res, "success", subscriptionResult);
     } catch (error) {
-
-      console.error("Error occurred:", error); 
-      var message = (error?.message) ? error?.message : "something went wrong"
+      console.error("Error occurred:", error);
+      var message = error?.message ? error?.message : "something went wrong";
       return Response.resWith422(res, message);
     }
   } catch (error) {
-
-    console.error("Error occurred:", error); 
-    var message = (error?.message) ? error?.message : "something went wrong"
+    console.error("Error occurred:", error);
+    var message = error?.message ? error?.message : "something went wrong";
     return Response.resWith422(res, message);
   }
 };
@@ -1945,7 +2036,7 @@ exports.createAffiliateUser = async (req, res) => {
 
 exports.createPortalSession = async (req, res) => {
   try {
-    const authUser = await checkAuthorization(req, res); 
+    const authUser = await checkAuthorization(req, res);
     const postData = req.body;
     const customerid = CleanHTMLData(CleanDBData(postData.customerid));
 
@@ -1960,7 +2051,6 @@ exports.createPortalSession = async (req, res) => {
           })
           .request(function (error, result) {
             if (error) {
-
               reject(error);
             } else {
               resolve(result);
@@ -1971,17 +2061,15 @@ exports.createPortalSession = async (req, res) => {
 
     let sessionResult;
     try {
-
       sessionResult = await createSession();
 
       return Response.resWith202(res, "success", sessionResult);
     } catch (error) {
-      console.error("Error occurred:", error);  
+      console.error("Error occurred:", error);
       return Response.resWith422(res, "Something went wrong");
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -1992,16 +2080,15 @@ exports.checkcoupon = async (req, res) => {
     const couponcode = CleanHTMLData(CleanDBData(postData?.couponcode));
     chargebee.coupon.retrieve(couponcode).request(function (error, result) {
       if (error) {
-        
         return Response.resWith422(res, "invalid coupon code");
       } else {
         var coupon = result.coupon;
-        
-        return Response.resWith202(res, "success", {coupondata: coupon});
+
+        return Response.resWith202(res, "success", { coupondata: coupon });
       }
     });
   } catch (error) {
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -2168,8 +2255,11 @@ exports.dashboarddata = async (req, res) => {
     if (!authUser) return;
 
     // Fetch user data
-    const result = await Qry("SELECT id, currency, bank_account_title, outside_bank_account_title, wallet_address, current_balance_eur_lastmonth, current_balance_usd_lastmonth FROM usersdata WHERE id = ?", [authUser]);
-    
+    const result = await Qry(
+      "SELECT id, currency, bank_account_title, outside_bank_account_title, wallet_address, current_balance_eur_lastmonth, current_balance_usd_lastmonth FROM usersdata WHERE id = ?",
+      [authUser]
+    );
+
     // Check if result is iterable (array) and contains data
     if (!result || !Array.isArray(result) || result.length === 0) {
       return Response.resWith422(res, "User data not found.");
@@ -2179,55 +2269,71 @@ exports.dashboarddata = async (req, res) => {
     const userCurrency = getUserCurrency(userData);
     const conversionRate = await getConversionRate(userCurrency);
     const cSymbol = userCurrency === "EUR" ? "€" : "$";
-    
-    const {lastMonthPayout, currentMonthEarning, pendingPayment} = await get_dashboard_affiliate_summary(authUser, userCurrency, conversionRate);
+
+    const { lastMonthPayout, currentMonthEarning, pendingPayment } =
+      await get_dashboard_affiliate_summary(
+        authUser,
+        userCurrency,
+        conversionRate
+      );
 
     // Earnings calculation
     const { EUR: earningEUR, USD: earningUSD } = await getEarnings(authUser);
-    const lifeTimeEarning = Number((
-      userCurrency === "EUR"
+    const lifeTimeEarning = Number(
+      (userCurrency === "EUR"
         ? earningEUR + earningUSD * conversionRate
         : earningUSD + earningEUR * conversionRate
-    ).toFixed(2));
+      ).toFixed(2)
+    );
 
     // Last month's earnings
-    const lastMonthEarning = Number((
-      userCurrency === "EUR"
-        ? userData.current_balance_eur_lastmonth + userData.current_balance_usd_lastmonth * conversionRate
-        : userData.current_balance_usd_lastmonth + userData.current_balance_eur_lastmonth * conversionRate
-    ).toFixed(2));
+    const lastMonthEarning = Number(
+      (userCurrency === "EUR"
+        ? userData.current_balance_eur_lastmonth +
+          userData.current_balance_usd_lastmonth * conversionRate
+        : userData.current_balance_usd_lastmonth +
+          userData.current_balance_eur_lastmonth * conversionRate
+      ).toFixed(2)
+    );
 
     // Commission data for current month
     const currentMonth = new Date().getMonth() + 1;
     const commissionData = await total_payment_function(authUser, currentMonth);
 
-    const totalPayment = Number((
-      userCurrency === "EUR"
-        ? commissionData.totalPaymentEUR + commissionData.totalPaymentUSD * conversionRate
-        : commissionData.totalPaymentUSD + commissionData.totalPaymentEUR * conversionRate
-    ).toFixed(2));
+    const totalPayment = Number(
+      (userCurrency === "EUR"
+        ? commissionData.totalPaymentEUR +
+          commissionData.totalPaymentUSD * conversionRate
+        : commissionData.totalPaymentUSD +
+          commissionData.totalPaymentEUR * conversionRate
+      ).toFixed(2)
+    );
 
     const totalEarning = {
-      l1: Number((
-        userCurrency === "EUR"
+      l1: Number(
+        (userCurrency === "EUR"
           ? commissionData.level1EUR + commissionData.level1USD * conversionRate
           : commissionData.level1USD + commissionData.level1EUR * conversionRate
-      ).toFixed(2)),
-      l2: Number((
-        userCurrency === "EUR"
+        ).toFixed(2)
+      ),
+      l2: Number(
+        (userCurrency === "EUR"
           ? commissionData.level2EUR + commissionData.level2USD * conversionRate
           : commissionData.level2USD + commissionData.level2EUR * conversionRate
-      ).toFixed(2)),
-      bonus: Number((
-        userCurrency === "EUR"
+        ).toFixed(2)
+      ),
+      bonus: Number(
+        (userCurrency === "EUR"
           ? commissionData.bonusUSD * conversionRate
           : commissionData.bonusUSD
-      ).toFixed(2)),
-      others: Number((
-        userCurrency === "EUR"
+        ).toFixed(2)
+      ),
+      others: Number(
+        (userCurrency === "EUR"
           ? commissionData.eurOthers + commissionData.usdOthers * conversionRate
           : commissionData.usdOthers + commissionData.eurOthers * conversionRate
-      ).toFixed(2))
+        ).toFixed(2)
+      ),
     };
 
     // User balances
@@ -2245,7 +2351,8 @@ exports.dashboarddata = async (req, res) => {
     const total_eur_balance = eur_balance + usd_balance * eur_rate;
 
     // Usage inside your route logic
-    const { currentPayoutPer, nextPayoutPer, progressPercentage } = await calculatePayoutData(commissionData?.totalUser);
+    const { currentPayoutPer, nextPayoutPer, progressPercentage } =
+      await calculatePayoutData(commissionData?.totalUser);
 
     // Dashboard data
     const dashboardData = {
@@ -2262,12 +2369,12 @@ exports.dashboarddata = async (req, res) => {
       cSymbol,
       lastMonthPayout,
       currentMonthEarning,
-      pendingPayment
+      pendingPayment,
     };
 
     return Response.resWith202(res, "success", dashboardData);
   } catch (error) {
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -2299,12 +2406,10 @@ exports.teamusers = async (req, res) => {
   }
 };
 
-exports.updatelanguage = async (req, res) => {  
+exports.updatelanguage = async (req, res) => {
   try {
-
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
-
       const postData = req.body;
       let language = postData.language;
 
@@ -2315,28 +2420,31 @@ exports.updatelanguage = async (req, res) => {
         language: language,
       };
 
-      const updateData = await updateCustomer(selectUserResult[0].customerid, data);
-      
+      const updateData = await updateCustomer(
+        selectUserResult[0].customerid,
+        data
+      );
+
       const updateUser = await Qry(
         "update usersdata set language = ?, language_status = ? where id = ?",
         [language, 1, authUser]
       );
 
-      return Response.resWith202(res, 'Language has been updated successfully.');
+      return Response.resWith202(
+        res,
+        "Language has been updated successfully."
+      );
     }
   } catch (error) {
-    
-    console.error("Error:", error);  
+    console.error("Error:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
 
 exports.news = async (req, res) => {
   try {
-
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
-
       const selectnewsQuery = `SELECT * FROM news ORDER BY id DESC`;
       const selectnewsResult = await Qry(selectnewsQuery);
 
@@ -2344,13 +2452,12 @@ exports.news = async (req, res) => {
 
       var final_response = {
         news: selectnewsResult,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
       };
-      return Response.resWith202(res, 'success.', final_response);
+      return Response.resWith202(res, "success.", final_response);
     }
   } catch (error) {
-    
-    console.error("Error:", error);  
+    console.error("Error:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -2364,87 +2471,86 @@ exports.singlenews = async (req, res) => {
       const selectnewsQuery = `SELECT * FROM news where id = ?`;
       const selectnewsResult = await Qry(selectnewsQuery, [id]);
 
-      return Response.resWith202(res, 'success.', {news: selectnewsResult});
+      return Response.resWith202(res, "success.", { news: selectnewsResult });
     }
   } catch (error) {
-    console.error("Error:", error);  
+    console.error("Error:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
 
 exports.uploadKycData = async (req, res) => {
-  
   try {
+    const postData = req.body;
+    const authUser = await checkAuthorization(req, res);
 
-      const postData = req.body;
-      const authUser = await checkAuthorization(req, res);
-    
-      if (authUser) {
+    if (authUser) {
+      let id_front, id_back;
+      const uploadDir = path.join(__dirname, "../public/uploads/kyc/");
 
-        let id_front, id_back;
-        const uploadDir = path.join(__dirname, "../public/uploads/kyc/");
+      const identityType = postData.identityType;
+      const residentialAddress = postData.residentialAddress;
+      const date = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-        const identityType = postData.identityType;
-        const residentialAddress = postData.residentialAddress;
-        const date = new Date().toISOString().slice(0, 19).replace("T", " ");
-
-        if (identityType === "Passport") {
-          const idCardFront = postData.idcardFront.split(";base64,");
-          const idCardFrontTypeAux = idCardFront[0].split("image/");
-          const idCardFrontType = idCardFrontTypeAux[1];
-          const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
-          const idCardFrontFilename = `${Date.now()}.png`;
-          const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
-          fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
-          id_front = idCardFrontFilename;
-          id_back = "";
-        } else if (identityType === "Identity Card") {
-          // Process the front and back sides of the identity (ID card)
-          const idCardFront = postData.idcardFront.split(";base64,");
-          const idCardFrontTypeAux = idCardFront[0].split("image/");
-          const idCardFrontType = idCardFrontTypeAux[1];
-          const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
-          const idCardFrontFilename = `${Date.now()}.png`;
-          const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
-          fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
-          const idCardBack = postData.idcardBack.split(";base64,");
-          const idCardBackTypeAux = idCardBack[0].split("image/");
-          const idCardBackType = idCardBackTypeAux[1];
-          const idCardBackBase64 = Buffer.from(idCardBack[1], "base64");
-          const idCardBackFilename = `${Date.now()}.png`;
-          const idCardBackFilePath = path.join(uploadDir, idCardBackFilename);
-          fs.writeFileSync(idCardBackFilePath, idCardBackBase64);
-          id_front = idCardFrontFilename;
-          id_back = idCardBackFilename;
-        } else {
-
-          console.error("Error occurred:", error); 
-          return Response.resWith422(res, "Invalid identity type selected.");
-        }
-
-        const insertPackageResult = await Qry(
-          "INSERT INTO `kyc`(`userid`, `id_front`, `id_back`, `address`, `type`, `date`) VALUES (?,?,?,?,?,?)",
-          [authUser, id_front, id_back, residentialAddress, identityType, date]
-        );
-
-        const updateUser = await Qry(
-          "update usersdata set kyc_status = ? where id = ?",
-          ["Uploaded", authUser]
-        );
-        if (insertPackageResult.affectedRows > 0 && updateUser.affectedRows > 0) {
-
-          const selectUserQuery = `SELECT * FROM usersdata where id = ?`;
-          const selectUserResult = await Qry(selectUserQuery, [authUser]);
-
-          logger.info(`User ${selectUserResult[0].username} has requested KYC of type ${identityType}`,
-            { type: "user" }
-          );
-
-          return Response.resWith202(res, "KYC request has been submitted successfully");
-        }
+      if (identityType === "Passport") {
+        const idCardFront = postData.idcardFront.split(";base64,");
+        const idCardFrontTypeAux = idCardFront[0].split("image/");
+        const idCardFrontType = idCardFrontTypeAux[1];
+        const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
+        const idCardFrontFilename = `${Date.now()}.png`;
+        const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
+        fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
+        id_front = idCardFrontFilename;
+        id_back = "";
+      } else if (identityType === "Identity Card") {
+        // Process the front and back sides of the identity (ID card)
+        const idCardFront = postData.idcardFront.split(";base64,");
+        const idCardFrontTypeAux = idCardFront[0].split("image/");
+        const idCardFrontType = idCardFrontTypeAux[1];
+        const idCardFrontBase64 = Buffer.from(idCardFront[1], "base64");
+        const idCardFrontFilename = `${Date.now()}.png`;
+        const idCardFrontFilePath = path.join(uploadDir, idCardFrontFilename);
+        fs.writeFileSync(idCardFrontFilePath, idCardFrontBase64);
+        const idCardBack = postData.idcardBack.split(";base64,");
+        const idCardBackTypeAux = idCardBack[0].split("image/");
+        const idCardBackType = idCardBackTypeAux[1];
+        const idCardBackBase64 = Buffer.from(idCardBack[1], "base64");
+        const idCardBackFilename = `${Date.now()}.png`;
+        const idCardBackFilePath = path.join(uploadDir, idCardBackFilename);
+        fs.writeFileSync(idCardBackFilePath, idCardBackBase64);
+        id_front = idCardFrontFilename;
+        id_back = idCardBackFilename;
+      } else {
+        console.error("Error occurred:", error);
+        return Response.resWith422(res, "Invalid identity type selected.");
       }
+
+      const insertPackageResult = await Qry(
+        "INSERT INTO `kyc`(`userid`, `id_front`, `id_back`, `address`, `type`, `date`) VALUES (?,?,?,?,?,?)",
+        [authUser, id_front, id_back, residentialAddress, identityType, date]
+      );
+
+      const updateUser = await Qry(
+        "update usersdata set kyc_status = ? where id = ?",
+        ["Uploaded", authUser]
+      );
+      if (insertPackageResult.affectedRows > 0 && updateUser.affectedRows > 0) {
+        const selectUserQuery = `SELECT * FROM usersdata where id = ?`;
+        const selectUserResult = await Qry(selectUserQuery, [authUser]);
+
+        logger.info(
+          `User ${selectUserResult[0].username} has requested KYC of type ${identityType}`,
+          { type: "user" }
+        );
+
+        return Response.resWith202(
+          res,
+          "KYC request has been submitted successfully"
+        );
+      }
+    }
   } catch (error) {
-    console.error("Error:", error);  
+    console.error("Error:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -2693,7 +2799,9 @@ exports.payout = async (req, res) => {
 
     // If specific payout balances set, override
     if (current_balance_usd_payout || current_balance_eur_payout) {
-      payout_amount = (current_balance_usd_payout || 0) * 0.88 + (current_balance_eur_payout || 0);
+      payout_amount =
+        (current_balance_usd_payout || 0) * 0.88 +
+        (current_balance_eur_payout || 0);
       final_amount = payout_amount - flat_fee;
       payout_fee = flat_fee;
       status = "Pending";
@@ -2725,13 +2833,12 @@ exports.payout = async (req, res) => {
     }
 
     var final_response = {
-      'payouts': payouts,
-      "all_time_payout": all_time_payout
-    }
+      payouts: payouts,
+      all_time_payout: all_time_payout,
+    };
     return Response.resWith202(res, "success", final_response);
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -2793,11 +2900,9 @@ exports.updatepayoutdetails = async (req, res) => {
   try {
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
-
       const payoutType = postData.type;
 
       if (payoutType === "Bank") {
-
         const country = postData.country;
         const bankAccountName = postData.bank_account_name;
         const bankAccountBIC = postData.bank_account_bic;
@@ -2825,14 +2930,17 @@ exports.updatepayoutdetails = async (req, res) => {
           ]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(`User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].bank_account_title} to ${bankAccountName}, IBAN from ${selectUserResult[0].bank_account_iban} to ${bankAccountIBAN}, BIC from ${selectUserResult[0].bank_account_bic} to ${bankAccountBIC} and Country from ${selectUserResult[0].bank_account_country} to ${country}`,
+          logger.info(
+            `User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].bank_account_title} to ${bankAccountName}, IBAN from ${selectUserResult[0].bank_account_iban} to ${bankAccountIBAN}, BIC from ${selectUserResult[0].bank_account_bic} to ${bankAccountBIC} and Country from ${selectUserResult[0].bank_account_country} to ${country}`,
             { type: "user" }
           );
 
-          return Response.resWith202(res, "Your request has been submitted successfully to admin, it will be verify soon.");
+          return Response.resWith202(
+            res,
+            "Your request has been submitted successfully to admin, it will be verify soon."
+          );
         }
       } else if (payoutType === "Crypto") {
-
         const address = postData.wallet_address;
 
         const selectUserQuery = `select * from usersdata where id = ?`;
@@ -2843,14 +2951,17 @@ exports.updatepayoutdetails = async (req, res) => {
           [authUser, address]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(`User ${selectUserResult[0].username} has updated wallet address from ${selectUserResult[0].wallet_address} to ${address}`,
+          logger.info(
+            `User ${selectUserResult[0].username} has updated wallet address from ${selectUserResult[0].wallet_address} to ${address}`,
             { type: "user" }
           );
 
-          return Response.resWith202(res, "Your payout detail request has been submit to admin successfully. It will be verify soon.");
+          return Response.resWith202(
+            res,
+            "Your payout detail request has been submit to admin successfully. It will be verify soon."
+          );
         }
       } else if (payoutType === "Bank_out_ue") {
-
         const country = postData.country;
         const bankAccountName = postData.bank_account_name;
         const bankAccountNumber = postData.bank_account_number;
@@ -2880,22 +2991,24 @@ exports.updatepayoutdetails = async (req, res) => {
           ]
         );
         if (insertPayoutRequest.affectedRows > 0) {
-          logger.info(`User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].outside_bank_account_title} to ${bankAccountName}, Account Number from ${selectUserResult[0].outside_bank_account_number} to ${bankAccountNumber}, Swift Code from ${selectUserResult[0].outside_bank_account_swift_code} to ${bankAccountSwiftCode}, Account Routing from ${selectUserResult[0].outside_bank_account_routing} to ${bankAccountRouting}, Address from ${selectUserResult[0].outside_bank_account_address} to ${bankAccountAddress}, City from ${selectUserResult[0].outside_bank_account_city} to ${bankAccountCity}, Zip Code from ${selectUserResult[0].outside_bank_account_zip_code} to ${bankAccountZipCode} and Country from ${selectUserResult[0].outside_bank_account_country} to ${country}`,
+          logger.info(
+            `User ${selectUserResult[0].username} has updated payout details Account Title from ${selectUserResult[0].outside_bank_account_title} to ${bankAccountName}, Account Number from ${selectUserResult[0].outside_bank_account_number} to ${bankAccountNumber}, Swift Code from ${selectUserResult[0].outside_bank_account_swift_code} to ${bankAccountSwiftCode}, Account Routing from ${selectUserResult[0].outside_bank_account_routing} to ${bankAccountRouting}, Address from ${selectUserResult[0].outside_bank_account_address} to ${bankAccountAddress}, City from ${selectUserResult[0].outside_bank_account_city} to ${bankAccountCity}, Zip Code from ${selectUserResult[0].outside_bank_account_zip_code} to ${bankAccountZipCode} and Country from ${selectUserResult[0].outside_bank_account_country} to ${country}`,
             { type: "user" }
           );
 
-          return Response.resWith202(res, "Your payout detail request has been submit to admin successfully. It will be verify soon.");
+          return Response.resWith202(
+            res,
+            "Your payout detail request has been submit to admin successfully. It will be verify soon."
+          );
         }
       } else {
-
         return Response.resWith422(res, "Invalid payout type selected.");
       }
     } else {
       return Response.resWith422(res, "Invalid token.");
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -3210,7 +3323,7 @@ exports.csvupgradelimits = async (req, res) => {
       status: "success",
       message: "ok",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.csvrenewal = async (req, res) => {
@@ -3352,7 +3465,7 @@ exports.csvrenewal = async (req, res) => {
       status: "success",
       message: "ok",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.csv3 = async (req, res) => {
@@ -3410,7 +3523,7 @@ exports.csv3 = async (req, res) => {
       status: "success",
       message: "ok",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.csv4 = async (req, res) => {
@@ -3468,7 +3581,7 @@ exports.csv4 = async (req, res) => {
       status: "success",
       message: "ok",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.cronjobduplicateentries = async (req, res) => {
@@ -3495,7 +3608,7 @@ exports.cronjobduplicateentries = async (req, res) => {
       status: "success",
       message: "ok",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.cronjobautocoupon = async (req, res) => {
@@ -3602,7 +3715,7 @@ exports.cronjobautocoupon = async (req, res) => {
                 x++;
               }
             }
-          } catch (error) { }
+          } catch (error) {}
         }
       }
     });
@@ -3611,7 +3724,7 @@ exports.cronjobautocoupon = async (req, res) => {
       status: "success",
       message: "okkkk",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.cronjobnovarank = async (req, res) => {
@@ -4569,7 +4682,8 @@ exports.registrationissue11 = async (req, res) => {
       const randomCode = randomToken(10);
       const emailToken = randomToken(90);
       const username = (postData?.content?.customer?.cf_username).toLowerCase();
-      const firstname = postData?.content?.customer?.billing_address?.first_name;
+      const firstname =
+        postData?.content?.customer?.billing_address?.first_name;
       const lastname = postData?.content?.customer?.billing_address?.last_name;
       const email = postData?.content?.customer?.email;
       const mobile = postData?.content?.customer?.phone;
@@ -4588,7 +4702,7 @@ exports.registrationissue11 = async (req, res) => {
       const currencyCode = postData?.content?.subscription?.currency_code;
       const couponCode =
         postData?.content?.subscription?.coupons &&
-          postData?.content?.subscription?.coupons?.length > 0
+        postData?.content?.subscription?.coupons?.length > 0
           ? postData?.content?.subscription?.coupons[0]?.coupon_id
           : "";
       const activatedAt = postData?.content?.subscription?.created_at;
@@ -4873,8 +4987,8 @@ exports.registrationissue11 = async (req, res) => {
         referralCommissionType === "Percentage"
           ? (commissionAmount = (referralCommissionValue / 100) * amount)
           : referralCommissionType === "Flat"
-            ? (commissionAmount = referralCommissionValue)
-            : (commissionAmount = 0);
+          ? (commissionAmount = referralCommissionValue)
+          : (commissionAmount = 0);
 
         if (commissionAmount > 0) {
           updateSponsorBalance = await Qry(
@@ -4967,8 +5081,9 @@ exports.registrationissue11 = async (req, res) => {
   }
 };
 
-async function insertUserLogs(sponsor_id=0, user_id=0, message=''){
-  const insert = await Qry("insert into user_logs(sponsor_id, user_id, message) values (?, ?, ?)",
+async function insertUserLogs(sponsor_id = 0, user_id = 0, message = "") {
+  const insert = await Qry(
+    "insert into user_logs(sponsor_id, user_id, message) values (?, ?, ?)",
     [sponsor_id, user_id, message]
   );
 }
@@ -4981,10 +5096,13 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     let entityType = postData?.content?.invoice?.line_items[0]?.entity_type;
     let entityType2 = postData?.content?.invoice?.line_items[1]?.entity_type;
     const customerId = postData?.content?.customer?.id;
-    const billingPeriodUnit = postData?.content?.subscription?.billing_period_unit;
+    const billingPeriodUnit =
+      postData?.content?.subscription?.billing_period_unit;
     const billingPeriod = postData?.content?.subscription?.billing_period;
-    let planID = postData?.content?.subscription?.subscription_items[0]?.item_price_id;
-    let planID2 = postData?.content?.subscription?.subscription_items[1]?.item_price_id;
+    let planID =
+      postData?.content?.subscription?.subscription_items[0]?.item_price_id;
+    let planID2 =
+      postData?.content?.subscription?.subscription_items[1]?.item_price_id;
     const created_at = postData?.content?.subscription?.created_at;
     const activated_at = postData?.content?.subscription?.activated_at;
     const activatedAt = postData?.content?.subscription?.started_at;
@@ -4997,24 +5115,29 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     let currencyCode2 = postData?.content?.invoice?.currency_code;
     let pkgName = postData?.content?.invoice?.line_items[0]?.description;
     let amount = postData?.content?.invoice?.amount_paid / 100;
-    let ac_amount = amount * (40/100);
+    let ac_amount = amount * (40 / 100);
     let trialStatus = postData?.content?.subscription?.status;
     let cancelled_at = postData?.content?.subscription?.cancelled_at;
-    const planPrice = postData?.content?.subscription?.subscription_items?.[0]?.unit_price /100;
+    const planPrice =
+      postData?.content?.subscription?.subscription_items?.[0]?.unit_price /
+      100;
     let trial_end = postData?.content?.subscription?.trial_end || 0;
-    let trial_start =  postData?.content?.subscription?.trial_start || 0;
-    const course_plans =  ['Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR',
-    'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-USD',
-    'Formation-Leads-en-RDV-Qualifies-Basic-Plan-EUR-Monthly',
-    'Formation-Leads-en-RDV-Qualifies-Basic-Plan-USD-Monthly',
-    'Formation-Leads-en-RDV-Qualifies-Unlimited-Plan-EUR-Yearly'
-  ];
+    let trial_start = postData?.content?.subscription?.trial_start || 0;
+    const course_plans = [
+      "Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR",
+      "Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-USD",
+      "Formation-Leads-en-RDV-Qualifies-Basic-Plan-EUR-Monthly",
+      "Formation-Leads-en-RDV-Qualifies-Basic-Plan-USD-Monthly",
+      "Formation-Leads-en-RDV-Qualifies-Unlimited-Plan-EUR-Yearly",
+    ];
     const nac_now = new Date();
     const nac_cutoff = new Date(Date.UTC(2025, 4, 1, 0, 0, 0));
 
-
     //optimize condition
-    if (entityType === "charge_item_price" || entityType2 === "charge_item_price") {
+    if (
+      entityType === "charge_item_price" ||
+      entityType2 === "charge_item_price"
+    ) {
       if (course_plans.includes(entityId)) {
         currencyCode = currencyCode2;
         planID = planID || entityId;
@@ -5024,46 +5147,51 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         currencyCode = currencyCode2;
         planID = planID2;
         trial_end = postData?.content?.subscription?.trial_end || 0;
-        trial_start =  postData?.content?.subscription?.trial_start || 0;
+        trial_start = postData?.content?.subscription?.trial_start || 0;
         planID = planID || entityId;
       }
     }
 
-
     const selectUserDataQuery = `SELECT * FROM usersdata WHERE customerid = ?`;
     const selectUserDataResult = await Qry(selectUserDataQuery, [customerId]);
     const userData = selectUserDataResult?.[0];
-    const selectPlansResult = await Qry(`SELECT * FROM plans WHERE plan_id = ?`, [planID]);
+    const selectPlansResult = await Qry(
+      `SELECT * FROM plans WHERE plan_id = ?`,
+      [planID]
+    );
     const planData = selectPlansResult?.[0];
     const pakageName = planData?.limits;
     const numericplanid = planData?.id;
 
-    
-    if (eventType === "payment_succeeded"  &&  entityId?.includes("Additional-5-CRM-Tags")) {
-      const  quantity = postData?.content?.invoice?.line_items[0]?.quantity
-         await Qry(
-         "UPDATE users_limits SET tags_pipelines = tags_pipelines + (? * 5) WHERE userid = ?",[quantity,userData?.id]
+    if (
+      eventType === "payment_succeeded" &&
+      entityId?.includes("Additional-5-CRM-Tags")
+    ) {
+      const quantity = postData?.content?.invoice?.line_items[0]?.quantity;
+      await Qry(
+        "UPDATE users_limits SET tags_pipelines = tags_pipelines + (? * 5) WHERE userid = ?",
+        [quantity, userData?.id]
       );
     }
 
     //Save Json Payload
     // const insertDummyQry = `insert into dummy(d_data) values (?)`;
     // await Qry(insertDummyQry, JSON.stringify(postData));
-    
+
     if (eventType === "subscription_cancellation_scheduled") {
       await Qry(
         "update new_packages set cancellation_date = ?, is_cancellation_scheduled = 1 where customerid = ? and type = ?",
         [cancelled_at, customerId, "package"]
       );
     }
-    
+
     // Event start subscription cancelled
     if (eventType === "subscription_cancelled") {
-      if (planID.includes('Affiliate-Fee')) {
-        await Qry(
-          "update usersdata set user_type = ? where id = ?",
-          ["Normal", userData?.id]
-        );
+      if (planID.includes("Affiliate-Fee")) {
+        await Qry("update usersdata set user_type = ? where id = ?", [
+          "Normal",
+          userData?.id,
+        ]);
       } else {
         await Qry(
           "update new_packages set status = ?, cancellation_date = ?, is_cancellation_scheduled= 0 where customerid = ? and type = ?",
@@ -5078,14 +5206,17 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     // Event end subscription cancelled
 
     // Event start subscription renewed
-    if (eventType === "subscription_renewed" && !planID.includes('Affiliate-Fee')) {
-        await Qry(
-          "update usersdata set for_renewal = ?, activated_at=? where id = ?",
-          ["subscription_renewed", activated_at, userData?.id]
-        );
+    if (
+      eventType === "subscription_renewed" &&
+      !planID.includes("Affiliate-Fee")
+    ) {
+      await Qry(
+        "update usersdata set for_renewal = ?, activated_at=? where id = ?",
+        ["subscription_renewed", activated_at, userData?.id]
+      );
 
-        await Qry(
-          `update plan_limit set 
+      await Qry(
+        `update plan_limit set 
           no_friend_request = 0, 
           no_crm_message = 0, 
           no_ai_comment=0, 
@@ -5095,19 +5226,19 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           no_insta_prospection=0, 
           no_insta_crm=0 
           where user_id = ?`,
-          [userData?.id]
-        );
+        [userData?.id]
+      );
     }
     // charge update status after charge
     // Event start payment refunded
     if (eventType === "payment_refunded") {
-
       amount = postData?.content?.credit_note?.amount_refunded / 100;
-      currencyCode = !currencyCode?postData?.content?.invoice?.currency_code:currencyCode;
+      currencyCode = !currencyCode
+        ? postData?.content?.invoice?.currency_code
+        : currencyCode;
 
-      if (!planID.includes('Affiliate-Fee')) {
-
-        let subDomain = planData?.subdomain?planData.subdomain:'app';
+      if (!planID.includes("Affiliate-Fee")) {
+        let subDomain = planData?.subdomain ? planData.subdomain : "app";
         let userTrialStatus = userData?.trial_status;
         let if_pro = true;
 
@@ -5115,35 +5246,45 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           // start level bonus
           let s_id = userData.sponsorid;
           for (let i = 1; i <= 2 && s_id !== 0; i++) {
-              if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-                break;
-              }
-              const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-              if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-                if_pro = false;
-                break;
-              }
-              await Qry(
-                  "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                  [
-                      s_id,
-                      userData.id,
-                      0,
-                      entityId,
-                      `Level ${i} Bonus Deducted`,
-                      eventType,
-                      currencyCode,
-                      amount,
-                      planID,
-                      billingPeriodUnit,
-                      billingPeriod,
-                      activatedAt,
-                      nextBillingAt,
-                      formatDateTimeFromTimestamp(cancelled_at),
-                      formatDateTimeFromTimestamp(cancelled_at),
-                  ]
-              );
-              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+            if (
+              i == 2 &&
+              (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+            ) {
+              break;
+            }
+            const sponsorData = await Qry(
+              "SELECT * FROM usersdata WHERE id = ?",
+              [s_id]
+            );
+            if (
+              i == 1 &&
+              course_plans.includes(entityId) &&
+              sponsorData[0].user_type != "Distributor"
+            ) {
+              if_pro = false;
+              break;
+            }
+            await Qry(
+              "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              [
+                s_id,
+                userData.id,
+                0,
+                entityId,
+                `Level ${i} Bonus Deducted`,
+                eventType,
+                currencyCode,
+                amount,
+                planID,
+                billingPeriodUnit,
+                billingPeriod,
+                activatedAt,
+                nextBillingAt,
+                formatDateTimeFromTimestamp(cancelled_at),
+                formatDateTimeFromTimestamp(cancelled_at),
+              ]
+            );
+            s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
           }
           // end level bonus
         }
@@ -5157,9 +5298,17 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           ["Block", eventType, userData.id]
         );
 
-        if(if_pro && subDomain === "app" && userTrialStatus === "Inactive"){
+        if (if_pro && subDomain === "app" && userTrialStatus === "Inactive") {
           const { id: ac_user_id, sponsorid: ac_sponsor_id } = userData;
-          await insert_affiliate_commission(ac_user_id,numericplanid,ac_sponsor_id,amount,ac_amount,currencyCode,"deduction");
+          await insert_affiliate_commission(
+            ac_user_id,
+            numericplanid,
+            ac_sponsor_id,
+            amount,
+            ac_amount,
+            currencyCode,
+            "deduction"
+          );
         }
       }
     }
@@ -5167,70 +5316,83 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
     // Event start payment failed
     if (eventType === "payment_failed" && entityType === "plan_item_price") {
-        if (planID.includes('Affiliate-Fee')) {
-          await Qry(
-            "update usersdata set user_type = ? where id = ?",
-            ["Normal", userData?.id]
-          );
-        } else {
-          await Qry(
-            "update new_packages set status = ?, failed_reason = ? where customerid = ? and type = ?",
-            [eventType, failedReason, customerId, "package"]
-          );
-          await Qry(
-            "update usersdata set subscription_status = ?, for_renewal = ? where id = ?",
-            [eventType, eventType, userData?.id]
-          );
-        }
+      if (planID.includes("Affiliate-Fee")) {
+        await Qry("update usersdata set user_type = ? where id = ?", [
+          "Normal",
+          userData?.id,
+        ]);
+      } else {
+        await Qry(
+          "update new_packages set status = ?, failed_reason = ? where customerid = ? and type = ?",
+          [eventType, failedReason, customerId, "package"]
+        );
+        await Qry(
+          "update usersdata set subscription_status = ?, for_renewal = ? where id = ?",
+          [eventType, eventType, userData?.id]
+        );
+      }
     }
     // Event end payment failed
 
     // Event start payment succeedd
     if (eventType === "payment_succeeded" && invoiceStatus === "paid") {
       // start code of payment succeedd
-      if (planID && planID.includes('Affiliate-Fee')) {
-        await Qry("update usersdata set user_type = ? where id = ?",["Distributor", userData.id]);
+      if (planID && planID.includes("Affiliate-Fee")) {
+        await Qry("update usersdata set user_type = ? where id = ?", [
+          "Distributor",
+          userData.id,
+        ]);
       } else {
         // start for normal renewal
-        if(
+        if (
           userData &&
           userData.for_renewal === "subscription_renewed" &&
           userData.subscription_status !== "payment_failed" &&
-          !entityId.includes("German-Event"))
-        {
-          console.log("in renewal")
-          let subDomain = planData?.subdomain?planData.subdomain:'app';
+          !entityId.includes("German-Event")
+        ) {
+          console.log("in renewal");
+          let subDomain = planData?.subdomain ? planData.subdomain : "app";
           if (subDomain === "app") {
             let s_id = userData.sponsorid;
             for (let i = 1; i <= 2 && s_id !== 0; i++) {
-                if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-                  break;
-                }
-                const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-                if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-                  break;
-                }
-                await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                        s_id,
-                        userData.id,
-                        0,
-                        entityId,
-                        `Level ${i} Bonus`,
-                        "subscription_renewed",
-                        currencyCode,
-                        amount,
-                        planID,
-                        billingPeriodUnit,
-                        billingPeriod,
-                        activatedAt,
-                        nextBillingAt,
-                        formatDateTimeFromTimestamp(billingStartAt),
-                        formatDateTimeFromTimestamp(billingStartAt),
-                    ]
-                );
-                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+              if (
+                i == 2 &&
+                (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+              ) {
+                break;
+              }
+              const sponsorData = await Qry(
+                "SELECT * FROM usersdata WHERE id = ?",
+                [s_id]
+              );
+              if (
+                i == 1 &&
+                course_plans.includes(entityId) &&
+                sponsorData[0].user_type != "Distributor"
+              ) {
+                break;
+              }
+              await Qry(
+                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                  s_id,
+                  userData.id,
+                  0,
+                  entityId,
+                  `Level ${i} Bonus`,
+                  "subscription_renewed",
+                  currencyCode,
+                  amount,
+                  planID,
+                  billingPeriodUnit,
+                  billingPeriod,
+                  activatedAt,
+                  nextBillingAt,
+                  formatDateTimeFromTimestamp(billingStartAt),
+                  formatDateTimeFromTimestamp(billingStartAt),
+                ]
+              );
+              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
             }
           }
 
@@ -5246,8 +5408,9 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             ]
           );
 
-
-          let billingPeriodAlt = billingPeriod?billingPeriod:userData?.plan_period;
+          let billingPeriodAlt = billingPeriod
+            ? billingPeriod
+            : userData?.plan_period;
           await Qry(
             "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=?, updatedat=? where id = ?",
             [
@@ -5265,44 +5428,56 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           );
         }
 
-
-        console.log("on 5725")
+        console.log("on 5725");
         // start for payment failed renewal
         if (userData.subscription_status === "payment_failed") {
-          let subDomain = planData?.subdomain?planData.subdomain:'app';
-          let eventTypeAlt = userData.trial_status === "Active"?"subscription_activated":eventType;
+          let subDomain = planData?.subdomain ? planData.subdomain : "app";
+          let eventTypeAlt =
+            userData.trial_status === "Active"
+              ? "subscription_activated"
+              : eventType;
 
           if (subDomain === "app") {
             let s_id = userData.sponsorid;
             for (let i = 1; i <= 2 && s_id !== 0; i++) {
-                if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-                  break;
-                }
-                const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-                if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-                  break;
-                }
-                await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                        s_id,
-                        userData.id,
-                        0,
-                        entityId,
-                        `Level ${i} Bonus`,
-                        eventType,
-                        currencyCode,
-                        amount,
-                        planID,
-                        billingPeriodUnit,
-                        billingPeriod,
-                        activatedAt,
-                        nextBillingAt,
-                        formatDateTimeFromTimestamp(billingStartAt),
-                        formatDateTimeFromTimestamp(billingStartAt),
-                    ]
-                );
-                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+              if (
+                i == 2 &&
+                (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+              ) {
+                break;
+              }
+              const sponsorData = await Qry(
+                "SELECT * FROM usersdata WHERE id = ?",
+                [s_id]
+              );
+              if (
+                i == 1 &&
+                course_plans.includes(entityId) &&
+                sponsorData[0].user_type != "Distributor"
+              ) {
+                break;
+              }
+              await Qry(
+                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                  s_id,
+                  userData.id,
+                  0,
+                  entityId,
+                  `Level ${i} Bonus`,
+                  eventType,
+                  currencyCode,
+                  amount,
+                  planID,
+                  billingPeriodUnit,
+                  billingPeriod,
+                  activatedAt,
+                  nextBillingAt,
+                  formatDateTimeFromTimestamp(billingStartAt),
+                  formatDateTimeFromTimestamp(billingStartAt),
+                ]
+              );
+              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
             }
           }
 
@@ -5318,7 +5493,10 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             ]
           );
 
-          let subscription_status_usersdata = eventTypeAlt === "payment_succeeded"?"subscription_renewed":eventTypeAlt;
+          let subscription_status_usersdata =
+            eventTypeAlt === "payment_succeeded"
+              ? "subscription_renewed"
+              : eventTypeAlt;
           await Qry(
             "update usersdata set sub_type = ?, plan_period = ?, plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, updatedat=? where id = ?",
             [
@@ -5335,97 +5513,129 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           );
         }
 
-        if (userData.trial_status == 'Active') {
+        if (userData.trial_status == "Active") {
           //update to inactive
           await Qry(
             "update usersdata set trial = ?, trial_status = ? where id = ?",
-            [
-              "No",
-              "Inactive",
-              userData.id,
-            ]
+            ["No", "Inactive", userData.id]
           );
         }
         // end for payment failed renewal
 
         let ps_affiliate_commission = true;
-        if (entityType === "charge_item_price" && invoiceStatus == "paid" && trial_start === 0) {
+        if (
+          entityType === "charge_item_price" &&
+          invoiceStatus == "paid" &&
+          trial_start === 0
+        ) {
           ps_affiliate_commission = false;
-          if(userData?.id && userData?.id != null && userData?.id != undefined && course_plans.includes(entityId)){ //for course
+          if (
+            userData?.id &&
+            userData?.id != null &&
+            userData?.id != undefined &&
+            course_plans.includes(entityId)
+          ) {
+            //for course
             await Qry(
               "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
-              [
-                userData?.id,
-                pkgName,
-                entityId
-              ]
+              [userData?.id, pkgName, entityId]
             );
 
-            let subDomain = planData?.subdomain?planData.subdomain:'app';
+            let subDomain = planData?.subdomain ? planData.subdomain : "app";
             let if_pro = true;
-            console.log("on 5822")
+            console.log("on 5822");
             if (subDomain === "app") {
               let s_id = userData.sponsorid;
               for (let i = 1; i <= 2 && s_id !== 0; i++) {
-                  if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-                    break;
-                  }
-                  const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-                  if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-                    console.log("on 5831 break")
-                    if_pro = false;
-                    break;
-                  }
-                  await Qry(
-                      "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                      [
-                          s_id,
-                          userData.id,
-                          0,
-                          entityId,
-                          `Level ${i} Bonus`,
-                          eventType,
-                          currencyCode,
-                          amount,
-                          planID
-                      ]
-                  );
-                  s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+                if (
+                  i == 2 &&
+                  (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+                ) {
+                  break;
+                }
+                const sponsorData = await Qry(
+                  "SELECT * FROM usersdata WHERE id = ?",
+                  [s_id]
+                );
+                if (
+                  i == 1 &&
+                  course_plans.includes(entityId) &&
+                  sponsorData[0].user_type != "Distributor"
+                ) {
+                  console.log("on 5831 break");
+                  if_pro = false;
+                  break;
+                }
+                await Qry(
+                  "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  [
+                    s_id,
+                    userData.id,
+                    0,
+                    entityId,
+                    `Level ${i} Bonus`,
+                    eventType,
+                    currencyCode,
+                    amount,
+                    planID,
+                  ]
+                );
+                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
               }
             }
 
-            if(if_pro && subDomain === "app"){
+            if (if_pro && subDomain === "app") {
               const { id: ac_user_id, sponsorid: ac_sponsor_id } = userData;
-              await insert_affiliate_commission(ac_user_id,numericplanid,ac_sponsor_id,amount,ac_amount,currencyCode,"addition");
+              await insert_affiliate_commission(
+                ac_user_id,
+                numericplanid,
+                ac_sponsor_id,
+                amount,
+                ac_amount,
+                currencyCode,
+                "addition"
+              );
             }
-          } else { // for tickets
-            const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
+          } else {
+            // for tickets
+            const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`;
             const getChargeResult = await Qry(getChargeQry, [userData?.id]);
 
-            const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+            const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`;
             const getTicketResult = await Qry(getTicketQry, 1);
 
-            let TicketCount = getTicketResult[0]?.total_tickets_sold
+            let TicketCount = getTicketResult[0]?.total_tickets_sold;
             TicketCount = TicketCount + 1;
 
-            const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
+            const isAlreadyCharge =
+              Number(getChargeResult[0]?.isAlreadyCharge) || 0;
             const count = isAlreadyCharge;
 
             if (userData?.id) {
-              await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
+              await Qry(
+                "update usersdata set isAlreadyCharge = ? where id = ?",
                 [count, userData?.id]
               );
             }
-            await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
+            await Qry(
+              "update ticket_count set total_tickets_sold = ? where id = ?",
               [TicketCount, 1]
             );
           }
         }
 
         //Affilate payment addition
-        if(ps_affiliate_commission ){
+        if (ps_affiliate_commission) {
           const { id: ac_user_id, sponsorid: ac_sponsor_id } = userData;
-          await insert_affiliate_commission(ac_user_id,numericplanid,ac_sponsor_id,amount,ac_amount,currencyCode,"addition");
+          await insert_affiliate_commission(
+            ac_user_id,
+            numericplanid,
+            ac_sponsor_id,
+            amount,
+            ac_amount,
+            currencyCode,
+            "addition"
+          );
         }
       }
       // end code of payment succeedd
@@ -5435,107 +5645,135 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     // Event start update customer info
     if (eventType === "customer_changed") {
       const customer = postData?.content?.customer;
-      const { id: customerId, first_name, last_name, email, phone: mobile } = customer || {};
+      const {
+        id: customerId,
+        first_name,
+        last_name,
+        email,
+        phone: mobile,
+      } = customer || {};
       const updatedBy = "api_chargebee";
-    
+
       if (!customerId) return; // Ensure customerId exists
-    
+
       const updates = [];
       const params = [];
-    
+
       if (first_name) {
         updates.push("`firstname` = ?");
         params.push(first_name);
       }
-    
+
       if (last_name) {
         updates.push("`lastname` = ?");
         params.push(last_name);
       }
-    
+
       if (email) {
         updates.push("`email` = ?");
         params.push(email);
       }
-    
+
       if (mobile) {
         updates.push("`mobile` = ?");
         params.push(mobile);
       }
-    
+
       updates.push("`updated_by` = ?");
       params.push(updatedBy, customerId);
-    
-      const query = `UPDATE \`usersdata\` SET ${updates.join(", ")} WHERE customerid = ?`;
-    
+
+      const query = `UPDATE \`usersdata\` SET ${updates.join(
+        ", "
+      )} WHERE customerid = ?`;
+
       await Qry(query, params);
     }
     // Event end update customer info
 
     // Event start subscription changed OR subscription reactivated
-    if (eventType === "subscription_changed" || eventType === "subscription_reactivated") {
-      const totalAmount = postData?.content?.subscription?.subscription_items[0]?.amount / 100;
-      let subDomain = planData?.subdomain?planData.subdomain:'app';
+    if (
+      eventType === "subscription_changed" ||
+      eventType === "subscription_reactivated"
+    ) {
+      const totalAmount =
+        postData?.content?.subscription?.subscription_items[0]?.amount / 100;
+      let subDomain = planData?.subdomain ? planData.subdomain : "app";
       let connections = planData?.connections;
       let limitsName = planData?.limits;
       let trialStatus = userData?.trial_status;
 
-      if (!planID.includes('Affiliate-Fee')) {
-
+      if (!planID.includes("Affiliate-Fee")) {
         if (subDomain === "app" && trialStatus !== "Active" && amount) {
           // start level bonus
-  
-            // check already entry for sponser L1
-            const currentDateNow = new Date();
-            const startOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth(), 1);
-            const endOfMonth = new Date(currentDateNow.getFullYear(), currentDateNow.getMonth() + 1, 0, 23, 59, 59);
 
-            let s_id = userData.sponsorid;
-            for (let i = 1; i <= 2 && s_id !== 0; i++) {
-              if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-                break;
-              }
-              let existingTransaction = await Qry(
-                "SELECT id, paid_amount FROM transactions WHERE receiverid = ? AND senderid = ? AND createdat BETWEEN ? AND ?",
-                [s_id, userData?.id, startOfMonth, endOfMonth]
-              );
-              const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-              if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-                break;
-              }
-              if (existingTransaction.length > 0) {
-                await Qry(
-                  "UPDATE transactions SET paid_amount = ?, event_type=? WHERE id = ?",
-                  [
-                    amount,
-                    eventType,
-                    existingTransaction[0].id
-                  ]
-                );
-              }else{
-                await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                        s_id,
-                        userData.id,
-                        0,
-                        entityId,
-                        `Level ${i} Bonus`,
-                        eventType,
-                        currencyCode,
-                        amount,
-                        planID,
-                        billingPeriodUnit,
-                        billingPeriod,
-                        activatedAt,
-                        nextBillingAt,
-                        formatDateTimeFromTimestamp(billingStartAt),
-                        formatDateTimeFromTimestamp(billingStartAt),
-                    ]
-                );
-              }
-              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+          // check already entry for sponser L1
+          const currentDateNow = new Date();
+          const startOfMonth = new Date(
+            currentDateNow.getFullYear(),
+            currentDateNow.getMonth(),
+            1
+          );
+          const endOfMonth = new Date(
+            currentDateNow.getFullYear(),
+            currentDateNow.getMonth() + 1,
+            0,
+            23,
+            59,
+            59
+          );
+
+          let s_id = userData.sponsorid;
+          for (let i = 1; i <= 2 && s_id !== 0; i++) {
+            if (
+              i == 2 &&
+              (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+            ) {
+              break;
             }
+            let existingTransaction = await Qry(
+              "SELECT id, paid_amount FROM transactions WHERE receiverid = ? AND senderid = ? AND createdat BETWEEN ? AND ?",
+              [s_id, userData?.id, startOfMonth, endOfMonth]
+            );
+            const sponsorData = await Qry(
+              "SELECT * FROM usersdata WHERE id = ?",
+              [s_id]
+            );
+            if (
+              i == 1 &&
+              course_plans.includes(entityId) &&
+              sponsorData[0].user_type != "Distributor"
+            ) {
+              break;
+            }
+            if (existingTransaction.length > 0) {
+              await Qry(
+                "UPDATE transactions SET paid_amount = ?, event_type=? WHERE id = ?",
+                [amount, eventType, existingTransaction[0].id]
+              );
+            } else {
+              await Qry(
+                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                  s_id,
+                  userData.id,
+                  0,
+                  entityId,
+                  `Level ${i} Bonus`,
+                  eventType,
+                  currencyCode,
+                  amount,
+                  planID,
+                  billingPeriodUnit,
+                  billingPeriod,
+                  activatedAt,
+                  nextBillingAt,
+                  formatDateTimeFromTimestamp(billingStartAt),
+                  formatDateTimeFromTimestamp(billingStartAt),
+                ]
+              );
+            }
+            s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+          }
           // end level bonus
         }
 
@@ -5574,7 +5812,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         );
         //end plan limits
 
-        if(eventType === "subscription_changed"){
+        if (eventType === "subscription_changed") {
           await Qry(
             "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, activated_at=?, connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ? WHERE id = ?",
             [
@@ -5607,8 +5845,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               "package",
             ]
           );
-
-        }else if(eventType === "subscription_reactivated"){
+        } else if (eventType === "subscription_reactivated") {
           await Qry(
             "UPDATE usersdata SET `currency` = ?, connection_type = ?, sub_type = ?, plan_period = ?,plan_pkg = ?, plan_price = ?, for_renewal = ?, subscription_status = ?, connect_status = ?, crm_status = ?, birthday_status = ?, unfollow_status = ?, login_status = ? WHERE id = ?",
             [
@@ -5625,7 +5862,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               "On",
               "On",
               "Unblock",
-              userData?.id
+              userData?.id,
             ]
           );
 
@@ -5640,16 +5877,16 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               billingPeriodUnit,
               customerId,
               "package",
-              eventType
+              eventType,
             ]
           );
-    
-          if (postData?.content?.subscription?.status == 'in_trial') {
+
+          if (postData?.content?.subscription?.status == "in_trial") {
             var trial_start_date = postData?.content?.subscription?.trial_start;
             var trial_end_date = postData?.content?.subscription?.trial_end;
             await Qry(
               "update usersdata set trial = ?, trial_status=?, trial_start = ?, trial_end = ? where id = ?",
-              ['Yes','Active', trial_start_date, trial_end_date, userData?.id]
+              ["Yes", "Active", trial_start_date, trial_end_date, userData?.id]
             );
           }
         }
@@ -5657,12 +5894,15 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     }
     // Event end subscription changed
 
-    console.log(eventType,invoiceStatus,trialStatus)
+    console.log(eventType, invoiceStatus, trialStatus);
     // Event start subscription Created
-    if (eventType === "subscription_created" && (invoiceStatus === "paid" || trialStatus === "in_trial")) {
-
+    if (
+      eventType === "subscription_created" &&
+      (invoiceStatus === "paid" || trialStatus === "in_trial")
+    ) {
       const randomCode = postData?.content?.customer?.cf_random_code;
-      const sponsorRnadomCode = postData?.content?.customer?.cf_sponsor_random_code;
+      const sponsorRnadomCode =
+        postData?.content?.customer?.cf_sponsor_random_code;
       const emailToken = postData?.content?.customer?.cf_email_token;
       const firstname = postData?.content?.customer?.first_name;
       const lastname = postData?.content?.customer?.last_name;
@@ -5678,33 +5918,37 @@ exports.ipnChagrbeWebhook = async (req, res) => {
       let amount = postData?.content?.invoice?.amount_paid / 100;
       const subscriptionId = postData?.content?.subscription?.id;
       const subscriptionStatus = "Active";
-      const subscriptionType = postData?.content?.subscription?.billing_period_unit;
-      const subscriptionPeriod = postData?.content?.subscription?.billing_period;
+      const subscriptionType =
+        postData?.content?.subscription?.billing_period_unit;
+      const subscriptionPeriod =
+        postData?.content?.subscription?.billing_period;
       let maskedNumber = postData?.content?.card?.masked_number || "";
       let parent_id = postData?.content?.customer?.cf_cf_parent_id;
-      let reseller_website = postData?.content?.customer?.cf_reseller_website || 'app';
+      let reseller_website =
+        postData?.content?.customer?.cf_reseller_website || "app";
 
-      if (!planID.includes('Affiliate-Fee')) {
-
+      if (!planID.includes("Affiliate-Fee")) {
         const selectUserDataduplicateResult = await Qry(
           `SELECT COUNT(*) as total FROM usersdata WHERE (username = ? OR email = ?) AND website = ?`,
           [customerId, email, reseller_website]
         );
         if (selectUserDataduplicateResult[0].total === 0) {
-          const selectSponsorResult = await Qry(`SELECT * FROM usersdata WHERE randomcode = ?`, [
-            sponsorRnadomCode,
-          ]);
+          const selectSponsorResult = await Qry(
+            `SELECT * FROM usersdata WHERE randomcode = ?`,
+            [sponsorRnadomCode]
+          );
 
           let userSponsorId = selectSponsorResult[0]?.id || 1;
           let l2SponsorId = parseInt(selectSponsorResult[0]?.sponsorid) ?? 0;
-          const selectRandomeCodeResult = await Qry(`SELECT * FROM password WHERE randomcode = ?`, [
-            randomCode,
-          ]);
+          const selectRandomeCodeResult = await Qry(
+            `SELECT * FROM password WHERE randomcode = ?`,
+            [randomCode]
+          );
 
           let encryptedPassword = selectRandomeCodeResult[0]?.password || null;
-        
-          let subDomain = planData?.subdomain?planData.subdomain:'app';
-          let connections = planData?planData.connections : 0;
+
+          let subDomain = planData?.subdomain ? planData.subdomain : "app";
+          let connections = planData ? planData.connections : 0;
           let limitsName = planData?.limits || "Basic";
           let referral_side = selectSponsorResult[0].referral_side;
 
@@ -5714,8 +5958,8 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           trial_start = trialStatus === "in_trial" ? trial_start : 0;
           amount = trialStatus === "in_trial" ? 0 : amount;
 
-          console.log(trial,trialStatus,entityId)
-          
+          console.log(trial, trialStatus, entityId);
+
           const insertResult = await Qry(
             `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -5757,7 +6001,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               currencyCode,
               subscriptionStatus,
               formatDateTimeFromTimestamp(created_at),
-              formatDateTimeFromTimestamp(created_at)
+              formatDateTimeFromTimestamp(created_at),
             ]
           );
           let newUserId = insertResult.insertId;
@@ -5765,13 +6009,13 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           if (newUserId) {
             try {
               createDefaultTagsAndMessages(newUserId, language ?? "en");
-            } catch (error) { }
+            } catch (error) {}
           }
 
-          await Qry(
-            "update password set status = ? where id = ?",
-            ["Approved", selectRandomeCodeResult[0].id]
-          );
+          await Qry("update password set status = ? where id = ?", [
+            "Approved",
+            selectRandomeCodeResult[0].id,
+          ]);
 
           await Qry(
             `INSERT INTO new_packages(userid, amount, subscriptionid, customerid, currency, planid, activatedAt, nextBillingAt, status, pkg_name, sub_type, dat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -5787,7 +6031,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               subscriptionStatus,
               limitsName,
               subscriptionType,
-              formatDateTimeFromTimestamp(created_at)
+              formatDateTimeFromTimestamp(created_at),
             ]
           );
 
@@ -5796,55 +6040,77 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             let aftbl_sid = s_id;
             let if_pro = true;
             for (let i = 1; i <= 2 && s_id !== 0; i++) {
-              console.log('entityId--6258:'+i, entityId);
-              console.log('entityId--6258'+i, course_plans.includes(entityId));
-              console.log('entityId--6258'+i, nac_now);
-              console.log('entityId--6258'+i, nac_cutoff);
-              
-              if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-                  console.log('in if--6264'+i);
-                  break;
-                }
-                const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-                console.log('sponsorData--6268',sponsorData);
-                console.log('sponsorData--6268', typeof sponsorData[0]?.user_type);
-                if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-                  console.log('in if_pro--6264:'+i);
-                  if_pro = false;
-                  break;
-                }
-                var transaction_insert = await Qry(
-                    "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [
-                        s_id,
-                        newUserId,
-                        0,
-                        entityId,
-                        `Level ${i} Bonus`,
-                        eventType,
-                        currencyCode,
-                        amount,
-                        planID,
-                        billingPeriodUnit,
-                        billingPeriod,
-                        activatedAt,
-                        nextBillingAt,
-                        formatDateTimeFromTimestamp(created_at),
-                        formatDateTimeFromTimestamp(created_at),
-                    ]
-                );
-                console.log('transaction_insert--6288', transaction_insert);
-                s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
-                insertUserLogs(s_id, newUserId, 'plan created');
+              console.log("entityId--6258:" + i, entityId);
+              console.log(
+                "entityId--6258" + i,
+                course_plans.includes(entityId)
+              );
+              console.log("entityId--6258" + i, nac_now);
+              console.log("entityId--6258" + i, nac_cutoff);
+
+              if (
+                i == 2 &&
+                (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+              ) {
+                console.log("in if--6264" + i);
+                break;
               }
-            
-            if(if_pro){
-              await insert_affiliate_commission(newUserId,numericplanid,aftbl_sid,amount,ac_amount,currencyCode,"addition");
+              const sponsorData = await Qry(
+                "SELECT * FROM usersdata WHERE id = ?",
+                [s_id]
+              );
+              console.log("sponsorData--6268", sponsorData);
+              console.log(
+                "sponsorData--6268",
+                typeof sponsorData[0]?.user_type
+              );
+              if (
+                i == 1 &&
+                course_plans.includes(entityId) &&
+                sponsorData[0].user_type != "Distributor"
+              ) {
+                console.log("in if_pro--6264:" + i);
+                if_pro = false;
+                break;
+              }
+              var transaction_insert = await Qry(
+                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                  s_id,
+                  newUserId,
+                  0,
+                  entityId,
+                  `Level ${i} Bonus`,
+                  eventType,
+                  currencyCode,
+                  amount,
+                  planID,
+                  billingPeriodUnit,
+                  billingPeriod,
+                  activatedAt,
+                  nextBillingAt,
+                  formatDateTimeFromTimestamp(created_at),
+                  formatDateTimeFromTimestamp(created_at),
+                ]
+              );
+              console.log("transaction_insert--6288", transaction_insert);
+              s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+              insertUserLogs(s_id, newUserId, "plan created");
             }
-          } 
-          
-          
-        
+
+            if (if_pro) {
+              await insert_affiliate_commission(
+                newUserId,
+                numericplanid,
+                aftbl_sid,
+                amount,
+                ac_amount,
+                currencyCode,
+                "addition"
+              );
+            }
+          }
+
           //start plan limits
           let limitsQueury = await Qry(
             "SELECT * from chargbee_packages_limits WHERE pkg_id = ?",
@@ -5887,35 +6153,45 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           );
 
           // eventTypeValue === "charge"
-          if (entityType === "charge_item_price" && invoiceStatus == "paid" && trial === "No") {
-            if(userData?.id && userData?.id != null && userData?.id != undefined && course_plans.includes(entityId)){ //for course
+          if (
+            entityType === "charge_item_price" &&
+            invoiceStatus == "paid" &&
+            trial === "No"
+          ) {
+            if (
+              userData?.id &&
+              userData?.id != null &&
+              userData?.id != undefined &&
+              course_plans.includes(entityId)
+            ) {
+              //for course
               await Qry(
                 "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
-                [
-                  userData?.id,
-                  pkgName,
-                  entityId
-                ]
+                [userData?.id, pkgName, entityId]
               );
-            } else { // for tickets
-              const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
+            } else {
+              // for tickets
+              const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`;
               const getChargeResult = await Qry(getChargeQry, [userData?.id]);
 
-              const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+              const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`;
               const getTicketResult = await Qry(getTicketQry, 1);
 
-              let TicketCount = getTicketResult[0]?.total_tickets_sold
+              let TicketCount = getTicketResult[0]?.total_tickets_sold;
               TicketCount = TicketCount + 1;
 
-              const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
+              const isAlreadyCharge =
+                Number(getChargeResult[0]?.isAlreadyCharge) || 0;
               const count = isAlreadyCharge;
 
               if (userData?.id) {
-                await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
+                await Qry(
+                  "update usersdata set isAlreadyCharge = ? where id = ?",
                   [count, userData?.id]
                 );
               }
-              await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
+              await Qry(
+                "update ticket_count set total_tickets_sold = ? where id = ?",
                 [TicketCount, 1]
               );
             }
@@ -5927,39 +6203,48 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
     // Event start subscription activated (trial subscription)
     if (eventType === "subscription_activated" && invoiceStatus === "paid") {
-
-      let subDomain = planData?.subdomain?planData.subdomain:'app';
+      let subDomain = planData?.subdomain ? planData.subdomain : "app";
       if (subDomain === "app") {
         let s_id = userData.sponsorid;
         for (let i = 1; i <= 2 && s_id !== 0; i++) {
-            if (i == 2 && (course_plans.includes(entityId) || nac_now >= nac_cutoff)) {
-              break;
-            }
-            const sponsorData = await Qry("SELECT * FROM usersdata WHERE id = ?", [s_id]);
-            if (i == 1 && course_plans.includes(entityId) && sponsorData[0].user_type != "Distributor") {
-              break;
-            }
-            await Qry(
-                "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    s_id,
-                    userData.id,
-                    0,
-                    entityId,
-                    `Level ${i} Bonus`,
-                    eventType,
-                    currencyCode,
-                    amount,
-                    planID,
-                    billingPeriodUnit,
-                    billingPeriod,
-                    activatedAt,
-                    nextBillingAt,
-                    formatDateTimeFromTimestamp(activated_at),
-                    formatDateTimeFromTimestamp(activated_at),
-                ]
-            );
-            s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
+          if (
+            i == 2 &&
+            (course_plans.includes(entityId) || nac_now >= nac_cutoff)
+          ) {
+            break;
+          }
+          const sponsorData = await Qry(
+            "SELECT * FROM usersdata WHERE id = ?",
+            [s_id]
+          );
+          if (
+            i == 1 &&
+            course_plans.includes(entityId) &&
+            sponsorData[0].user_type != "Distributor"
+          ) {
+            break;
+          }
+          await Qry(
+            "INSERT INTO transactions (receiverid, senderid, amount, details, type, event_type, currency, paid_amount, plan_id, sub_type, plan_period, activated_at, nextBillingAt, createdat, approvedat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+              s_id,
+              userData.id,
+              0,
+              entityId,
+              `Level ${i} Bonus`,
+              eventType,
+              currencyCode,
+              amount,
+              planID,
+              billingPeriodUnit,
+              billingPeriod,
+              activatedAt,
+              nextBillingAt,
+              formatDateTimeFromTimestamp(activated_at),
+              formatDateTimeFromTimestamp(activated_at),
+            ]
+          );
+          s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
         }
       }
 
@@ -5985,34 +6270,40 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
       // eventTypeValue === "charge"
       if (entityType === "charge_item_price" && invoiceStatus == "paid") {
-        if(userData?.id && userData?.id != null && userData?.id != undefined && course_plans.includes(entityId)){ //for course
+        if (
+          userData?.id &&
+          userData?.id != null &&
+          userData?.id != undefined &&
+          course_plans.includes(entityId)
+        ) {
+          //for course
           await Qry(
             "INSERT INTO user_courses (user_id, course_name, course_chargebe_id) VALUES (?, ?, ?)",
-            [
-              userData?.id,
-              pkgName,
-              entityId
-            ]
+            [userData?.id, pkgName, entityId]
           );
-        } else { // for tickets
-          const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`
+        } else {
+          // for tickets
+          const getChargeQry = `SELECT isAlreadyCharge  FROM usersdata WHERE id = ?`;
           const getChargeResult = await Qry(getChargeQry, [userData?.id]);
 
-          const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`
+          const getTicketQry = `SELECT total_tickets_sold  FROM ticket_count WHERE id = ?`;
           const getTicketResult = await Qry(getTicketQry, 1);
 
-          let TicketCount = getTicketResult[0]?.total_tickets_sold
+          let TicketCount = getTicketResult[0]?.total_tickets_sold;
           TicketCount = TicketCount + 1;
 
-          const isAlreadyCharge = Number(getChargeResult[0]?.isAlreadyCharge) || 0;
+          const isAlreadyCharge =
+            Number(getChargeResult[0]?.isAlreadyCharge) || 0;
           const count = isAlreadyCharge;
 
           if (userData?.id) {
-            await Qry("update usersdata set isAlreadyCharge = ? where id = ?",
-              [count, userData?.id]
-            );
+            await Qry("update usersdata set isAlreadyCharge = ? where id = ?", [
+              count,
+              userData?.id,
+            ]);
           }
-          await Qry("update ticket_count set total_tickets_sold = ? where id = ?",
+          await Qry(
+            "update ticket_count set total_tickets_sold = ? where id = ?",
             [TicketCount, 1]
           );
         }
@@ -6022,11 +6313,11 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
     //Event start subscription paused
     if (eventType === "subscription_paused") {
-      if (planID.includes('Affiliate-Fee')) {
-        await Qry(
-          "update usersdata set user_type = ? where id = ?",
-          ["Normal", userData?.id]
-        );
+      if (planID.includes("Affiliate-Fee")) {
+        await Qry("update usersdata set user_type = ? where id = ?", [
+          "Normal",
+          userData?.id,
+        ]);
       } else {
         await Qry(
           "update new_packages set status = ?, cancellation_date = ?, is_cancellation_scheduled= 0 where customerid = ? and type = ?",
@@ -6041,7 +6332,8 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
     // Event for subscription resumed
     if (eventType === "subscription_resumed") {
-      const totalAmount = postData?.content?.subscription?.subscription_items[0]?.amount / 100;
+      const totalAmount =
+        postData?.content?.subscription?.subscription_items[0]?.amount / 100;
       let connections = planData.connections;
       let limitsName = planData.limits;
 
@@ -6062,7 +6354,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           "On",
           "Unblock",
           activated_at,
-          userData?.id
+          userData?.id,
         ]
       );
 
@@ -6077,15 +6369,14 @@ exports.ipnChagrbeWebhook = async (req, res) => {
           billingPeriodUnit,
           customerId,
           "package",
-          eventType
+          eventType,
         ]
       );
     }
 
     return Response.resWith202(res, "success", eventType);
   } catch (error) {
-
-    console.error("webhook error:", error); 
+    console.error("webhook error:", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -6626,7 +6917,7 @@ exports.cronjobautocouponcsv = async (req, res) => {
             );
 
             x++;
-          } catch (error) { }
+          } catch (error) {}
 
           x = x + 1;
         }
@@ -6636,7 +6927,7 @@ exports.cronjobautocouponcsv = async (req, res) => {
       status: "success",
       message: "okkkk",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.cronjobwithdrawalstatus = async (req, res) => {
@@ -6730,8 +7021,6 @@ exports.cronjobbalancetransfer = async (req, res) => {
     let lastMonthNumber = getLastMonthNumber();
     let yearNumber = getYearNumber(lastMonthNumber);
 
-
-
     let x = 1;
     for (const user of selectUserResult) {
       let userID = user.id;
@@ -6749,8 +7038,6 @@ exports.cronjobbalancetransfer = async (req, res) => {
         dataCommission.totalPaymentEUR,
         userID,
       ]);
-
-
 
       const insertQuery = `INSERT INTO balance_transfer_for_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;
       await Qry(insertQuery, [
@@ -6774,17 +7061,11 @@ exports.cronjobbalancetransfer = async (req, res) => {
   }
 };
 
-exports.cronjobpendingpool = async (req, res) => {
+exports.cronjobpendingpool = async (req, res) => {};
 
-};
+exports.cronjobpoolone = async (req, res) => {};
 
-exports.cronjobpoolone = async (req, res) => {
-
-};
-
-exports.cronjobpoolthreee = async (req, res) => {
-
-};
+exports.cronjobpoolthreee = async (req, res) => {};
 
 exports.getpayoutinformationrequest = async (req, res) => {
   try {
@@ -6806,7 +7087,7 @@ exports.getpayoutinformationrequest = async (req, res) => {
       message: "Server error occurred",
     });
   }
-};  
+};
 
 exports.openunfollow = async (req, res) => {
   try {
@@ -7238,10 +7519,8 @@ exports.getpoolreports = async (req, res) => {
 
 exports.getunilevelreports = async (req, res) => {
   try {
-
     const auth_id = await checkAuthorization(req, res);
     if (auth_id) {
-      
       const selectQuerLogin = await Qry(
         "SELECT * FROM usersdata WHERE id = ?",
         [auth_id]
@@ -7253,13 +7532,16 @@ exports.getunilevelreports = async (req, res) => {
       let month = postData.month;
       let currentYear = new Date().getFullYear();
       let year = postData?.year || currentYear;
-      let commission = await total_payment_function_afcm_tbl(auth_id, month, year);
-      
+      let commission = await total_payment_function_afcm_tbl(
+        auth_id,
+        month,
+        year
+      );
+
       return Response.resWith202(res, "success", commission);
     }
   } catch (error) {
-
-    console.error("Error occurred:", error);  
+    console.error("Error occurred:", error);
     return Response.resWith422(res, "Something went wrong");
   }
 };
@@ -9076,13 +9358,13 @@ exports.affiliateslifetimeearning = async (req, res) => {
 
           if (
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-USD-Monthly" ||
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-USD-Monthly" ||
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-EUR-Monthly" ||
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-EUR-Monthly" ||
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-USD-Monthly" ||
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-USD-Monthly" ||
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-EUR-Monthly"
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-EUR-Monthly"
           ) {
             let senderCreatedat = resultSender1[0].createdat;
 
@@ -9139,13 +9421,13 @@ exports.affiliateslifetimeearning = async (req, res) => {
 
           if (
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-USD-Monthly" ||
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-USD-Monthly" ||
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-EUR-Monthly" ||
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-EUR-Monthly" ||
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-USD-Monthly" ||
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-USD-Monthly" ||
             currentUserPlanId ===
-            "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-EUR-Monthly"
+              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-EUR-Monthly"
           ) {
             let senderCreatedat = resultSender1[0].createdat;
 
@@ -9241,12 +9523,12 @@ exports.setpaidamount = async (req, res) => {
         const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
           .toString()
           .padStart(2, "0")}-${date
-            .getDate()
-            .toString()
-            .padStart(2, "0")} ${date
-              .getHours()
-              .toString()
-              .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+          .getDate()
+          .toString()
+          .padStart(2, "0")} ${date
+          .getHours()
+          .toString()
+          .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
         if (data.event_type === "subscription_changed") {
           const getunilevelQuery1111 =
             "SELECT * FROM transactions WHERE senderid = ? AND event_type = ? and type = ? and DATE_FORMAT(createdat, '%Y-%m-%d %H:%i') = ?";
@@ -9448,7 +9730,7 @@ exports.setpaidamount = async (req, res) => {
       status: "success",
       message: "ok",
     });
-  } catch (e) { }
+  } catch (e) {}
 };
 
 exports.getunilevelreports111 = async (req, res) => {
@@ -9531,7 +9813,7 @@ exports.charge = async (req, res) => {
           })
           .request(function (error, result) {
             if (error) {
-              console.log('error--10755', error);
+              console.log("error--10755", error);
               //handle error
             } else {
               var hosted_page = result.hosted_page;
@@ -9548,7 +9830,7 @@ exports.charge = async (req, res) => {
       data: await subscription.hosted_page,
     });
   } catch (error) {
-    console.log('error--10772', error);
+    console.log("error--10772", error);
     res.json({
       status: "error",
       message: "Server error occurred",
@@ -9645,8 +9927,8 @@ exports.testgetitems = async (req, res) => {
   try {
     chargebee.item
       .retrieve("Pro-Facebook-Instagram")
-      .request(function (error, result) { });
-  } catch (error) { }
+      .request(function (error, result) {});
+  } catch (error) {}
 };
 
 exports.cancelsubscription = async (req, res) => {
@@ -9687,28 +9969,25 @@ exports.cancelsubscription = async (req, res) => {
 
 exports.settrialrenewal = async (req, res) => {
   try {
-
     const query = `
     SELECT * 
     FROM usersdata 
     WHERE trial = ? and trial_status = ? and (subscription_status = ?)`;
-    let result = await Qry(query, ['Yes', 'Active', 'subscription_renewed']);
-    let x = 1
+    let result = await Qry(query, ["Yes", "Active", "subscription_renewed"]);
+    let x = 1;
     for (data of result) {
-
       // const pkgSelectQuery = `SELECT * FROM transactions WHERE senderid = ? and type = ? and MONTH(createdat) = 8`;
       // const pkgSelectParams = [data.id, "Level 1 Bonus"];
       // const pkgSelectResult = await Qry(pkgSelectQuery, pkgSelectParams);
 
-
-      x = x + 1
+      x = x + 1;
     }
     res.json({
       status: "success",
       // data: result,
     });
   } catch (error) {
-    console.log('error', error);
+    console.log("error", error);
     res.json({
       status: "error",
       message: "Server error occurred",
@@ -9720,50 +9999,52 @@ exports.getsubscriptionitemsupgrade = async (req, res) => {
   const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
   const postData = req.body;
   try {
-
     if (authUser) {
-
       const selectUserQuery = "SELECT * FROM usersdata WHERE id = ?";
       const selectUserResult = await Qry(selectUserQuery, [authUser]);
 
-      let trial = 'No';
+      let trial = "No";
 
-      if (postData.subdomain === 'lyriange') {
-        trial = 'Yes'
+      if (postData.subdomain === "lyriange") {
+        trial = "Yes";
       }
 
-      const selectPlanQuery = "SELECT * FROM plans WHERE subdomain = ? and currency_code = ? and period_unit = ? and plan_type = ? and trial = ?";
-      const selectPlanResult = await Qry(selectPlanQuery, [postData.subdomain, selectUserResult[0].currency, postData.period_unit, postData.plan_type, trial]);
+      const selectPlanQuery =
+        "SELECT * FROM plans WHERE subdomain = ? and currency_code = ? and period_unit = ? and plan_type = ? and trial = ?";
+      const selectPlanResult = await Qry(selectPlanQuery, [
+        postData.subdomain,
+        selectUserResult[0].currency,
+        postData.period_unit,
+        postData.plan_type,
+        trial,
+      ]);
 
+      const selectPkgQuery =
+        "SELECT * FROM new_packages WHERE userid = ? and type = ?";
+      const selectPkgResult = await Qry(selectPkgQuery, [authUser, "package"]);
 
-      const selectPkgQuery = "SELECT * FROM new_packages WHERE userid = ? and type = ?";
-      const selectPkgResult = await Qry(selectPkgQuery, [authUser, 'package']);
-
-      let planId = selectPkgResult[0].planid
+      let planId = selectPkgResult[0].planid;
 
       const selectUserPlanQuery = "SELECT * FROM plans WHERE plan_id = ?";
       const selectUserPlanResult = await Qry(selectUserPlanQuery, [planId]);
 
-      currentPlanData = selectUserPlanResult[0]
+      currentPlanData = selectUserPlanResult[0];
 
-      let oldPlan = 'No'
+      let oldPlan = "No";
 
       if (!selectUserPlanResult[0].plan_name) {
-        oldPlan = 'Yes'
+        oldPlan = "Yes";
       }
 
-      currentPlanData.oldPlan = oldPlan
-
+      currentPlanData.oldPlan = oldPlan;
 
       res.json({
         status: "success",
         data: selectPlanResult,
         currentPlanData: currentPlanData,
-        authUserData: selectUserResult[0]
+        authUserData: selectUserResult[0],
       });
-
     }
-
   } catch (error) {
     if (debugging === "true") {
       console.error("Error executing query:", error);
@@ -9808,14 +10089,12 @@ exports.checkupgradehostedpage = async (req, res) => {
           status: "success",
           message: "You have upgrade your subscription successfully.",
         });
-      }
-      else {
+      } else {
         res.json({
           status: "error",
           message: "Server error occurred",
         });
       }
-
     }
   } catch (error) {
     if (debugging === "true") {
@@ -9830,35 +10109,35 @@ exports.checkupgradehostedpage = async (req, res) => {
 
 exports.uploadImageToS3Bucket = async (req, res) => {
   try {
-    limit = req.body?.limit || 100
-    let data = await ProcessBase64ImageDataFunc(limit)
+    limit = req.body?.limit || 100;
+    let data = await ProcessBase64ImageDataFunc(limit);
     res.json({
       status: "success",
       message: "action completed",
-      data
+      data,
     });
   } catch (error) {
     res.json({
       status: "error",
       message: "something went wrong",
-      error
+      error,
     });
   }
 };
 
 exports.setL2SponsorId = async (req, res) => {
   try {
-    let data = await processL2SponsorId()
+    let data = await processL2SponsorId();
     res.json({
       status: "success",
       message: "action completed",
-      data
+      data,
     });
   } catch (error) {
     res.json({
       status: "error",
       message: "something went wrong",
-      error
+      error,
     });
   }
 };
@@ -9866,49 +10145,52 @@ exports.setL2SponsorId = async (req, res) => {
 exports.chargeBeeDatta = async (req, res) => {
   const filePath = path.join(__dirname, "userList.csv");
 
-  fs.createReadStream(filePath).pipe(csv()).on("data", async (row) => {
-    if (row.customerid && row.plan_id && row.billing_amount && row.currency) {
-      try {
-        const customerID = row.customerid;
-        const planID = row.plan_id;
-        const billingAmount = row.billing_amount;
-        const currency = row.currency;
+  fs.createReadStream(filePath)
+    .pipe(csv())
+    .on("data", async (row) => {
+      if (row.customerid && row.plan_id && row.billing_amount && row.currency) {
+        try {
+          const customerID = row.customerid;
+          const planID = row.plan_id;
+          const billingAmount = row.billing_amount;
+          const currency = row.currency;
 
-        let periodStrArr = planID.split("-");
-        let periodInd = periodStrArr[periodStrArr.length - 1];
-        let period = "";
-        let period_unit = "";
-        if (periodInd === "months") {
-          period = 3;
-          period_unit = "month";
-        } else if (periodInd === "Monthly") {
-          period = 1;
-          period_unit = "month";
-        } else if (periodInd === "Yearly") {
-          period = 1;
-          period_unit = "year";
+          let periodStrArr = planID.split("-");
+          let periodInd = periodStrArr[periodStrArr.length - 1];
+          let period = "";
+          let period_unit = "";
+          if (periodInd === "months") {
+            period = 3;
+            period_unit = "month";
+          } else if (periodInd === "Monthly") {
+            period = 1;
+            period_unit = "month";
+          } else if (periodInd === "Yearly") {
+            period = 1;
+            period_unit = "year";
+          }
+
+          const planLimitqry = `SELECT limits FROM plans WHERE plan_id = ?`;
+          const getLimits = await Qry(planLimitqry, [planID]);
+          const Limits = getLimits[0].limits;
+
+          const updateLoginQuery = `UPDATE usersdata SET plan_price = ?, currency = ?, sub_type = ?, plan_period = ?, plan_pkg = ? WHERE customerid = ?`;
+          await Qry(updateLoginQuery, [
+            billingAmount,
+            currency,
+            period_unit,
+            period,
+            Limits,
+            customerID,
+          ]);
+        } catch (error) {
+          console.error(
+            `Error processing row for customerID ${row.customerid}:`,
+            error
+          );
         }
-
-        const planLimitqry = `SELECT limits FROM plans WHERE plan_id = ?`;
-        const getLimits = await Qry(planLimitqry, [planID]);
-        const Limits = getLimits[0].limits;
-
-        const updateLoginQuery = `UPDATE usersdata SET plan_price = ?, currency = ?, sub_type = ?, plan_period = ?, plan_pkg = ? WHERE customerid = ?`;
-        await Qry(updateLoginQuery, [
-          billingAmount,
-          currency,
-          period_unit,
-          period,
-          Limits,
-          customerID,
-        ]);
-
-
-      } catch (error) {
-        console.error(`Error processing row for customerID ${row.customerid}:`, error);
       }
-    }
-  })
+    })
     .on("end", () => {
       res.json({
         status: "success",
@@ -9925,46 +10207,63 @@ exports.chargeBeeDatta = async (req, res) => {
 
 exports.cronjobAffiliateCalculation = async (req, res) => {
   try {
-    const select_user_result = await Qry(`SELECT * FROM usersdata WHERE usertype = ? and user_type = ?`, [
-      "user",
-      "Distributor",
-    ]);
-    
-    const affiliate_comission = await Qry(`SELECT * FROM affiliate_comission WHERE calculation_status = ?`, ["pending"]);
-    select_user_result.forEach(async(user) => {
+    const select_user_result = await Qry(
+      `SELECT * FROM usersdata WHERE usertype = ? and user_type = ?`,
+      ["user", "Distributor"]
+    );
+
+    const affiliate_comission = await Qry(
+      `SELECT * FROM affiliate_comission WHERE calculation_status = ?`,
+      ["pending"]
+    );
+    select_user_result.forEach(async (user) => {
       //Test 2537
-      if(user.id == 2537){
-        
-        let af_commission_usd = affiliate_comission.filter(af => af.sponser_id === user.id && af.currency === "USD");
-        let af_commission_eur = affiliate_comission.filter(af => af.sponser_id === user.id && af.currency === "EUR");
+      if (user.id == 2537) {
+        let af_commission_usd = affiliate_comission.filter(
+          (af) => af.sponser_id === user.id && af.currency === "USD"
+        );
+        let af_commission_eur = affiliate_comission.filter(
+          (af) => af.sponser_id === user.id && af.currency === "EUR"
+        );
 
-        let total_usd = af_commission_usd.reduce((sum, af) => sum + af.amount, 0);
-        let total_eur = af_commission_eur.reduce((sum, af) => sum + af.amount, 0);
-        
-        if(total_usd){
+        let total_usd = af_commission_usd.reduce(
+          (sum, af) => sum + af.amount,
+          0
+        );
+        let total_eur = af_commission_eur.reduce(
+          (sum, af) => sum + af.amount,
+          0
+        );
+
+        if (total_usd) {
           await Qry(
-              `INSERT INTO affiliate_payout 
+            `INSERT INTO affiliate_payout 
               (user_id, total_amount, amount_after_tax, currency, created_at, updated_at) 
-              VALUES (?, ?, ?, ?, NOW(), NOW())`, 
-              [user.id, total_usd, total_usd, "USD"]
+              VALUES (?, ?, ?, ?, NOW(), NOW())`,
+            [user.id, total_usd, total_usd, "USD"]
           );
         }
 
-        if(total_eur){
+        if (total_eur) {
           await Qry(
-              `INSERT INTO affiliate_payout 
+            `INSERT INTO affiliate_payout 
               (user_id, total_amount, amount_after_tax, currency, created_at, updated_at) 
-              VALUES (?, ?, ?, ?, NOW(), NOW())`, 
-              [user.id, total_eur, total_eur, "EUR"]
+              VALUES (?, ?, ?, ?, NOW(), NOW())`,
+            [user.id, total_eur, total_eur, "EUR"]
           );
         }
-        
+
         // Extract IDs from affiliate_comission
-        let af_commission_ids = affiliate_comission.filter(af => af.sponser_id === user.id).map(af => af.id);
+        let af_commission_ids = affiliate_comission
+          .filter((af) => af.sponser_id === user.id)
+          .map((af) => af.id);
         if (af_commission_ids.length > 0) {
-            await Qry(`UPDATE affiliate_comission SET calculation_status = ? WHERE id IN (?)`, ["done", af_commission_ids]);
+          await Qry(
+            `UPDATE affiliate_comission SET calculation_status = ? WHERE id IN (?)`,
+            ["done", af_commission_ids]
+          );
         }
-        
+
         //Final Updates Doubt?
         /*
         await Qry(`UPDATE usersdata SET current_balance_usd_payout = current_balance_usd_payout + ?, current_balance_eur_payout = current_balance_eur_payout + ?, current_balance_usd_lastmonth = ?, current_balance_eur_lastmonth = ? WHERE id = ?`, [
@@ -9981,7 +10280,10 @@ exports.cronjobAffiliateCalculation = async (req, res) => {
           total_eur,
         ]);*/
 
-        await Qry(`UPDATE usersdata SET withdrawal_status = ? WHERE id = ?`, [1,user.id]);
+        await Qry(`UPDATE usersdata SET withdrawal_status = ? WHERE id = ?`, [
+          1,
+          user.id,
+        ]);
       }
     });
     res.status(200).json({
@@ -9993,16 +10295,11 @@ exports.cronjobAffiliateCalculation = async (req, res) => {
   }
 };
 
-
 exports.updateprofilepicture = async (req, res) => {
-  
   try {
     const authUser = await checkAuthorization(req, res);
     if (authUser) {
-      const uploadDir = path.join(
-        __dirname,
-        "../public/uploads/userprofile/"
-      );
+      const uploadDir = path.join(__dirname, "../public/uploads/userprofile/");
       const imageParts = req.body.image.split(";base64,");
       const imageTypeAux = imageParts[0].split("image/");
       const imageType = imageTypeAux[1];
@@ -10031,8 +10328,8 @@ exports.updateprofilepicture = async (req, res) => {
 
         if (updateResult) {
           const pictureUrl = `${req.protocol}://${req.get(
-              "host"
-            )}/uploads/userprofile/${filename}`;
+            "host"
+          )}/uploads/userprofile/${filename}`;
           // const pictureUrl = `${image_base_url}uploads/userprofile/${filename}`;
           res.status(200).json({
             status: "success",
@@ -10057,4 +10354,4 @@ exports.updateprofilepicture = async (req, res) => {
   } catch (e) {
     res.status(500).json({ status: "error", error: e.message, message: e });
   }
-}
+};
