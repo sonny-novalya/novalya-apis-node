@@ -247,6 +247,7 @@ exports.subscriptionAddon = async(req,res) => {
     console.error("Error generating addon checkout link:", error);
   } else {
     console.log("Addon Checkout URL:", result.hosted_page.url);
+    return Response.resWith202(res,"success",result.hosted_page.url)
   }
 });
 
