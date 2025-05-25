@@ -226,6 +226,7 @@ exports.subscriptionAddon = async(req,res) => {
     const authUser = await checkAuthorization(req, res);
     if (!authUser) return Response.resWith401(res, "Unauthorized");
 
+      const userSelectQuery = `SELECT customerid FROM usersdata WHERE id = ?`;
       const userSelectParams = [authUser];
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
       const userdbData = userSelectResult[0];
