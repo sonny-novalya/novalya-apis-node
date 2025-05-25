@@ -227,7 +227,7 @@ exports.subscriptionAddon = async(req,res) => {
     if (!authUser) return Response.resWith401(res, "Unauthorized") 
        const { addonId, quantity }=req.body
 
-      const userSelectQuery = `SELECT customerid FROM usersdata WHERE id = ?`;
+      const userSelectQuery = `SELECT customerid,email FROM usersdata WHERE id = ?`;
       const userSelectParams = [authUser];
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
       const userdbData = userSelectResult[0];
@@ -242,7 +242,10 @@ exports.subscriptionAddon = async(req,res) => {
     }
   ],
   customer: {
-    id: userdbData.customerid // optional, if customer is already created
+    id: userdbData.customerid ,
+    email:userdbData.email 
+    // optional, if customer is already created
+
   }
 }).request((error, result) => {
   if (error) {
