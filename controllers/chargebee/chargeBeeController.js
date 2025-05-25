@@ -225,7 +225,7 @@ exports.subscriptionAddon = async(req,res) => {
 
     const authUser = await checkAuthorization(req, res);
     if (!authUser) return Response.resWith401(res, "Unauthorized") 
-       const { addonId, quantity }=req.body
+       const { addonId, quantity,subscriptionId }=req.body
 
       const userSelectQuery = `SELECT customerid,email FROM usersdata WHERE id = ?`;
       const userSelectParams = [authUser];
@@ -234,22 +234,18 @@ exports.subscriptionAddon = async(req,res) => {
 
       console.log(addonId, quantity,userdbData.customerid)
 
-  chargebee.hosted_page.checkout_new_for_items({
+chargebee.hosted_page.checkout_existing_for_items({
+  subscription_id: subscriptionId,
   subscription_items: [
     {
-      item_price_id: addonId, // your addon item price ID
+      item_price_id: addonId,
       quantity: quantity
     }
-  ],
-  customer: {
-    id: userdbData.customerid ,
-    email:userdbData.email 
-    // optional, if customer is already created
-
-  }
+  ]
 }).request((error, result) => {
   if (error) {
     console.error("Error generating addon checkout link:", error);
+     return Response.resWith400(res,error?.message || "something went wrong")
   } else {
     console.log("Addon Checkout URL:", result.hosted_page.url);
     return Response.resWith202(res,"success",result.hosted_page.url)
