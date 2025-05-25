@@ -5029,6 +5029,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
       }
     }
 
+
     const selectUserDataQuery = `SELECT * FROM usersdata WHERE customerid = ?`;
     const selectUserDataResult = await Qry(selectUserDataQuery, [customerId]);
     const userData = selectUserDataResult?.[0];
@@ -5036,6 +5037,14 @@ exports.ipnChagrbeWebhook = async (req, res) => {
     const planData = selectPlansResult?.[0];
     const pakageName = planData?.limits;
     const numericplanid = planData?.id;
+
+    
+    if (eventType === "payment_succeeded"  &&  entityId?.includes("Additional-5-CRM-Tags")) {
+      const  quantity = postData?.content?.invoice?.line_items[0]?.quantity
+         await Qry(
+         "UPDATE users_limits SET tags_pipelines = tags_pipelines + (? * 5) WHERE userid = ?",[quantity,userData?.id]
+      );
+    }
 
     //Save Json Payload
     // const insertDummyQry = `insert into dummy(d_data) values (?)`;

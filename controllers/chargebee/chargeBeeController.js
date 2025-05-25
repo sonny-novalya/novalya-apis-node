@@ -227,12 +227,7 @@ exports.subscriptionAddon = async(req,res) => {
     if (!authUser) return Response.resWith401(res, "Unauthorized") 
        const { addonId, quantity,subscriptionId }=req.body
 
-      const userSelectQuery = `SELECT customerid,email FROM usersdata WHERE id = ?`;
-      const userSelectParams = [authUser];
-      const userSelectResult = await Qry(userSelectQuery, userSelectParams);
-      const userdbData = userSelectResult[0];
-
-      console.log(addonId, quantity,userdbData.customerid,subscriptionId)
+    
 
 chargebee.hosted_page.checkout_existing_for_items({
     subscription: {
