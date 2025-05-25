@@ -223,6 +223,9 @@ exports.getUserSubscription = async(userid) => {
 
 exports.subscriptionAddon = async(req,res) => {
 
+    // const authUser = await checkAuthorization(req, res);
+    // if (!authUser) return Response.resWith401(res, "Unauthorized");
+
   const {subscriptionId, addonId, quantity }=req.body
 
   chargebee.subscription.update_for_items(subscriptionId,  {
@@ -231,12 +234,18 @@ exports.subscriptionAddon = async(req,res) => {
           item_price_id: addonId,
           quantity: quantity
         }
-      ]
-    }).request((error, result) => {
+      ],
+      invoice_immediately: true
+    }).request(async(error, result) => {
   if (error) {
     console.error("Error adding addon:", error);
+        return Response.resWith422(res, error.message || "Something went wrong");
   } else {
         console.log("Updated subscription with addon:", result.subscription);
+        if (result.subscription) {
+          const userLimitsUpdateQry = `UPDATE users_limits SET tags_pipelines = tags_pipelines + (? * 5) WHERE userid = ?`;
+          await Qry(userLimitsUpdateQry, [quantity,authUser]);
+        }
      return Response.resWith200(res, "Updated subscription with addon",result.subscription);
 
   }
