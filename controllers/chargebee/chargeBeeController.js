@@ -226,28 +226,27 @@ exports.subscriptionAddon = async(req,res) => {
     const authUser = await checkAuthorization(req, res);
     if (!authUser) return Response.resWith401(res, "Unauthorized");
 
-  const {subscriptionId, addonId, quantity }=req.body
+      const userSelectParams = [authUser];
+      const userSelectResult = await Qry(userSelectQuery, userSelectParams);
+      const userdbData = userSelectResult[0];
 
-  chargebee.subscription.update_for_items(subscriptionId,  {
-      subscription_items: [
-        {
-          item_price_id: addonId,
-          quantity: quantity
-        }
-      ],
-      invoice_immediately: true
-    }).request(async(error, result) => {
+  const { addonId, quantity }=req.body
+
+  chargebee.hosted_page.checkout_new_for_items({
+  subscription_items: [
+    {
+      item_price_id: addonId, // your addon item price ID
+      quantity: quantity
+    }
+  ],
+  customer: {
+    id: userdbData.customerid // optional, if customer is already created
+  }
+}).request((error, result) => {
   if (error) {
-    console.error("Error adding addon:", error);
-        return Response.resWith422(res, error.message || "Something went wrong");
+    console.error("Error generating addon checkout link:", error);
   } else {
-        console.log("Updated subscription with addon:", result.subscription);
-        if (result.subscription) {
-          const userLimitsUpdateQry = `UPDATE users_limits SET tags_pipelines = tags_pipelines + (? * 5) WHERE userid = ?`;
-          await Qry(userLimitsUpdateQry, [quantity,authUser]);
-        }
-     return Response.resWith200(res, "Updated subscription with addon",result.subscription);
-
+    console.log("Addon Checkout URL:", result.hosted_page.url);
   }
 });
 
