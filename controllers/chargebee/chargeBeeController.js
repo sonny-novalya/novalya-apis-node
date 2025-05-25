@@ -232,7 +232,7 @@ exports.subscriptionAddon = async(req,res) => {
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
       const userdbData = userSelectResult[0];
 
-      console.log(addonId, quantity,userdbData.customerid)
+      console.log(addonId, quantity,userdbData.customerid,subscriptionId)
 
 chargebee.hosted_page.checkout_existing_for_items({
   subscription_id: subscriptionId,
