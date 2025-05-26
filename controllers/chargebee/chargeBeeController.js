@@ -250,3 +250,24 @@ chargebee.hosted_page.checkout_existing_for_items({
 });
 
 };
+
+exports.updateSubscriptionPlanPreserveEverything = async (req, res) =>{
+  try {
+    const {subscriptionId, newPlanPriceId, currentPrice} = req.body
+    const result = await chargebee.subscription.update(subscriptionId, {
+      replace_items: true,
+      subscription_items: [
+        {
+          item_price_id: newPlanPriceId,
+          quantity: 1,
+          unit_price: currentPrice // Set to current price in cents
+        }
+      ]
+    }).request();
+
+    return Response.resWith202(res,"success",result)
+  } catch (error) {
+      console.error("Error generating addon checkout link:", error);
+     return Response.resWith400(res,error?.message || "something went wrong")
+  }
+}

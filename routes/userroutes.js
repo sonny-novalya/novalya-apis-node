@@ -264,6 +264,7 @@ router.post("/chargebee/card-listing", chargeBeeController.getAllCards);
 router.post("/chargebee/create-new-card", chargeBeeController.createNewCard);
 router.post("/chargebee/delete-card", chargeBeeController.deleteCard);
 router.post("/chargebee/addon", chargeBeeController.subscriptionAddon);
+router.post("/chargebee/pakageChange",chargeBeeController.updateSubscriptionPlanPreserveEverything)
 
 
 module.exports = router;
