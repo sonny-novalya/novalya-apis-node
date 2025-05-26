@@ -253,7 +253,7 @@ chargebee.hosted_page.checkout_existing_for_items({
 
 exports.updateSubscriptionPlanPreserveEverything = async (req, res) =>{
   try {
-    const {subscriptionId, newPlanPriceId, } = req.body
+    const {subscriptionId, newPlanPriceId, currentPrice} = req.body
    const result = await chargebee.subscription.update_for_items(subscriptionId, {
   subscription_items: [
     {
