@@ -253,18 +253,18 @@ chargebee.hosted_page.checkout_existing_for_items({
 
 exports.updateSubscriptionPlanPreserveEverything = async (req, res) =>{
   try {
-    const {subscriptionId, newPlanPriceId, currentPrice} = req.body
-       const result = await chargebee.subscription.update(subscriptionId, {
-      subscription_items: [
-        {
-          item_price_id: newPlanPriceId,
-          item_type: "plan",
-          quantity: 1,
-          unit_price: currentPrice*100
-        }
-      ],
-      replace_items: true
-    }).request();
+    const {subscriptionId, newPlanPriceId, } = req.body
+   const result = await chargebee.subscription.update_for_items(subscriptionId, {
+  subscription_items: [
+    {
+      item_price_id: newPlanPriceId,
+      item_type: "plan",
+      quantity: 1,
+      unit_price: currentPrice*100 // override price (in cents)
+    }
+  ],
+  replace_items: true
+}).request();
 
    
 
