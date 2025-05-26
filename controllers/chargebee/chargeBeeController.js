@@ -255,14 +255,15 @@ exports.updateSubscriptionPlanPreserveEverything = async (req, res) =>{
   try {
     const {subscriptionId, newPlanPriceId, currentPrice} = req.body
     console.log(subscriptionId, newPlanPriceId, currentPrice)
+    const price = currentPrice * 100
        const result = await chargebee.subscription.update(subscriptionId, {
       subscription_items: [
-        {
-          "item_price_id[is]": newPlanPriceId,
-          item_type: "plan",
-          quantity: 1,
-          "plan_unit_price_in_decimal": currentPrice*100
-        }
+    {
+      item_price_id: newPlanPriceId, // just use this directly
+      item_type: "plan",
+      quantity: 1,
+      unit_price_in_decimal: price .toFixed(2), // must be a string
+    }
       ],
       "replace_items_list": true
     }).request();
