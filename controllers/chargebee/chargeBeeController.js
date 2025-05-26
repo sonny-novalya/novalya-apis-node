@@ -254,23 +254,18 @@ chargebee.hosted_page.checkout_existing_for_items({
 exports.updateSubscriptionPlanPreserveEverything = async (req, res) =>{
   try {
     const {subscriptionId, newPlanPriceId, currentPrice} = req.body
-//     const result =await chargebee.subscription.update(subscriptionId, {
-//   replace_items: true,
-//   subscription_items: [
-//     {
-//       item_price_id: newPlanPriceId, // this is a price_id, not plan_id
-//       quantity: 1,
-//       unit_price: currentPrice // override price in cents, optional
-//     }
-//   ]
-// }).request();
+    const result =await chargebee.subscription.update(subscriptionId, {
+  replace_items: true,
+  subscription_items: [
+    {
+      item_price_id: newPlanPriceId, // this is a price_id, not plan_id
+      quantity: 1,
+      unit_price: currentPrice // override price in cents, optional
+    }
+  ]
+}).request();
 
-    const result = await chargebee.subscription.update(subscriptionId, {
-      plan_id: newPlanPriceId,
-      plan_unit_price: currentPrice, // override pricing
-      start_date: "retain", // retain existing renewal date
-      invoice_immediately: false, // no billing now
-    }).request();
+   
 
     return Response.resWith202(res,"success",result)
   } catch (error) {
