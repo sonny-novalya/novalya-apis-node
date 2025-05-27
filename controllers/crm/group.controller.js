@@ -13,6 +13,7 @@ const tag = db.tag;
 const campaign = db.campaign;
 const stage = db.stage;
 const taggedusers = db.taggedusers;
+const Statistic = db.Statistic;
 
 
 tag.hasMany(stage, { as: 'stages', foreignKey: 'tag_id' });
@@ -44,6 +45,12 @@ const placetag = async (req, res) => {
     };
 
     let createdTag = await tag.create(dataToSave); // Save data to the database
+
+    let statistic = await Statistic.create({
+      user_id: authUser,
+      type : 'fb_crm',
+      message_count: 1, 
+    });
 
     if (createdTag) {
       if (params.no_stages_group === false) {
