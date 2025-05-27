@@ -3286,7 +3286,7 @@ exports.csvupgradelimits = async (req, res) => {
             [plan_id, selectUser[0].id, "distributor"]
           );
           const updateUsersLimits = await Qry(
-            "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ? where userid = ?",
+            "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ? , message_limit = ? where userid = ?",
             [
               selectLimits[0].fb_no_crm_group,
               selectLimits[0].fb_no_stages_group,
@@ -3304,6 +3304,7 @@ exports.csvupgradelimits = async (req, res) => {
               selectLimits[0].inst_advanced_novadata,
               selectLimits[0].inst_no_friend_requests_received,
               selectLimits[0].inst_no_of_birthday_wishes,
+              selectLimits[0].message_limit,
               selectUser[0].id,
             ]
           );
@@ -5785,7 +5786,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
         let limitsData = limitsQueury[0];
         await Qry(
-          "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ?, fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ? where userid = ?",
+          "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ?, fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ? , message_limit = ? where userid = ?",
           [
             limitsData.fb_no_crm_group,
             limitsData.fb_no_stages_group,
@@ -5807,6 +5808,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             limitsData.insta_messages,
             limitsData.ai_credits_new,
             limitsData.tags_pipelines,
+            limitsData.message_limit,
             userData?.id,
           ]
         );
@@ -6120,7 +6122,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
           await Qry(
             `INSERT INTO users_limits(userid, fb_no_crm_group, fb_no_stages_group, fb_no_friend_request, fb_no_crm_message, fb_no_ai_comment, fb_advanced_novadata, fb_no_friend_requests_received, fb_no_of_birthday_wishes, insta_no_crm_group, insta_no_stages_group, insta_no_friend_request, insta_no_crm_message, insta_no_ai_comment, insta_advanced_novadata, insta_no_friend_requests_received, insta_no_of_birthday_wishes,
-            fb_messages,insta_messages,ai_credits_new,tags_pipelines) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            fb_messages,insta_messages,ai_credits_new,tags_pipelines,message_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
             [
               newUserId,
               limitsData.fb_no_crm_group,
@@ -6143,6 +6145,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               limitsData.insta_messages,
               limitsData.ai_credits_new,
               limitsData.tags_pipelines,
+              limitsData.message_limit
             ]
           );
 
