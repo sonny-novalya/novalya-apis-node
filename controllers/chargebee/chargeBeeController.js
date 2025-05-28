@@ -1,6 +1,9 @@
 const chargebee = require("chargebee");
 const { checkAuthorization,Qry } = require("../../helpers/functions");
 const Response = require("../../helpers/response");
+const fs = require('fs');
+const path = require('path');
+const { Terms, findPlan, findPlanPeriod, findPlanCurrName } = require("../../utils/chargeBeeSubscriptionChange");
 
 chargebee.configure({
   site: process.env.CHARGEBEE_SITE,
@@ -251,26 +254,106 @@ chargebee.hosted_page.checkout_existing_for_items({
 
 };
 
-exports.updateSubscriptionPlanPreserveEverything = async (req, res) =>{
+exports.updateSubscriptionPlanPreserveEverything = async (req, res) => {
   try {
-    const {subscriptionId, newPlanPriceId, currentPrice} = req.body
-   const result = await chargebee.subscription.update_for_items(subscriptionId, {
-  subscription_items: [
-    {
-      item_price_id: newPlanPriceId,
-      item_type: "plan",
-      quantity: 1,
-      unit_price: currentPrice*100 // override price (in cents)
+    const filePath = path.join(__dirname, "../../Subscriptions.json");
+    const rawData = fs.readFileSync(filePath, "utf-8");
+    const subscriptions = JSON.parse(rawData);
+
+    if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
+      return Response.resWith400(res, "No subscriptions found in Subscriptions.json");
     }
-  ],
-  replace_items: true
-}).request();
 
-   
+    const results = [];
 
-    return Response.resWith202(res,"success",result)
+    for (const sub of subscriptions) {
+      // Access properties with exact keys including dots
+      const subscriptionId = sub["subscriptions.id"];
+      const planId = sub["subscriptions.plan_id"];
+      const planUnitPrice = sub["subscriptions.plan_unit_price"];
+
+      if (!subscriptionId || !planId || typeof planUnitPrice !== "number") {
+        results.push({
+          subscriptionId,
+          status: "failed",
+          reason: "Missing subscription id, plan_id or plan_unit_price",
+        });
+        continue;
+      }
+
+      // Use your utils with the planId from JSON
+      const newPlan = findPlan(planId);
+      const period = findPlanPeriod(planId);
+      const currPlan = findPlanCurrName(planId);
+
+      if (!newPlan || !period || !currPlan) {
+        results.push({
+          subscriptionId,
+          status: "skipped",
+          reason: "Invalid plan data from utils",
+        });
+        continue;
+      }
+
+      const term = Terms.find(t =>
+        Array.isArray(t.old_plan) &&
+        t.old_plan.includes(newPlan) &&
+        t.period_unit === period &&
+        t.currency_code === currPlan
+      );
+
+      if(!term){
+        results.push({
+          subscriptionId,
+          status: "skipped",
+          reason: "No matching subscription found in New Plans",
+        });
+        continue;
+      }
+
+      const newPriceId = term.plan_id;
+      if (!newPriceId) {
+        results.push({
+          subscriptionId,
+          status: "failed",
+          reason: "No new price ID found in New Plans",
+        });
+        continue;
+      }
+
+      try {
+        const result = await chargebee.subscription
+          .update_for_items(subscriptionId, {
+            subscription_items: [
+              {
+                item_price_id: newPriceId,
+                item_type: "plan",
+                quantity: 1,
+                unit_price: planUnitPrice*100, // preserve existing price exactly in cents
+              },
+            ],
+            replace_items: true,
+          })
+          .request();
+
+        results.push({
+          subscriptionId,
+          status: "success",
+          new_price_id: newPriceId,
+        });
+      } catch (err) {
+        console.error(`Chargebee error for subscription ${subscriptionId}:`, err.message);
+        results.push({
+          subscriptionId,
+          status: "failed",
+          reason: err.message,
+        });
+      }
+    }
+
+    return Response.resWith200(res, "Processed subscriptions", results);
   } catch (error) {
-      console.error("Error generating addon checkout link:", error);
-     return Response.resWith400(res,error?.message || "something went wrong")
+    console.error("Fatal error:", error);
+    return Response.resWith500(res, "Failed to process subscriptions");
   }
-}
+};
