@@ -360,14 +360,14 @@ self.getFbFriendsWithTags = async (req, res) => {
       group: ['Novadata.fbId', 'taggedusers.is_primary'],
     });
 
-    if(page == 1){
+    // if(page == 1){
       const userSelectQuery = `SELECT plan_pkg FROM usersdata WHERE id = ?`;
 
       const userSelectParams = [user_id];
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
       plan_pkg = userSelectResult[0].plan_pkg;
 
-    }
+    // }
 
     // Return response
     return Response.resWith202(
