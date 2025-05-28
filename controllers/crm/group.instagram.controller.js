@@ -13,6 +13,7 @@ const tag = db.instatag;
 const campaign = db.instagramCampaign;
 const stage = db.instastage;
 const taggedusers = db.instataggedusers;
+const Statistic = db.Statistic;
 
 const placetag = async (req, res) => {
   try {
@@ -35,6 +36,12 @@ const placetag = async (req, res) => {
     };
 
     let createdTag = await tag.create(dataToSave); // Save data to the database
+
+    let statistic = await Statistic.create({
+      user_id: authUser,
+      type : 'fb_crm',
+      message_count: 1, 
+    });
 
     if (createdTag) {
       if (params.no_stages_group === false) {
