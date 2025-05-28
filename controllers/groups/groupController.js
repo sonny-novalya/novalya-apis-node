@@ -236,6 +236,13 @@ self.createProspectFolder = async (req, res)=>{
       });
     }
 
+    // Get max order_num for current user's folders under the same prospect_folder
+    const maxOrderNumFolder = await ProspectionGrpFolders.findOne({
+      where: { user_id, prospect_folder },
+      order: [["order_num", "DESC"]],
+    });
+    const newOrderNum = maxOrderNumFolder ? maxOrderNumFolder.order_num + 1 : 1;
+
     if(selectedGroups.length <= 0){
       return res.status(400).json({
         status: "error",
@@ -247,7 +254,8 @@ self.createProspectFolder = async (req, res)=>{
       user_id,
       folder_name,
       social_type,
-      prospect_folder
+      prospect_folder,
+      order_num: newOrderNum
     });
 
     // group map
@@ -465,6 +473,46 @@ self.getProspectFolders = async (req, res)=>{
     return Response.resWith422(res, error.message || "An error occurred.");
   }
 }
+
+self.reorderProspectFolder = async(req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { source, destination, prospect_folder } = req.body;
+
+    if (typeof prospect_folder !== "string" || prospect_folder.trim() === "") {
+      return Response.resWith422(res, "prospect_folder is required.");
+    }
+
+    // Fetch folders for the given user and prospect_folder
+    const folders = await ProspectionGrpFolders.findAll({
+      where: {
+        user_id: user_id,
+        prospect_folder,
+      },
+      order: [["order_num", "DESC"]],
+    });
+
+    if (!folders || folders.length === 0) {
+      return Response.resWith422(res, "No folders found for the specified prospect_folder.");
+    }
+
+    const updatedFolders = [...folders];
+
+    // Move folder from source index to destination index
+    const [reorderedFolder] = updatedFolders.splice(source, 1);
+    updatedFolders.splice(destination, 0, reorderedFolder);
+
+    // Update order_num in the database
+    for (let i = updatedFolders.length - 1; i >= 0; i--) {
+      await updatedFolders[i].update({ order_num: updatedFolders.length - i });
+    }
+
+    return Response.resWith202(res, updatedFolders);
+  } catch (error) {
+    console.log("error", error);
+    return Response.resWith422(res, error.message || "An error occurred while reordering folders.");
+  }
+};
 
 self.getGroupByFolder = async (req, res)=>{
   try {

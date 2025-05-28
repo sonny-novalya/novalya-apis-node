@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
     prospect_folder: {
       type: DataTypes.STRING(255),
       allowNull: false
+    },
+    order_num: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     sequelize,

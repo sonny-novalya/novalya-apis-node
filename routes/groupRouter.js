@@ -13,6 +13,7 @@ const routes = [
   { method: "post", path: "/delete-prospect-folder", handler: groupController.deleteProspectFolder },
   { method: "get", path: "/get-prospect-folders", handler: groupController.getProspectFolders },
   { method: "post", path: "/get-group-by-folder", handler: groupController.getGroupByFolder },
+  { method: "post", path: "/reorder-prospect-folders", handler: groupController.reorderProspectFolder },
   // API TO CREATE PROSPECTION FOLDERS AND GROUP BY FOLDER END
   
   { method: "get", path: "/all", handler: groupController.getAllGroups },
