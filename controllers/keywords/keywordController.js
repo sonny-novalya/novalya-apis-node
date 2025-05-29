@@ -26,6 +26,11 @@ self.getAll = async (req, res) => {
       }),
     };
 
+    // Filters for total count (removing search from the filter)
+    const totalWhereOptions = {
+      ...(user_id && { user_id })
+    };
+
     const includeOptions = type
       ? {
           model: KeywordType,
@@ -47,9 +52,13 @@ self.getAll = async (req, res) => {
     };
 
     const keywords = await Keyword.findAll(fetchParams);
-    const keywordCount = keywords.length;
+    
+     // Get count of search-filtered keywords
+    const count = await Keyword.count({ where: whereOptions, include: [includeOptions] });
+    // Get total count without search filter
+    const total_count = await Keyword.count({ where: totalWhereOptions, include: [includeOptions] });
 
-    return Response.resWith202(res, 'success', { items: keywords, count: keywordCount });
+    return Response.resWith202(res, 'success', { items: keywords, count, total_count });
   } catch (error) {
 
     console.log('error', error);
