@@ -11,7 +11,7 @@ const GroupController = {
     try {
       const user_id = req.user.id;
 
-      const { name, group_type, total_member, comment_member, url, prospection_type, post_image  } =
+      const { name, group_type, total_member, comment_member, url, prospection_type, privacy, post_image  } =
         req.body;
 
       // Check if a group with the same URL already exists
@@ -36,6 +36,7 @@ const GroupController = {
         comment_member: comment_member ?? null,
         url: url,
         prospection_type: prospection_type || null,
+        privacy: privacy || null,
       };
 
       const create = await Group.create(create_data);

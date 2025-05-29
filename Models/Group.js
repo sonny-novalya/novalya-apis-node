@@ -53,6 +53,9 @@ module.exports = (sequelize, DataTypes) => {
         prospection_type: {
             type: DataTypes.TEXT,
         },
+        privacy: {
+            type: DataTypes.STRING,
+        },
         url: {
             type: DataTypes.TEXT,
         },
