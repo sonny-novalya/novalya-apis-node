@@ -47,8 +47,9 @@ self.getAll = async (req, res) => {
     };
 
     const keywords = await Keyword.findAll(fetchParams);
+    const keywordCount = keywords.length;
 
-    return Response.resWith202(res, 'success', keywords);
+    return Response.resWith202(res, 'success', { items: keywords, count: keywordCount });
   } catch (error) {
 
     console.log('error', error);
