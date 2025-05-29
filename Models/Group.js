@@ -58,7 +58,6 @@ module.exports = (sequelize, DataTypes) => {
         },
         is_verified_acc: {
             type: DataTypes.TEXT,
-            defaultValue: false,
         },
         url: {
             type: DataTypes.TEXT,
