@@ -188,7 +188,7 @@ self.updateGroupMembers = async (req, res) => {
         .status(404)
         .json({ status: "error", message: "Group not found." });
     }
-    const { total_member, post_image, comment_member } = req.body;
+    const { total_member, post_image, comment_member, privacy } = req.body;
 
     if(total_member){
       group.total_member = total_member;
@@ -196,6 +196,10 @@ self.updateGroupMembers = async (req, res) => {
 
     if(	comment_member){
       group.comment_member = 	comment_member;
+    }
+
+    if(privacy){
+      group.privacy = privacy;
     }
 
     if(post_image && !group.post_image) {
