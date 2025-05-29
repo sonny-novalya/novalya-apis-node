@@ -36,7 +36,7 @@ const GroupController = {
         comment_member: comment_member ?? null,
         url: url,
         prospection_type: prospection_type || null,
-        privacy: privacy || null,
+        privacy: privacy || null
       };
 
       const create = await Group.create(create_data);
