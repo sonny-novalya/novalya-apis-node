@@ -57,8 +57,8 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
         },
         is_verified_acc: {
-            type: DataTypes.BOOLEAN,
-            allowNull: true,
+            type: DataTypes.TEXT,
+            defaultValue: false,
         },
         url: {
             type: DataTypes.TEXT,
