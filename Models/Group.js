@@ -56,6 +56,10 @@ module.exports = (sequelize, DataTypes) => {
         privacy: {
             type: DataTypes.STRING,
         },
+        is_verified_acc: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+        },
         url: {
             type: DataTypes.TEXT,
         },
