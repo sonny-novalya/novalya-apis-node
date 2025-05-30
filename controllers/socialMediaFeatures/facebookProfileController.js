@@ -8,6 +8,8 @@ const { checkAuthorization, Qry } = require("../../helpers/functions");
 const { Op, fn, col, literal } = require("sequelize");
 const moment = require("moment");
 
+const { tag } = require("../../Models/crm");
+let instaGramTag = db.instatag;
 
 let self = {};
 self.createOrUpdateFeature = async (req, res) => {
@@ -180,11 +182,17 @@ self.getDashboardSocialAccountData = async (req, res) => {
 
         const totalContactLimit = totalFbContact + totalInstaContact;
 
+        var tagFBAiLimit = tagsTable.findAll({ where: { user_id } });
+        var tagIGAiLimit = instaGramTag.findAll({ where: { user_id } });
+        var final_ai_limit = tagFBAiLimit.length + tagIGAiLimit.length;
+
+
         const limit_response = {
             fbMessageLimit: statistics[0]?.fbMessageLimit || 0,
             igMessageLimit: statistics[0]?.igMessageLimit || 0,
             tagsLimit: statistics[0]?.tagsLimit || 0,
-            aiLimits: statistics[0]?.aiLimits || 0,
+            // aiLimits: statistics[0]?.aiLimits || 0,
+            aiLimits: final_ai_limit || 0,
             totalContactLimit,
         };
 
