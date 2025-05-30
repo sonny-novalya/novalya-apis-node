@@ -183,12 +183,14 @@ self.getDashboardSocialAccountData = async (req, res) => {
 
         const totalContactLimit = totalFbContact + totalInstaContact;
 
-        var tagFBAiLimit = await tagsTable.findAll({ where: { user_id: user_id } });
-        var tagIGAiLimit = await instaGramTag.findAll({ where: { user_id: user_id } });
-        console.log('tagFBAiLimit', tagFBAiLimit);
-        console.log('tagIGAiLimit', tagIGAiLimit);
+        const fbCount = await tagsTable.count({ where: { user_id: user_id } });
+        const igCount = await instaGramTag.count({ where: { user_id: user_id } });
+
+        console.log('tagFBAiLimit', fbCount);
+        console.log('tagIGAiLimit', igCount);
+        const final_ai_limit = fbCount + igCount;
         
-        var final_ai_limit = tagFBAiLimit.length + tagIGAiLimit.length;
+        // var final_ai_limit = tagFBAiLimit.length + tagIGAiLimit.length;
 
 
         const limit_response = {
