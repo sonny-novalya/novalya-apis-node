@@ -20,6 +20,7 @@ self.createOrUpdateFeature = async (req, res) => {
             following,
             total_friends,
             total_followers,
+            is_verified_acc	,
             profile_image,
         } = req.body;
 
@@ -34,6 +35,7 @@ self.createOrUpdateFeature = async (req, res) => {
                 following,
                 total_friends,
                 followers: total_followers,
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 profile_image,
             });
             existingProfile = await FacebookProfileFeature.findOne({
@@ -53,6 +55,7 @@ self.createOrUpdateFeature = async (req, res) => {
                 following,
                 total_friends,
                 followers: total_followers,
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 user_id,
                 profile_image,
             });

@@ -32,6 +32,10 @@ module.exports = (sequelize, DataTypes) => {
     followers: {
       type: DataTypes.INTEGER
     },
+    is_verified_acc: {
+      type: DataTypes.BOOLEAN,
+      default: false,
+    },
     profile_image: {
       type: DataTypes.STRING,
       allowNull: true,

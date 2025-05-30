@@ -37,7 +37,7 @@ const GroupController = {
         url: url,
         prospection_type: prospection_type || null,
         privacy: privacy || null,
-        is_verified_acc: is_verified_acc || null
+        is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
       };
 
       const create = await Group.create(create_data);

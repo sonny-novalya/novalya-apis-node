@@ -202,8 +202,8 @@ self.updateGroupMembers = async (req, res) => {
       group.privacy = privacy;
     }
 
-    if(is_verified_acc){
-      group.is_verified_acc = is_verified_acc;
+    if (typeof is_verified_acc !== "undefined") {
+      group.is_verified_acc = Boolean(Number(is_verified_acc));
     }
 
     if(post_image && !group.post_image) {
