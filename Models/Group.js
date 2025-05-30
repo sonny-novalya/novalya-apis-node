@@ -55,10 +55,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         privacy: {
             type: DataTypes.STRING,
+            defaultValue: "Public",
         },
         is_verified_acc: {
             type: DataTypes.BOOLEAN,
-            default: false,
+            defaultValue: false,
         },
         url: {
             type: DataTypes.TEXT,
