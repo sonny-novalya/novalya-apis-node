@@ -250,7 +250,7 @@ const getGroupsInfo = async (req, res) => {
     const enrichedTags = tags.map(tagItem => {
       return {
         ...tagItem.toJSON(),
-        userTagsCount: tagCountMap[tagItem.id] || 0
+        taggedUsersCount: tagCountMap[tagItem.id] || 0
       };
     });
 
