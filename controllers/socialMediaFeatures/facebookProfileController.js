@@ -9,6 +9,7 @@ const { Op, fn, col, literal } = require("sequelize");
 const moment = require("moment");
 
 const { tag } = require("../../Models/crm");
+let tagsTable = tag;
 let instaGramTag = db.instatag;
 
 let self = {};
