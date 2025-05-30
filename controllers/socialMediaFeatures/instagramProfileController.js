@@ -5,7 +5,7 @@ let self = {};
 self.createOrUpdateFeature = async (req, res) => {
     try {
         const user_id = req.authUser;
-        const { insta_user_id, insta_numeric_id, insta_user_name, following, total_followers, profile_image ,posts} = req.body;
+        const { insta_user_id, insta_numeric_id, insta_user_name, following, total_followers, is_verified_acc, profile_image ,posts} = req.body;
 
         let existingProfile = await InstagramProfileFeature.findOne({ where: { user_id } });
 
@@ -16,6 +16,7 @@ self.createOrUpdateFeature = async (req, res) => {
                 insta_user_name,
                 following,
                 total_followers,
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 profile_image,
                 posts
             });
@@ -28,6 +29,7 @@ self.createOrUpdateFeature = async (req, res) => {
                 insta_user_name,
                 following,
                 total_followers,
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 user_id,
                 profile_image,
                 posts
