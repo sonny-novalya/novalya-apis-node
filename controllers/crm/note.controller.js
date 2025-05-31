@@ -159,9 +159,27 @@ const createFbNote = async (req, res) => {
 
       console.log('update--160');
       
+      // for (const [key, value] of Object.entries(postData)) {
+      //   const sanitizedValue = CleanHTMLData(CleanDBData(value));
+      //   updates.push(`${key} = '${sanitizedValue}'`);
+      // }
       for (const [key, value] of Object.entries(postData)) {
-        const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        updates.push(`${key} = '${sanitizedValue}'`);
+        // First clean DB input (remove SQL injection, etc.)
+        let cleaned = CleanDBData(value);
+      
+        // Clean HTML input (strip tags, unwanted chars)
+        cleaned = CleanHTMLData(cleaned);
+      
+        // Now fix backslashes and escaped quotes in description (if key is description)
+        if (key === 'description') {
+          // Remove double backslashes, remove escaped apostrophes
+          cleaned = cleaned.replace(/\\\\'/g, '') // remove \\'
+                          .replace(/\\'/g, '')   // remove \'
+                          .replace(/\\\\/g, '')  // remove double backslash
+                          .replace(/'/g, '');    // remove apostrophes if you want 'dont' instead of don't
+        }
+      
+        updates.push(`${key} = '${cleaned}'`);
       }
       const updateQuery = `UPDATE notes SET ${updates.join(
         ", "
