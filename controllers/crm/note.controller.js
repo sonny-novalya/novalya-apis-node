@@ -467,10 +467,20 @@ const getUserNote = async (req, res) => {
       const raw = item.get({ plain: true });
       if (raw.description) {
         try {
-          let parsed = JSON.parse(raw.description.replace(/\\"/g, '"'));
+
+          let parsed = raw.description;
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+
           if (Array.isArray(parsed)) {
-            descriptions = descriptions.concat(parsed);
+            descriptions.push(...parsed);
           }
+
+          // let parsed = JSON.parse(raw.description.replace(/\\"/g, '"'));
+          // if (Array.isArray(parsed)) {
+          //   descriptions = descriptions.concat(parsed);
+          // }
         } catch (e) {
           console.warn(`Invalid JSON in description for note ID ${raw.id}:`, raw.description);
         }
