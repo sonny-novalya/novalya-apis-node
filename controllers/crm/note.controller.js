@@ -159,16 +159,47 @@ const createFbNote = async (req, res) => {
 
       console.log('update--160');
       
-      for (const [key, value] of Object.entries(postData)) {
-        const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        // updates.push(`${key} = '${sanitizedValue}'`);
+      // for (const [key, value] of Object.entries(postData)) {
+      //   const sanitizedValue = CleanHTMLData(CleanDBData(value));
+      //   // updates.push(`${key} = '${sanitizedValue}'`);
 
+      //   if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
+      //     updates.push(`${key} = NULL`);
+      //   } else {
+      //     updates.push(`${key} = '${sanitizedValue.replace(/'/g, "''")}'`);
+      //   }
+
+      // }
+
+      for (const [key, value] of Object.entries(postData)) {
+        let sanitizedValue = value;
+      
         if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
           updates.push(`${key} = NULL`);
-        } else {
-          updates.push(`${key} = '${sanitizedValue.replace(/'/g, "''")}'`);
+          continue;
         }
-
+      
+        if (key === 'description' || key === 'Socials') {
+          try {
+            if (Array.isArray(sanitizedValue)) {
+              sanitizedValue = JSON.stringify(sanitizedValue);
+            } else if (typeof sanitizedValue === 'string') {
+              let parsed = JSON.parse(sanitizedValue);
+              if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+              if (Array.isArray(parsed) || typeof parsed === 'object') {
+                sanitizedValue = JSON.stringify(parsed);
+              }
+            }
+          } catch (e) {
+            // fallback - leave as is
+          }
+        }
+      
+        sanitizedValue = CleanHTMLData(CleanDBData(sanitizedValue.toString()));
+        // **Double single quotes for SQL escape**
+        sanitizedValue = sanitizedValue.replace(/'/g, "''");
+      
+        updates.push(`${key} = '${sanitizedValue}'`);
       }
       const updateQuery = `UPDATE notes SET ${updates.join(", ")} WHERE id = '${existingNotes.id}'`;
       const updateResult = await Qry(updateQuery);
