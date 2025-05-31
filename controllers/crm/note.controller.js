@@ -156,6 +156,9 @@ const createFbNote = async (req, res) => {
     const existingNotes = await note.findOne({ where: whereClause });
 
     if (existingNotes) {  // update user notes
+
+      console.log('update--160');
+      
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
         updates.push(`${key} = '${sanitizedValue}'`);
@@ -171,6 +174,8 @@ const createFbNote = async (req, res) => {
         return Response.resWith422(res, "An error occurred while updating the notes");
       }
     }else{ // create user notes
+
+      console.log('create--178');
       postData.user_id = user_id
       postData.createdAt = date;
       const columns = []
