@@ -159,45 +159,13 @@ const createFbNote = async (req, res) => {
 
       console.log('update--160');
       
-      // for (const [key, value] of Object.entries(postData)) {
-      //   const sanitizedValue = CleanHTMLData(CleanDBData(value));
-      //   // updates.push(`${key} = '${sanitizedValue}'`);
-
-      //   if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
-      //     updates.push(`${key} = NULL`);
-      //   } else {
-      //     updates.push(`${key} = '${sanitizedValue.replace(/'/g, "''")}'`);
-      //   }
-
-      // }
-
       for (const [key, value] of Object.entries(postData)) {
-        let sanitizedValue = CleanHTMLData(CleanDBData(value));
-      
-        if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
-          updates.push(`${key} = NULL`);
-          continue;
-        }
-      
-        if (key === 'description' || key === 'Socials') {
-          try {
-            if (Array.isArray(value)) {
-              sanitizedValue = JSON.stringify(value);
-            } else if (typeof value === 'string') {
-              let parsed = JSON.parse(value);
-              sanitizedValue = JSON.stringify(parsed);
-            }
-          } catch (e) {
-            // fallback to original sanitizedValue
-          }
-        }
-      
-        // Finally, escape single quotes for SQL syntax
-        sanitizedValue = sanitizedValue.replace(/'/g, "''");
-      
+        const sanitizedValue = CleanHTMLData(CleanDBData(value));
         updates.push(`${key} = '${sanitizedValue}'`);
       }
-      const updateQuery = `UPDATE notes SET ${updates.join(", ")} WHERE id = '${existingNotes.id}'`;
+      const updateQuery = `UPDATE notes SET ${updates.join(
+        ", "
+      )} WHERE id = '${existingNotes.id}'`;
       const updateResult = await Qry(updateQuery);
 
       if (updateResult) {
@@ -504,25 +472,24 @@ const getUserNote = async (req, res) => {
       const raw = item.get({ plain: true });
       if (raw.description) {
         try {
-
-          let parsed = raw.description;
-          parsed = JSON.parse(parsed);
-
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-
+          // Fix the invalid escaped single quote by removing the backslash before '
+          const cleanedDescription = raw.description.replace(/\\'/g, "'");
+    
+          let parsed = JSON.parse(cleanedDescription);
+    
+          if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed);
+          }
+    
           if (Array.isArray(parsed)) {
             descriptions.push(...parsed);
           }
-
-          // let parsed = JSON.parse(raw.description.replace(/\\"/g, '"'));
-          // if (Array.isArray(parsed)) {
-          //   descriptions = descriptions.concat(parsed);
-          // }
         } catch (e) {
           console.warn(`Invalid JSON in description for note ID ${raw.id}:`, raw.description);
         }
       }
     });
+    
 
     // Add final key
     noteData.taggedUsers = finalTaggedUsers;
