@@ -178,7 +178,13 @@ const createFbNote = async (req, res) => {
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
         columns.push(key);
-        values.push(`'${sanitizedValue}'`);
+        // values.push(`'${sanitizedValue}'`);
+
+        if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
+          values.push(`NULL`);
+        } else {
+          values.push(`'${sanitizedValue.replace(/'/g, "''")}'`); 
+        }
       }
       const createQuery = `INSERT INTO notes (${columns.join(", ")}) VALUES (${values.join(", ")})`;
       console.log('createQuery:180', createQuery);
