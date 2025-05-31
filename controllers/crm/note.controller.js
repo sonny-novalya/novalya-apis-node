@@ -161,11 +161,16 @@ const createFbNote = async (req, res) => {
       
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        updates.push(`${key} = '${sanitizedValue}'`);
+        // updates.push(`${key} = '${sanitizedValue}'`);
+
+        if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
+          updates.push(`${key} = NULL`);
+        } else {
+          updates.push(`${key} = '${sanitizedValue.replace(/'/g, "''")}'`);
+        }
+
       }
-      const updateQuery = `UPDATE notes SET ${updates.join(
-        ", "
-      )} WHERE id = '${existingNotes.id}'`;
+      const updateQuery = `UPDATE notes SET ${updates.join(", ")} WHERE id = '${existingNotes.id}'`;
       const updateResult = await Qry(updateQuery);
 
       if (updateResult) {
