@@ -323,12 +323,26 @@ self.getFbFriendsWithTags = async (req, res) => {
     const validFields = ["id", "name", "createdAt"];
     const orderField = validFields.includes(field) ? field : "id";
     const orderSort = (sort === "ASC" || sort === "DESC") ? [orderField, sort] : ["id", "DESC"];
-    const whereOptions = user_id ? { user_id: user_id } : {};
 
+    let whereOptions = {
+      user_id: user_id
+    };
+
+    // advanced search
     if (search) {
-      whereOptions[Op.or] = [
-        { user_name: { [Op.like]: `%${search}%` } }
-      ];
+      whereOptions = {
+        [Op.and]: [
+          { user_id: user_id },
+          {
+            [Op.or]: [
+              { user_name: { [Op.like]: `%${search}%` } },
+              { hometown: { [Op.like]: `%${search}%` } },
+              { lived: { [Op.like]: `%${search}%` } },
+              { email: { [Op.like]: `%${search}%` } }
+            ]
+          }
+        ]
+      };
     }
 
     const totalCount = await Novadata.count({ where: whereOptions });
@@ -442,11 +456,17 @@ self.getAllWhitelist = async (req, res) => {
     const user_id = req.authUser;
     const { page = 1, limit = 50, orderBy = "desc", search} = req.query;
     const offset = (page - 1) * limit;
-    const whereOptions = user_id ? { user_id: user_id } : {};
+    const whereOptions = { user_id: user_id };
 
     if (search) {
-      whereOptions[Op.or] = [
-        { user_name: { [Op.like]: `%${search}%` } }
+      whereOptions[Op.and] = [
+        { user_id: user_id },
+        {
+          [Op.or]: [
+            { user_name: { [Op.like]: `%${search}%` } },
+            { lived: { [Op.like]: `%${search}%` } }
+          ]
+        }
       ];
     }
 
@@ -479,12 +499,17 @@ self.getAllUnfriendlist = async (req, res) => {
     const user_id = req.authUser;
     const { page = 1, limit = 50, orderBy = "desc", search} = req.query;
     const offset = (page - 1) * limit;
-    const whereOptions = user_id ? { user_id: user_id } : {};
+    const whereOptions = { user_id: user_id };
 
     if (search) {
-      whereOptions[Op.or] = [
-        { user_name: { [Op.like]: `%${search}%` } },
-        { lived: { [Op.like]: `%${search}%` } },
+      whereOptions[Op.and] = [
+        { user_id: user_id },
+        {
+          [Op.or]: [
+            { user_name: { [Op.like]: `%${search}%` } },
+            { lived: { [Op.like]: `%${search}%` } }
+          ]
+        }
       ];
     }
 
@@ -535,11 +560,17 @@ self.getAllDeactivated = async (req, res) => {
     const user_id = req.authUser;
     const { page = 1, limit = 50, orderBy = "desc", search } = req.query;
     const offset = (page - 1) * limit;
-    const whereOptions = user_id ? { user_id: user_id } : {};
+    const whereOptions = { user_id: user_id };
 
     if (search) {
-      whereOptions[Op.or] = [
-        { user_name: { [Op.like]: `%${search}%` } }
+      whereOptions[Op.and] = [
+        { user_id: user_id },
+        {
+          [Op.or]: [
+            { user_name: { [Op.like]: `%${search}%` } },
+            { lived: { [Op.like]: `%${search}%` } }
+          ]
+        }
       ];
     }
     
