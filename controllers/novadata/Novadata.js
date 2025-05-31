@@ -20,6 +20,7 @@ const { getAuthUser, Qry} = require("../../helpers/functions");
 const taggedusers = db.taggedusers;
 const taggedUser = db.instataggedusers;
 const Op = Sequelize.Op;
+const literal  = Sequelize.literal ;
 let self = {};
 
 
@@ -330,12 +331,15 @@ self.getFbFriendsWithTags = async (req, res) => {
 
     // advanced search
     if (search) {
+      const normalizedSearch = search.replace(/\s/g, "").toLowerCase();
+
       whereOptions = {
         [Op.and]: [
           { user_id: user_id },
           {
             [Op.or]: [
               { user_name: { [Op.like]: `%${search}%` } },
+              literal(`LOWER(REPLACE(user_name, ' ', '')) LIKE '%${normalizedSearch}%'`),
               { hometown: { [Op.like]: `%${search}%` } },
               { lived: { [Op.like]: `%${search}%` } },
               { email: { [Op.like]: `%${search}%` } }
@@ -459,11 +463,14 @@ self.getAllWhitelist = async (req, res) => {
     const whereOptions = { user_id: user_id };
 
     if (search) {
+      const normalizedSearch = search.replace(/\s/g, "").toLowerCase();
+
       whereOptions[Op.and] = [
         { user_id: user_id },
         {
           [Op.or]: [
             { user_name: { [Op.like]: `%${search}%` } },
+            literal(`LOWER(REPLACE(user_name, ' ', '')) LIKE '%${normalizedSearch}%'`),
             { lived: { [Op.like]: `%${search}%` } }
           ]
         }
@@ -502,11 +509,14 @@ self.getAllUnfriendlist = async (req, res) => {
     const whereOptions = { user_id: user_id };
 
     if (search) {
+      const normalizedSearch = search.replace(/\s/g, "").toLowerCase();
+      
       whereOptions[Op.and] = [
         { user_id: user_id },
         {
           [Op.or]: [
             { user_name: { [Op.like]: `%${search}%` } },
+            literal(`LOWER(REPLACE(user_name, ' ', '')) LIKE '%${normalizedSearch}%'`),
             { lived: { [Op.like]: `%${search}%` } }
           ]
         }
@@ -563,11 +573,14 @@ self.getAllDeactivated = async (req, res) => {
     const whereOptions = { user_id: user_id };
 
     if (search) {
+      const normalizedSearch = search.replace(/\s/g, "").toLowerCase();
+
       whereOptions[Op.and] = [
         { user_id: user_id },
         {
           [Op.or]: [
             { user_name: { [Op.like]: `%${search}%` } },
+            literal(`LOWER(REPLACE(user_name, ' ', '')) LIKE '%${normalizedSearch}%'`),
             { lived: { [Op.like]: `%${search}%` } }
           ]
         }
