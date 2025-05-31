@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     is_verified_acc: {
       type: DataTypes.BOOLEAN,
-      default: false,
+      defaultValue: false,
     },
     profile_image: {
       type: DataTypes.STRING,

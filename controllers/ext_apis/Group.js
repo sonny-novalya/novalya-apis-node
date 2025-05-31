@@ -36,7 +36,7 @@ const GroupController = {
         comment_member: comment_member ?? null,
         url: url,
         prospection_type: prospection_type || null,
-        privacy: privacy || null,
+        privacy: privacy || "Public",
         is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
       };
 
