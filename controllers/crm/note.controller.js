@@ -472,11 +472,16 @@ const getUserNote = async (req, res) => {
       const raw = item.get({ plain: true });
       if (raw.description) {
         try {
-          // Fix the invalid escaped single quote by removing the backslash before '
-          const cleanedDescription = raw.description.replace(/\\'/g, "'");
+          // Step 1: Replace escaped double quotes with normal quotes
+          let cleaned = raw.description.replace(/\\"/g, '"');
+          
+          // Step 2: Replace escaped single quotes (backslash + single quote) with just single quote
+          cleaned = cleaned.replace(/\\\\'/g, "'");
     
-          let parsed = JSON.parse(cleanedDescription);
-    
+          // Step 3: Sometimes you may need to parse twice due to nested stringified JSON
+          let parsed = JSON.parse(cleaned);
+          
+          // If the parsed result is still a stringified JSON (string), parse again
           if (typeof parsed === 'string') {
             parsed = JSON.parse(parsed);
           }
@@ -489,6 +494,7 @@ const getUserNote = async (req, res) => {
         }
       }
     });
+    
     
 
     // Add final key
