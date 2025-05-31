@@ -172,7 +172,7 @@ const createFbNote = async (req, res) => {
       // }
 
       for (const [key, value] of Object.entries(postData)) {
-        let sanitizedValue = value;
+        let sanitizedValue = CleanHTMLData(CleanDBData(value));
       
         if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
           updates.push(`${key} = NULL`);
@@ -181,22 +181,18 @@ const createFbNote = async (req, res) => {
       
         if (key === 'description' || key === 'Socials') {
           try {
-            if (Array.isArray(sanitizedValue)) {
-              sanitizedValue = JSON.stringify(sanitizedValue);
-            } else if (typeof sanitizedValue === 'string') {
-              let parsed = JSON.parse(sanitizedValue);
-              if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-              if (Array.isArray(parsed) || typeof parsed === 'object') {
-                sanitizedValue = JSON.stringify(parsed);
-              }
+            if (Array.isArray(value)) {
+              sanitizedValue = JSON.stringify(value);
+            } else if (typeof value === 'string') {
+              let parsed = JSON.parse(value);
+              sanitizedValue = JSON.stringify(parsed);
             }
           } catch (e) {
-            // fallback - leave as is
+            // fallback to original sanitizedValue
           }
         }
       
-        sanitizedValue = CleanHTMLData(CleanDBData(sanitizedValue.toString()));
-        // **Double single quotes for SQL escape**
+        // Finally, escape single quotes for SQL syntax
         sanitizedValue = sanitizedValue.replace(/'/g, "''");
       
         updates.push(`${key} = '${sanitizedValue}'`);
