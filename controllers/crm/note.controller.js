@@ -469,7 +469,7 @@ const getUserNote = async (req, res) => {
         try {
 
           let parsed = raw.description;
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+          parsed = JSON.parse(parsed);
 
           if (typeof parsed === 'string') parsed = JSON.parse(parsed);
 
