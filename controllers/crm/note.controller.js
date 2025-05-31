@@ -488,18 +488,24 @@ const getUserNote = async (req, res) => {
     let descriptions = [];
     data.forEach(item => {
       const raw = item.get({ plain: true });
+      
       if (raw.description) {
         try {
-          // Step 1: Replace escaped double quotes with normal quotes
-          let cleaned = raw.description.replace(/\\"/g, '"');
-          
-          // Step 2: Replace escaped single quotes (backslash + single quote) with just single quote
-          cleaned = cleaned.replace(/\\\\'/g, "'");
+          let cleaned = raw.description;
     
-          // Step 3: Sometimes you may need to parse twice due to nested stringified JSON
+          // Replace escaped quotes and backslashes
+          cleaned = cleaned
+            .replace(/\\"/g, '"')    // escaped double quotes → "
+            .replace(/\\\\'/g, "'")  // double backslash + single quote → '
+            .replace(/\\'/g, "'")    // single backslash + single quote → '
+            .replace(/\\n/g, ' ')    // newlines → space
+            .replace(/\\+/g, '')     // remove excessive backslashes
+            .replace(/\s{2,}/g, ' ') // collapse multiple spaces → single
+    
+          // Try parsing
           let parsed = JSON.parse(cleaned);
-          
-          // If the parsed result is still a stringified JSON (string), parse again
+    
+          // If it's a stringified string, parse again
           if (typeof parsed === 'string') {
             parsed = JSON.parse(parsed);
           }
@@ -509,9 +515,31 @@ const getUserNote = async (req, res) => {
           }
         } catch (e) {
           console.warn(`Invalid JSON in description for note ID ${raw.id}:`, raw.description);
+    
+          // Optional fallback: try to recover simple array-like content
+          const fallback = raw.description.match(/\[.*?\]/s);
+          if (fallback) {
+            const tryFix = fallback[0]
+              .replace(/\\\\'/g, "'")
+              .replace(/\\'/g, "'")
+              .replace(/\\"/g, '"')
+              .replace(/\\+/g, '')
+              .replace(/\s{2,}/g, ' ')
+              .replace(/[^\x20-\x7E]+/g, ''); // remove non-ASCII garbage
+    
+            try {
+              const recovered = JSON.parse(tryFix);
+              if (Array.isArray(recovered)) {
+                descriptions.push(...recovered);
+              }
+            } catch (_) {
+              // silently fail fallback
+            }
+          }
         }
       }
     });
+    
     
     
 
