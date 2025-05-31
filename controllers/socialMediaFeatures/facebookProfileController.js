@@ -156,7 +156,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
             },
             attributes: [
                 [fn("SUM", literal("CASE WHEN type IN ('fb_prospection', 'birthday', 'requests', 'fb_crm') THEN message_count ELSE 0 END")), "fbMessageLimit"],
-                [fn("SUM", literal("CASE WHEN type = 'ig_prospection' THEN message_count ELSE 0 END")), "igMessageLimit"],
+                [fn("SUM", literal("CASE WHEN type IN ('ig_prospection', 'ig_crm') THEN message_count ELSE 0 END")), "igMessageLimit"],
                 [fn("SUM", literal("CASE WHEN type IN ('fb_crm', 'ig_crm') THEN message_count ELSE 0 END")), "tagsLimit"],
                 [fn("SUM", literal("CASE WHEN type IN ('ig_ai', 'fb_ai') THEN message_count ELSE 0 END")), "aiLimits"],
             ],
