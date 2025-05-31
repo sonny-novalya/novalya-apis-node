@@ -193,6 +193,9 @@ const createFbNote = async (req, res) => {
     }
 
   } catch (e) {
+
+    console.log('create-note-error', e);
+    
     return Response.resWith422(res, e.message);
   }
 }
