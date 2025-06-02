@@ -67,9 +67,32 @@ const createFbNote = async (req, res) => {
       fb_name,
       profile_pic,
       is_primary,
+      first_name,
+      last_name,
+      email,
+      phone,
+      profession,
+      short_description,
+      Socials,
+      description,
       selected_tag_stage_ids,
       type = "facebook"
     } = req.body;
+
+    // const taggedUserData = {
+    //   tag_id: tag_id,
+    //   stage_id: stage_id,
+    //   fb_name: fb_name,
+    //   is_primary,
+    //   fb_user_id,
+    //   profile_pic: imageUrl,
+    //   fb_image_id: null,
+    //   numeric_fb_id: fb_alphanumeric_id,
+    //   fb_user_e2ee_id: fb_user_e2ee_id,
+    //   is_e2ee,
+    //   user_note: req.body.short_description || null,
+    //   profession: req.body.profession || null
+    // };
 
     let folderName = "notes";
     let dateImg = Date.now()
@@ -153,72 +176,98 @@ const createFbNote = async (req, res) => {
     const date = new Date().toISOString().replace('T', ' ').substring(0, 19);
     postData.updatedAt = date;    
 
+    const escapeForSQL = (value) => {
+      if (!value) return null;
+      
+      // Convert to JSON string first
+      let jsonString = JSON.stringify(value);
+      
+      // Replace double quotes with escaped quotes to store as literal string
+      jsonString = jsonString.replace(/"/g, '\\"');
+      
+      // Escape single quotes for SQL and backslashes
+      jsonString = jsonString.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      
+      return jsonString;
+    };
+
+    const notesData = {
+      user_id,
+      fb_user_id: fb_user_id || null,
+      fb_user_e2ee_id: fb_user_e2ee_id || null,
+      first_name: first_name || null,
+      last_name: last_name || null,
+      email: email || null,
+      phone: phone || null,
+      profession: profession || null,
+      short_description: short_description || null,
+      socials: Socials ? escapeForSQL(Socials) : null,
+      description: description ? escapeForSQL(description) : null,
+      type
+    };
+    
     const existingNotes = await note.findOne({ where: whereClause });
 
-    // Shared logic for both update and insert
-    const sanitizeValue = (key, value) => {
-      let processed = value;
+    const now = new Date().toISOString().replace("T", " ").substring(0, 19);
 
-      // If value is array (like description), convert it to JSON string first
-      if (Array.isArray(processed)) {
-        processed = JSON.stringify(processed);
+    // Helper function to format value for SQL
+    const formatSQLValue = (value) => {
+      if (value === null || value === undefined) {
+        return 'NULL';
       }
-
-      // Clean value using your sanitizers
-      processed = CleanDBData(processed);
-      processed = CleanHTMLData(processed);
-
-      return processed;
+      return `'${value}'`;
     };
 
     if (existingNotes) {
-      console.log('update--160');
-      for (const [key, value] of Object.entries(postData)) {
-        const sanitizedValue = sanitizeValue(key, value);
-
-        if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
-          updates.push(`${key} = NULL`);
-        } else {
-          updates.push(`${key} = '${sanitizedValue.replace(/'/g, "''")}'`);
+      // Dynamic Update logic
+      const updateFields = [];
+      
+      // Add insta_user_id as NULL for Facebook notes
+      updateFields.push('insta_user_id = NULL');
+      
+      // Dynamically build update fields from notesData
+      Object.keys(notesData).forEach(key => {
+        if (key !== 'user_id') { // Skip user_id as it shouldn't be updated
+          updateFields.push(`${key} = ${formatSQLValue(notesData[key])}`);
         }
-      }
+      });
+      
+      // Add updatedAt
+      updateFields.push(`updatedAt = '${now}'`);
+      
+      const updateQuery = `
+        UPDATE notes SET 
+          ${updateFields.join(',\n          ')}
+        WHERE id = '${existingNotes.id}'
+      `;
 
-      const updateQuery = `UPDATE notes SET ${updates.join(", ")} WHERE id = '${existingNotes.id}'`;
       const updateResult = await Qry(updateQuery);
-
       if (updateResult) {
-        return Response.resWith202(res, "Operation Completed", updateResult);
+        return Response.resWith202(res, "Note updated", updateResult);
       } else {
-        return Response.resWith422(res, "An error occurred while updating the notes");
+        return Response.resWith422(res, "Failed to update note");
       }
     } else {
-      console.log('create--178');
-      postData.user_id = user_id;
-      postData.createdAt = date;
-
-      const columns = [];
-      const values = [];
-
-      for (const [key, value] of Object.entries(postData)) {
-        const sanitizedValue = sanitizeValue(key, value);
-
-        columns.push(key);
-        if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
-          values.push(`NULL`);
-        } else {
-          values.push(`'${sanitizedValue.replace(/'/g, "''")}'`);
-        }
-      }
-
-      const createQuery = `INSERT INTO notes (${columns.join(", ")}) VALUES (${values.join(", ")})`;
-      console.log('createQuery:180', createQuery);
+      // Dynamic Create logic
+      const fields = Object.keys(notesData);
+      const values = Object.values(notesData);
+      
+      // Add insta_user_id, createdAt, updatedAt
+      fields.push('insta_user_id', 'createdAt', 'updatedAt');
+      values.push(null, now, now);
+      
+      const formattedValues = values.map(value => formatSQLValue(value));
+      
+      const createQuery = `
+        INSERT INTO notes (${fields.join(', ')}) 
+        VALUES (${formattedValues.join(', ')})
+      `;
 
       const createResult = await Qry(createQuery);
-
       if (createResult) {
-        return Response.resWith202(res, "Operation Completed", createResult);
+        return Response.resWith202(res, "Note created", createResult);
       } else {
-        return Response.resWith422(res, "An error occurred while creating the notes");
+        return Response.resWith422(res, "Failed to create note");
       }
     }
 
