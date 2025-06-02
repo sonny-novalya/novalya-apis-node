@@ -38,6 +38,34 @@ self.getBirthdaySetting = async (req, res) => {
   }
 };
 
+self.getBirthdaySettingExcludingVariant = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const existingBirthdaySetting = await BirthdaySetting.findOne({
+      where: { user_id },
+      include: [
+        {
+          model: MessageData,
+          as: "message",
+          include: [
+            {
+              model: Section,
+            },
+          ],
+        },
+        {
+          model: db.Message,
+          as: "newMessage",
+        },
+      ],
+    });
+    return Response.resWith202(res, "birthday setting fetched successfully", existingBirthdaySetting);
+  } catch (error) {
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
+  }
+};
+
 self.createBirthdaySetting = async (req, res) => {
   try {
     const user_id = req.authUser;

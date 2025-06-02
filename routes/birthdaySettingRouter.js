@@ -5,6 +5,7 @@ const { authenticateUser } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 const routes = [
+    { method: 'post', path: '/fetch-new', handler: birthdaySettingController.getBirthdaySettingExcludingVariant },
     { method: 'post', path: '/fetch', handler: birthdaySettingController.getBirthdaySetting },
     { method: 'post', path: '/create', handler: birthdaySettingController.createBirthdaySetting }
 ];
