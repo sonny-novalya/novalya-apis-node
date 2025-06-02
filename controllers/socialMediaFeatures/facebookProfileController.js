@@ -202,7 +202,7 @@ self.getDashboardSocialAccountData = async (req, res) => {
             totalContactLimit,
         };
 
-        const userSelectQuery = `SELECT extension_version from account_settings limit 1`;
+        const userSelectQuery = `SELECT extension_version, website_version from account_settings limit 1`;
 
         const userSelectParams = [];
         const userSelectResult = await Qry(userSelectQuery, userSelectParams);
