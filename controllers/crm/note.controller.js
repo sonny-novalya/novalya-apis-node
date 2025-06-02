@@ -155,35 +155,35 @@ const createFbNote = async (req, res) => {
 
     const existingNotes = await note.findOne({ where: whereClause });
 
-    if (existingNotes) {  // update user notes
+    // Shared logic for both update and insert
+    const sanitizeValue = (key, value) => {
+      let processed = value;
 
-      console.log('update--160');
-      
-      // for (const [key, value] of Object.entries(postData)) {
-      //   const sanitizedValue = CleanHTMLData(CleanDBData(value));
-      //   updates.push(`${key} = '${sanitizedValue}'`);
-      // }
-      for (const [key, value] of Object.entries(postData)) {
-        // First clean DB input (remove SQL injection, etc.)
-        let cleaned = CleanDBData(value);
-      
-        // Clean HTML input (strip tags, unwanted chars)
-        cleaned = CleanHTMLData(cleaned);
-      
-        // Now fix backslashes and escaped quotes in description (if key is description)
-        if (key === 'description') {
-          // Remove double backslashes, remove escaped apostrophes
-          cleaned = cleaned.replace(/\\\\'/g, '') // remove \\'
-                          .replace(/\\'/g, '')   // remove \'
-                          .replace(/\\\\/g, '')  // remove double backslash
-                          .replace(/'/g, '');    // remove apostrophes if you want 'dont' instead of don't
-        }
-      
-        updates.push(`${key} = '${cleaned}'`);
+      // If value is array (like description), convert it to JSON string first
+      if (Array.isArray(processed)) {
+        processed = JSON.stringify(processed);
       }
-      const updateQuery = `UPDATE notes SET ${updates.join(
-        ", "
-      )} WHERE id = '${existingNotes.id}'`;
+
+      // Clean value using your sanitizers
+      processed = CleanDBData(processed);
+      processed = CleanHTMLData(processed);
+
+      return processed;
+    };
+
+    if (existingNotes) {
+      console.log('update--160');
+      for (const [key, value] of Object.entries(postData)) {
+        const sanitizedValue = sanitizeValue(key, value);
+
+        if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
+          updates.push(`${key} = NULL`);
+        } else {
+          updates.push(`${key} = '${sanitizedValue.replace(/'/g, "''")}'`);
+        }
+      }
+
+      const updateQuery = `UPDATE notes SET ${updates.join(", ")} WHERE id = '${existingNotes.id}'`;
       const updateResult = await Qry(updateQuery);
 
       if (updateResult) {
@@ -191,27 +191,28 @@ const createFbNote = async (req, res) => {
       } else {
         return Response.resWith422(res, "An error occurred while updating the notes");
       }
-    }else{ // create user notes
-
+    } else {
       console.log('create--178');
-      postData.user_id = user_id
+      postData.user_id = user_id;
       postData.createdAt = date;
-      const columns = []
-      const values = []
-      for (const [key, value] of Object.entries(postData)) {
-        const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        columns.push(key);
-        // values.push(`'${sanitizedValue}'`);
 
+      const columns = [];
+      const values = [];
+
+      for (const [key, value] of Object.entries(postData)) {
+        const sanitizedValue = sanitizeValue(key, value);
+
+        columns.push(key);
         if (sanitizedValue === null || sanitizedValue === undefined || sanitizedValue === 'null') {
           values.push(`NULL`);
         } else {
-          values.push(`'${sanitizedValue.replace(/'/g, "''")}'`); 
+          values.push(`'${sanitizedValue.replace(/'/g, "''")}'`);
         }
       }
+
       const createQuery = `INSERT INTO notes (${columns.join(", ")}) VALUES (${values.join(", ")})`;
       console.log('createQuery:180', createQuery);
-      
+
       const createResult = await Qry(createQuery);
 
       if (createResult) {
