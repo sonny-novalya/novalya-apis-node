@@ -32,6 +32,10 @@ module.exports = (sequelize, DataTypes) => {
       is_primary: {
         type: DataTypes.INTEGER,
       },
+      is_verified_acc: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
       user_note: {
         type: DataTypes.TEXT,
       },

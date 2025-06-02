@@ -19,6 +19,7 @@ const TagsController = {
         fb_name,
         profile_pic,
         is_primary,
+        is_verified_acc,
         stage_id,
         is_e2ee = 0,
         fb_user_e2ee_id
@@ -66,6 +67,7 @@ const TagsController = {
           fb_name,
           profile_pic,
           is_primary,
+          is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
           tag_id,
           stage_id,
           is_e2ee,
@@ -192,6 +194,7 @@ const TagsController = {
                 fb_name: fbName,
                 profile_pic: profilePic,
                 is_primary: tag_id, // Update with actual value if available
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 tag_id,
                 stage_id,
                 fb_user_e2ee_id
@@ -208,6 +211,7 @@ const TagsController = {
                 fb_name: fbName,
                 profile_pic: profilePic,
                 is_primary: tag_id, // Update with actual value if available
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 tag_id,
                 stage_id,
                 fb_user_e2ee_id,
@@ -270,6 +274,7 @@ const TagsController = {
               fb_name: fbName,
               profile_pic: profilePic,
               is_primary: tag_id, // Update with actual value if available
+              is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
               tag_id,
             };
 

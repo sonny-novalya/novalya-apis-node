@@ -67,6 +67,7 @@ const createFbNote = async (req, res) => {
       fb_name,
       profile_pic,
       is_primary,
+      is_verified_acc,
       first_name,
       last_name,
       email,
@@ -143,6 +144,7 @@ const createFbNote = async (req, res) => {
           stage_id: stage_id,
           fb_name: fb_name,
           is_primary,
+          is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
           fb_user_id,
           profile_pic: imageUrl,
           fb_image_id: null,
@@ -166,6 +168,7 @@ const createFbNote = async (req, res) => {
     }
 
     delete postData.is_primary;
+    delete postData.is_verified_acc;
     delete postData.selected_tag_stage_ids;
     delete postData.fb_alphanumeric_id;
     delete postData.is_e2ee;
@@ -290,6 +293,7 @@ const createInstaNote = async (req, res) => {
       profile_pic,
       insta_name,
       is_primary,
+      is_verified_acc,
       selected_tag_stage_ids,
       thread_id,
       type = "instagram"
@@ -328,6 +332,7 @@ const createInstaNote = async (req, res) => {
           stage_id: stage_id,
           insta_name: insta_name,
           is_primary,
+          is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
           insta_user_id,
           profile_pic: imageUrl,
           insta_image_id: null,
@@ -350,6 +355,7 @@ const createInstaNote = async (req, res) => {
     }
 
     delete postData.is_primary;
+    delete postData.is_verified_acc;
     delete postData.selected_tag_stage_ids;
     delete postData.thread_id;
     delete postData.insta_name;

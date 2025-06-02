@@ -176,5 +176,58 @@ self.getAllSendRequestMessages = async (req, res) => {
   }
 };
 
+// Get a list of all send request messages excluding variant
+self.getAllSendRequestMessagesExcludingVariant = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    console.log('user_id-118', user_id);
+    
+    SendRequestMessage.findOne({
+      where: {
+        user_id: user_id,
+      },
+      include: [
+        {
+          model: Message,
+          as: "accept_new_message",
+        },
+        {
+          model: Message,
+          as: "reject_new_message",
+        },
+        {
+          model: MessageData,
+          as: "accept_message",
+          include: [
+            {
+              model: Section,
+            },
+          ],
+        },
+        {
+          model: MessageData,
+          as: "reject_message",
+          include: [
+            {
+              model: Section,
+            },
+          ],
+        },
+      ],
+      // raw: true,
+    })
+    .then((record) => {
+      Response.resWith202(res, "success", record);
+    })
+    .catch((error) => {
+      console.error("Error occurred:", error); 
+      return Response.resWith422(res, "Something went wrong");
+    });
+  } catch (error) {
+    console.error("Error occurred:", error);  
+    return Response.resWith422(res, "Something went wrong");
+  }
+};
+
 
 module.exports = self;
