@@ -589,15 +589,7 @@ const getUserNote = async (req, res) => {
                 descriptions.push(...recovered);
               }
             } catch (_) {
-              const unescaped = raw.description
-                .replace(/\\"/g, '"')   
-                .replace(/\\'/g, "'")  
-                .replace(/\\\\/g, '\\');
-
-              const parsed = JSON.parse(unescaped);
-              if(Array.isArray(parsed)){
-                descriptions.push(...parsed);
-              }
+              // silently fail
             }
           }
         }
