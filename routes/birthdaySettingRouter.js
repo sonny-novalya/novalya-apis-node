@@ -10,7 +10,8 @@ const routes = [
     { method: 'post', path: '/create', handler: birthdaySettingController.createBirthdaySetting },
     
     { method: 'post', path: '/settings/list', handler: birthdaySettingController.getBirthdaySettingListing },
-    { method: 'post', path: '/settings/create', handler: birthdaySettingController.createBirthdaySettingListing }
+    { method: 'post', path: '/settings/create', handler: birthdaySettingController.createBirthdaySettingListing },
+    { method: 'post', path: '/settings/update', handler: birthdaySettingController.updateBirthdaySettingListing }
 ];
 
 // Loop through the routes and define them using the router

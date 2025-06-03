@@ -134,8 +134,11 @@ self.createBirthdaySetting = async (req, res) => {
 self.getBirthdaySettingListing = async (req, res) => {
   try {
     const user_id = req.authUser;
+    const { sort_by = "id", sort_type = "ASC" } = req.body;
+
     const existingBirthdaySetting = await BirthdaySetting.findAll({
       where: { user_id },
+      order: [[sort_by, sort_type]],
       include: [
         {
           model: MessageData,
@@ -211,6 +214,58 @@ self.createBirthdaySettingListing = async (req, res) => {
     
   } catch (error) {
 
+    console.error("Error occurred:", error); 
+    return Response.resWith422(res, "something went wrong");
+  }
+};
+
+self.updateBirthdaySettingListing = async (req, res) => {
+  try {
+    const user_id = req.authUser;
+    const { id, name, type, time_interval, birthday_id, birthday_type, action, prospect } = req.body;
+    const existingBirthdaySetting = await BirthdaySetting.findOne({where: { id }});
+    
+    if (!existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting does not exists");
+    } else {
+      var updateData = await existingBirthdaySetting.update({
+        name,
+        type,
+        time_interval: time_interval || 1,
+        birthday_id,
+        birthday_type,
+        action,
+        prospect
+      });
+    }
+    const birthdaySetting = await BirthdaySetting.findOne({
+      where: { user_id, name },
+      include: [
+        {
+          model: MessageData,
+          as: "message",
+          include: [
+            {
+              model: Section,
+            },
+          ],
+        },
+        {
+          model: db.Message,
+          as: "newMessage", 
+          include: [
+            {
+              model: db.MessageVariant,
+              as: "variants",
+            },
+          ],
+        },
+
+      ],
+    });
+    return Response.resWith202(res, "birthday setting updated successfully", birthdaySetting);
+    
+  } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
   }
