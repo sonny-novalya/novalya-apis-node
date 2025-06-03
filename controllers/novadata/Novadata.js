@@ -323,7 +323,8 @@ self.getFbFriendsWithTags = async (req, res) => {
     // Validate sorting fields
     const validFields = ["id", "name", "createdAt"];
     const orderField = validFields.includes(field) ? field : "id";
-    const orderSort = (sort === "ASC" || sort === "DESC") ? [orderField, sort] : ["id", "DESC"];
+    // const orderSort = (sort === "ASC" || sort === "DESC") ? [orderField, sort] : ["id", "DESC"];
+    const orderSort = sort === "ASC" || sort === "DESC" ? sort : "DESC";
 
     let whereOptions = {
       user_id: user_id
@@ -355,7 +356,7 @@ self.getFbFriendsWithTags = async (req, res) => {
       where: whereOptions,
       offset: offset,
       limit: limitValue,
-      order: [orderSort],
+      order: [[orderField, orderSort]],
       include: [
         {
           model: db.taggedusers,
@@ -375,9 +376,10 @@ self.getFbFriendsWithTags = async (req, res) => {
           },
         },
       ],
-      group: ['Novadata.fbId', 'taggedusers.is_primary'],
+      distinct: true,
     });
 
+    // group: ['Novadata.fbId', 'taggedusers.is_primary'],
     // if(page == 1){
       const userSelectQuery = `SELECT plan_pkg FROM usersdata WHERE id = ?`;
 
