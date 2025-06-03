@@ -134,11 +134,26 @@ self.createBirthdaySetting = async (req, res) => {
 self.getBirthdaySettingListing = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { sort_by = "id", sort_type = "ASC" } = req.body;
+    const { 
+      sort_by = "id", 
+      sort_type = "ASC",
+      search,
+      page = 1,
+      limit = 25,
+    } = req.body;
 
-    const existingBirthdaySetting = await BirthdaySetting.findAll({
-      where: { user_id },
+    const offset = (page - 1) * limit;
+    const existingBirthdaySetting = await BirthdaySetting.findAndCountAll({
+      where: { 
+        user_id,
+        [Op.or]: [
+          { name: { [Op.like]: `%${search}%` } },
+          { type: { [Op.like]: `%${search}%` } }
+        ]
+      },
       order: [[sort_by, sort_type]],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
       include: [
         {
           model: MessageData,
@@ -156,7 +171,12 @@ self.getBirthdaySettingListing = async (req, res) => {
         },
       ],
     });
-    return Response.resWith202(res, "birthday setting fetched successfully", existingBirthdaySetting);
+    return Response.resWith202(res, "birthday setting fetched successfully", {
+      data: existingBirthdaySetting.rows,
+      total: existingBirthdaySetting.count,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(existingBirthdaySetting.count / limit),
+    });
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
