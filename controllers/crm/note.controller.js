@@ -205,7 +205,7 @@ const createFbNote = async (req, res) => {
       profession: profession || null,
       short_description: short_description || null,
       socials: Socials ? escapeForSQL(Socials) : null,
-      description: description ? escapeForSQL(description) : null,
+      description: description,
       type
     };
     
@@ -214,10 +214,16 @@ const createFbNote = async (req, res) => {
     const now = new Date().toISOString().replace("T", " ").substring(0, 19);
 
     // Helper function to format value for SQL
-    const formatSQLValue = (value) => {
+    const formatSQLValue = (value, key) => {
       if (value === null || value === undefined) {
         return 'NULL';
       }
+
+      if (key === 'description') {
+        const encoded = Buffer.from(JSON.stringify(value)).toString('base64');
+        return `'${encoded}'`;
+      }
+
       return `'${value}'`;
     };
 
@@ -231,7 +237,7 @@ const createFbNote = async (req, res) => {
       // Dynamically build update fields from notesData
       Object.keys(notesData).forEach(key => {
         if (key !== 'user_id') { // Skip user_id as it shouldn't be updated
-          updateFields.push(`${key} = ${formatSQLValue(notesData[key])}`);
+          updateFields.push(`${key} = ${formatSQLValue(notesData[key], key)}`);
         }
       });
       
@@ -259,7 +265,7 @@ const createFbNote = async (req, res) => {
       fields.push('insta_user_id', 'createdAt', 'updatedAt');
       values.push(null, now, now);
       
-      const formattedValues = values.map(value => formatSQLValue(value));
+      const formattedValues = fields.map((key, index) => formatSQLValue(values[index], key));
       
       const createQuery = `
         INSERT INTO notes (${fields.join(', ')}) 
@@ -370,7 +376,8 @@ const createInstaNote = async (req, res) => {
     if (existingNotes) {  // update user notes
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        updates.push(`${key} = '${sanitizedValue}'`);
+        const finalValue = key == 'description' ? Buffer.from(JSON.stringify(value)).toString('base64') : sanitizedValue;
+        updates.push(`${key} = '${finalValue}'`);
       }
       const updateQuery = `UPDATE notes SET ${updates.join(
         ", "
@@ -389,8 +396,9 @@ const createInstaNote = async (req, res) => {
       const values = []
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
+        const finalValue = key == 'description' ? Buffer.from(JSON.stringify(value)).toString('base64') : sanitizedValue;
         columns.push(key);
-        values.push(`'${sanitizedValue}'`);
+        values.push(`'${finalValue}'`);
       }
       const createQuery = `INSERT INTO notes (${columns.join(", ")}) VALUES (${values.join(", ")})`;
       const createResult = await Qry(createQuery);
@@ -540,74 +548,91 @@ const getUserNote = async (req, res) => {
     delete noteData.taggedUsers;
     delete noteData.taggedUsersE2ee;
 
-    // Extract and merge all descriptions
-    let descriptions = [];
-    data.forEach(item => {
-      const raw = item.get({ plain: true });
-      
-      if (raw.description) {
-        try {
-          let cleaned = raw.description;
-    
-          // Replace escaped quotes and backslashes
-          cleaned = cleaned
-            .replace(/\\"/g, '"')    // escaped double quotes → "
-            .replace(/\\\\'/g, "'")  // double backslash + single quote → '
-            .replace(/\\'/g, "'")    // single backslash + single quote → '
-            .replace(/\\n/g, ' ')    // newlines → space
-            .replace(/\\+/g, '')     // remove excessive backslashes
-            .replace(/\s{2,}/g, ' ') // collapse multiple spaces → single
-    
-          // Try parsing
-          let parsed = JSON.parse(cleaned);
-    
-          // If it's a stringified string, parse again
-          if (typeof parsed === 'string') {
-            parsed = JSON.parse(parsed);
-          }
-    
-          if (Array.isArray(parsed)) {
-            descriptions.push(...parsed);
-          }
-        } catch (e) {
-          console.warn(`Invalid JSON in description for note ID ${raw.id}:`, raw.description);
-    
-          // Optional fallback: try to recover simple array-like content
-          const fallback = raw.description.match(/\[.*?\]/s);
-          if (fallback) {
-            const tryFix = fallback[0]
-              .replace(/\\\\'/g, "'")
-              .replace(/\\'/g, "'")
-              .replace(/\\"/g, '"')
-              .replace(/\\+/g, '')
-              .replace(/\s{2,}/g, ' ')
-              .replace(/[^\x20-\x7E]+/g, ''); // remove non-ASCII garbage
-    
-            try {
-              const recovered = JSON.parse(tryFix);
-              if (Array.isArray(recovered)) {
-                descriptions.push(...recovered);
-              }
-            } catch (_) {
-              // silently fails
-            }
-          }
-        }
-      }
-    });
-    
-    
-    
-
-    // Add final key
+    // let descriptions1 = JSON.parse(noteData.description)
     noteData.taggedUsers = finalTaggedUsers;
-    noteData.description = descriptions;
+
+    try{
+      const decodedDescription = Buffer.from(noteData.description, 'base64').toString('utf8');
+      noteData.description = JSON.parse(decodedDescription);
+    }catch(err){
+      noteData.description = JSON.parse(noteData.description);
+    }    
+
     if(noteData?.socials){
       let noteSocials = noteData.socials.replace(/\\"/g, '"')
       noteData.socials = noteSocials
     }    
 
     return Response.resWith202(res, "Operation Completed", [noteData]);
+
+    // Extract and merge all descriptions
+    // let descriptions = [];
+    // data.forEach(item => {
+    //   const raw = item.get({ plain: true });
+      
+    //   if (raw.description) {
+    //     try {
+    //       let cleaned = raw.description;
+    
+    //       // Replace escaped quotes and backslashes
+    //       cleaned = cleaned
+    //         .replace(/\\"/g, '"')    // escaped double quotes → "
+    //         .replace(/\\\\'/g, "'")  // double backslash + single quote → '
+    //         .replace(/\\'/g, "'")    // single backslash + single quote → '
+    //         .replace(/\\n/g, ' ')    // newlines → space
+    //         .replace(/\\+/g, '')     // remove excessive backslashes
+    //         .replace(/\s{2,}/g, ' ') // collapse multiple spaces → single
+    
+    //       // Try parsing
+    //       let parsed = JSON.parse(cleaned);
+    
+    //       // If it's a stringified string, parse again
+    //       if (typeof parsed === 'string') {
+    //         parsed = JSON.parse(parsed);
+    //       }
+    
+    //       if (Array.isArray(parsed)) {
+    //         descriptions.push(...parsed);
+    //       }
+    //     } catch (e) {
+    //       console.warn(`Invalid JSON in description for note ID ${raw.id}:`, raw.description);
+    
+    //       // Optional fallback: try to recover simple array-like content
+    //       const fallback = raw.description.match(/\[.*?\]/s);
+    //       if (fallback) {
+    //         const tryFix = fallback[0]
+    //           .replace(/\\\\'/g, "'")
+    //           .replace(/\\'/g, "'")
+    //           .replace(/\\"/g, '"')
+    //           .replace(/\\+/g, '')
+    //           .replace(/\s{2,}/g, ' ')
+    //           .replace(/[^\x20-\x7E]+/g, ''); // remove non-ASCII garbage
+    
+    //         try {
+    //           const recovered = JSON.parse(tryFix);
+    //           if (Array.isArray(recovered)) {
+    //             descriptions.push(...recovered);
+    //           }
+    //         } catch (_) {
+    //           // silently fails
+    //         }
+    //       }
+    //     }
+    //   }
+    // });
+    
+    
+    
+
+    // // Add final key
+    // noteData.taggedUsers = finalTaggedUsers;
+    // noteData.description = descriptions;
+    // if(noteData?.socials){
+    //   let noteSocials = noteData.socials.replace(/\\"/g, '"')
+    //   noteData.socials = noteSocials
+    // }    
+
+    // return Response.resWith202(res, "Operation Completed", [noteData]);
   } catch (error) {
 
     console.log('error', error);
