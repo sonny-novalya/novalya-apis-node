@@ -179,34 +179,28 @@ self.getBirthdaySettingListing = async (req, res) => {
 self.createBirthdaySettingListing = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { name, type, time_interval, birthday_id, birthday_type, action, prospect } = req.body;
-    const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id, name }});
-    
-    if (existingBirthdaySetting) {
-      return Response.resWith422(res, "Birthday setting already exists with same name");
-    } else {
-      // If it doesn't exist, create a new record
-      await BirthdaySetting.create({
-        user_id,
-        name,
-        type,
-        time_interval: time_interval || 1,
-        birthday_id,
-        birthday_type,
-        action,
-        prospect
-      });
+    const { name, type, time_interval, message_id, birthday_type, action, prospect } = req.body;
+
+    if (name !== null && name !== undefined && name !== "") {
+      const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id, name }});
+      if (existingBirthdaySetting) {
+        return Response.resWith422(res, "Birthday setting already exists with same name");
+      }
     }
-    const birthdaySetting = await BirthdaySetting.findOne({
-      where: { user_id, name }
+    
+    // If it doesn't exist, create a new record
+    await BirthdaySetting.create({
+      user_id,
+      name: name || null,
+      type,
+      time_interval: time_interval || 1,
+      birthday_id: message_id,
+      birthday_type,
+      action,
+      prospect
     });
 
-    // Rename `birthday_id` to `message_id` in the response
-    const result = birthdaySetting.toJSON();
-    result.message_id = result.birthday_id;
-    delete result.birthday_id;
-
-    return Response.resWith202(res, "birthday setting created successfully", result);
+    return Response.resWith202(res, "birthday setting created successfully");
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
@@ -216,32 +210,24 @@ self.createBirthdaySettingListing = async (req, res) => {
 self.updateBirthdaySettingListing = async (req, res) => {
   try {
     const user_id = req.authUser;
-    const { id, name, type, time_interval, birthday_id, birthday_type, action, prospect } = req.body;
+    const { id, name, type, time_interval, message_id, birthday_type, action, prospect } = req.body;
     const existingBirthdaySetting = await BirthdaySetting.findOne({where: { id, user_id }});
     
     if (!existingBirthdaySetting) {
       return Response.resWith422(res, "Birthday setting does not exists");
     } else {
       await existingBirthdaySetting.update({
-        name,
+        name: name || null,
         type,
         time_interval: time_interval || 1,
-        birthday_id,
+        birthday_id: message_id,
         birthday_type,
         action,
         prospect
       });
     }
-    const birthdaySetting = await BirthdaySetting.findOne({
-      where: { user_id, name }
-    });
 
-    // Rename `birthday_id` to `message_id` in the response
-    const result = birthdaySetting.toJSON();
-    result.message_id = result.birthday_id;
-    delete result.birthday_id;
-
-    return Response.resWith202(res, "birthday setting updated successfully", result);
+    return Response.resWith202(res, "birthday setting updated successfully");
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
