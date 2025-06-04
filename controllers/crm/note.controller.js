@@ -589,7 +589,7 @@ const getUserNote = async (req, res) => {
                 descriptions.push(...recovered);
               }
             } catch (_) {
-              // silently fail
+              // silently fails
             }
           }
         }
