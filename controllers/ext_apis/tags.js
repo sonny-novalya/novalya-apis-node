@@ -170,7 +170,7 @@ const TagsController = {
               fb_user_id,
               fb_user_alphanumeric_id,
               fbName,
-              profilePic,
+              profile_pic,
               fb_image_id,
               fb_user_e2ee_id
             } = member;
