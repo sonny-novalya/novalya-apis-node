@@ -11,7 +11,9 @@ const routes = [
     
     { method: 'post', path: '/settings/list', handler: birthdaySettingController.getBirthdaySettingListing },
     { method: 'post', path: '/settings/create', handler: birthdaySettingController.createBirthdaySettingListing },
-    { method: 'post', path: '/settings/update', handler: birthdaySettingController.updateBirthdaySettingListing }
+    { method: 'post', path: '/settings/update', handler: birthdaySettingController.updateBirthdaySettingListing },
+    { method: 'post', path: '/settings/delete', handler: birthdaySettingController.deleteBirthdaySettingListing },
+    { method: 'post', path: '/settings/clone', handler: birthdaySettingController.cloneBirthdaySettingListing }
 ];
 
 // Loop through the routes and define them using the router
