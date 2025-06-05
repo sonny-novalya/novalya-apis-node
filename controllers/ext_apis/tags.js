@@ -4,6 +4,7 @@ const { checkAuthorization, getAuthUser } = require("../../helpers/functions");
 const Op = Sequelize.Op;
 const db = require("../../Models/crm");
 const message = require("../../Models/crm/message");
+const UploadImageOnS3Bucket = require("../../utils/s3BucketUploadImage");
 const taggedUser = db.taggedusers;
 const tags = db.tag;
 
@@ -26,6 +27,10 @@ const TagsController = {
       } = req.body;
 
       var { tag_id } = req.body;
+      let folderName = "facebook-crm";
+      let dateImg = Date.now()
+      let imageUrl;
+      let base64Str = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/
 
       if (type == "add") {
         // if (!fb_user_id || !fb_user_alphanumeric_id) {
@@ -57,6 +62,12 @@ const TagsController = {
         const deletedCount = await taggedUser.destroy({ where: deleteWhereClause });
         // res.status(200).json({ status: "success", data: deletedCount });
 
+        if (profile_pic && base64Str.test(profile_pic) && profile_pic.includes("novalya-assets") != true) {
+
+          imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+        }else{
+          imageUrl = profile_pic
+        }
         // return false;
         // Create a new tagged user object
         const taggedUserData = {
@@ -65,7 +76,7 @@ const TagsController = {
           numeric_fb_id: fb_user_alphanumeric_id,
           fb_image_id,
           fb_name,
-          profile_pic,
+          profile_pic: imageUrl,
           is_primary,
           is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
           tag_id,
@@ -187,12 +198,19 @@ const TagsController = {
               where: whereClause
             });
 
+            if (profile_pic && base64Str.test(profile_pic) && profile_pic.includes("novalya-assets") != true) {
+
+              imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+            }else{
+              imageUrl = profile_pic
+            }
+
             if (existingRecord) {
               const taggedUserData = {
                 fb_user_alphanumeric_id,
                 fb_image_id, // Update with actual value if available
                 fb_name: fbName,
-                profile_pic: profilePic,
+                profile_pic: imageUrl,
                 is_primary: tag_id, // Update with actual value if available
                 is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 tag_id,
@@ -209,7 +227,7 @@ const TagsController = {
                 fb_user_alphanumeric_id,
                 fb_image_id, // Update with actual value if available
                 fb_name: fbName,
-                profile_pic: profilePic,
+                profile_pic: imageUrl,
                 is_primary: tag_id, // Update with actual value if available
                 is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
                 tag_id,
