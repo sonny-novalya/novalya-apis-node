@@ -181,17 +181,20 @@ self.createBirthdaySettingListing = async (req, res) => {
     const user_id = req.authUser;
     const { name, type, time_interval, message_id, birthday_type, action, prospect } = req.body;
 
-    if (name !== null && name !== undefined && name !== "") {
-      const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id, name }});
-      if (existingBirthdaySetting) {
-        return Response.resWith422(res, "Birthday setting already exists with same name");
-      }
+    // ✅ Check if name is required
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return Response.resWith422(res, "Name is required");
     }
-    
+
+    const existingBirthdaySetting = await BirthdaySetting.findOne({ where: { user_id, name } });
+    if (existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting already exists with same name");
+    }
+
     // If it doesn't exist, create a new record
     await BirthdaySetting.create({
       user_id,
-      name: name || null,
+      name: name.trim(),
       type,
       time_interval: time_interval || 1,
       birthday_id: message_id,
@@ -211,21 +214,27 @@ self.updateBirthdaySettingListing = async (req, res) => {
   try {
     const user_id = req.authUser;
     const { id, name, type, time_interval, message_id, birthday_type, action, prospect } = req.body;
-    const existingBirthdaySetting = await BirthdaySetting.findOne({where: { id, user_id }});
-    
-    if (!existingBirthdaySetting) {
-      return Response.resWith422(res, "Birthday setting does not exists");
-    } else {
-      await existingBirthdaySetting.update({
-        name: name || null,
-        type,
-        time_interval: time_interval || 1,
-        birthday_id: message_id,
-        birthday_type,
-        action,
-        prospect
-      });
+
+    // ✅ Validate name is required
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return Response.resWith422(res, "Name is required");
     }
+
+    const existingBirthdaySetting = await BirthdaySetting.findOne({ where: { id, user_id } });
+
+    if (!existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting does not exist");
+    }
+
+    await existingBirthdaySetting.update({
+      name: name.trim(),
+      type,
+      time_interval: time_interval || 1,
+      birthday_id: message_id,
+      birthday_type,
+      action,
+      prospect
+    });
 
     return Response.resWith202(res, "birthday setting updated successfully");
   } catch (error) {
