@@ -14,7 +14,7 @@ const campaign = db.instagramCampaign;
 const stage = db.instastage;
 const taggedusers = db.instataggedusers;
 const Statistic = db.Statistic;
-const userLimit =db.userLimit
+const userLimit =require("../../Models/Userlimit")
 const tagsTable = db.tag
 const instaGramTag = db.instatag
 
