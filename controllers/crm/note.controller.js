@@ -189,7 +189,7 @@ const createFbNote = async (req, res) => {
       phone: phone || null,
       profession: profession || null,
       short_description: short_description || null,
-      socials: Socials ? JSON.stringify(Socials) : null,
+      socials: Socials || null,
       description: description,
       type
     };
