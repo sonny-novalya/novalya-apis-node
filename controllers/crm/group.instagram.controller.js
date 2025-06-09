@@ -1,4 +1,5 @@
 const db = require("../../Models/crm");
+const wholeDB = require("../../Models");
 const {
   checkAuthorization,
   getAuthUser,
@@ -14,7 +15,7 @@ const campaign = db.instagramCampaign;
 const stage = db.instastage;
 const taggedusers = db.instataggedusers;
 const Statistic = db.Statistic;
-const {userLimit} =require("../../Models/UserPlanLimit")
+const userLimit =wholeDB.UserPlanLimit
 const tagsTable = db.tag
 const instaGramTag = db.instatag
 
