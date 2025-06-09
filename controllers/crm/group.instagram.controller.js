@@ -14,6 +14,9 @@ const campaign = db.instagramCampaign;
 const stage = db.instastage;
 const taggedusers = db.instataggedusers;
 const Statistic = db.Statistic;
+const userLimit =db.userLimit
+const tagsTable = db.tag
+const instaGramTag = db.instatag
 
 const placetag = async (req, res) => {
   try {
@@ -22,6 +25,20 @@ const placetag = async (req, res) => {
     const params = req.body;
     const authUser = await getAuthUser(req, res);
     params.user_id = authUser;
+   const userLimitData = await userLimit.findOne({
+      where: { userid:authUser  },
+    });
+
+    const fbCount = await tagsTable.count({ where: { user_id: authUser } });
+        const igCount = await instaGramTag.count({ where: { user_id: authUser } });
+        const total = fbCount + igCount;
+
+
+        if ( total >= userLimitData?.tags_pipelines) {
+           return Response.resWith201(res, 'success', "Limit Exceeded");
+        }
+
+
 
     const maxOrderNumTag = await tag.findOne({
       where: { user_id: authUser },
