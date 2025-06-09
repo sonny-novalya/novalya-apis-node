@@ -5409,11 +5409,14 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             ]
           );
 
-          let billingPeriodAlt = billingPeriod
-            ? billingPeriod
-            : userData?.plan_period;
+          let isChatBotActive = 1;
+          if (planID.includes("Starter")) {
+            isChatBotActive = 0;
+          }
+
+          let billingPeriodAlt = billingPeriod ? billingPeriod : userData?.plan_period;
           await Qry(
-            "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=?, updatedat=? where id = ?",
+            "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=?, updatedat=?, isChatActive=? where id = ?",
             [
               billingPeriodUnit,
               billingPeriodAlt,
@@ -5424,6 +5427,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               activated_at,
               nextBillingAt,
               formatDateTimeFromTimestamp(billingStartAt),
+              isChatBotActive,
               userData?.id,
             ]
           );
@@ -5962,8 +5966,13 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
           console.log(trial, trialStatus, entityId);
 
+          let isChatBotActive = 1;
+          if (planID.includes("Starter")) {
+            isChatBotActive = 0;
+          }
+
           const insertResult = await Qry(
-            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat)
+            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat, isChatActive)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               mobile,
@@ -6004,6 +6013,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               subscriptionStatus,
               formatDateTimeFromTimestamp(created_at),
               formatDateTimeFromTimestamp(created_at),
+              isChatBotActive
             ]
           );
           let newUserId = insertResult.insertId;
