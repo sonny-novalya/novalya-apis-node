@@ -42,7 +42,7 @@ const placetag = async (req, res) => {
         const fbCount = await tagsTable.count({ where: { user_id: authUser } });
             const igCount = await instaGramTag.count({ where: { user_id: authUser } });
             const total = fbCount + igCount;
-    
+          console.log(userLimitData,fbCount,igCount)
     
             if ( total >= userLimitData?.tags_pipelines) {
                return Response.resWith201(res, 'success', "Limit Exceeded");
