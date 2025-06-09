@@ -1,4 +1,5 @@
 const db = require("../../Models/crm");
+const wholeDB = require("../../Models");
 const {
   checkAuthorization,
   getAuthUser,
@@ -14,9 +15,9 @@ const campaign = db.campaign;
 const stage = db.stage;
 const taggedusers = db.taggedusers;
 const Statistic = db.Statistic;
-const {userLimit} =require("../../Models/UserPlanLimit")
 const tagsTable = db.tag
 const instaGramTag = db.instatag
+const userLimit =wholeDB.UserPlanLimit
 
 tag.hasMany(stage, { as: 'stages', foreignKey: 'tag_id' });
 stage.belongsTo(tag, { foreignKey: 'tag_id' });
