@@ -177,22 +177,7 @@ const createFbNote = async (req, res) => {
 
     const updates = [];
     const date = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    postData.updatedAt = date;    
-
-    const escapeForSQL = (value) => {
-      if (!value) return null;
-      
-      // Convert to JSON string first
-      let jsonString = JSON.stringify(value);
-      
-      // Replace double quotes with escaped quotes to store as literal string
-      jsonString = jsonString.replace(/"/g, '\\"');
-      
-      // Escape single quotes for SQL and backslashes
-      jsonString = jsonString.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      
-      return jsonString;
-    };
+    postData.updatedAt = date;
 
     const notesData = {
       user_id,
@@ -204,7 +189,7 @@ const createFbNote = async (req, res) => {
       phone: phone || null,
       profession: profession || null,
       short_description: short_description || null,
-      socials: Socials ? escapeForSQL(Socials) : null,
+      socials: Socials ? JSON.stringify(Socials) : null,
       description: description,
       type
     };
