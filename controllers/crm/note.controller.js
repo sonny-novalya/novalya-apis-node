@@ -190,7 +190,8 @@ const createFbNote = async (req, res) => {
       profession: profession || null,
       short_description: short_description || null,
       socials: Socials || null,
-      description: description,
+      // description: description,
+      description: Array.isArray(description) ? description : [description],
       type
     };
     
@@ -205,8 +206,11 @@ const createFbNote = async (req, res) => {
       }
 
       if (key === 'description') {
-        const encoded = Buffer.from(JSON.stringify(value)).toString('base64');
-        return `'${encoded}'`;
+        const arraySafe = Array.isArray(value) ? value : [value];
+        const stringified = JSON.stringify(arraySafe);             // handles double quotes and adds backslashes
+        const escapedSingleQuotes = stringified.replace(/'/g, "''");  // escape single quotes for SQL
+        const escapedBackslashes = escapedSingleQuotes.replace(/\\/g, '\\\\'); // escape backslashes
+        return `'${escapedBackslashes}'`;
       }
 
       return `'${value}'`;
@@ -361,7 +365,18 @@ const createInstaNote = async (req, res) => {
     if (existingNotes) {  // update user notes
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        const finalValue = key == 'description' ? Buffer.from(JSON.stringify(value)).toString('base64') : sanitizedValue;
+
+        let finalValue;
+        if (key === 'description') {
+          const arraySafe = Array.isArray(value) ? value : [value];
+          const stringified = JSON.stringify(arraySafe);             // Handles quotes safely
+          const escapedSingleQuotes = stringified.replace(/'/g, "''");  // SQL-safe for single quotes
+          const escapedBackslashes = escapedSingleQuotes.replace(/\\/g, '\\\\'); // SQL-safe for backslashes
+          finalValue = escapedBackslashes;
+        } else {
+          finalValue = sanitizedValue;
+        }
+
         updates.push(`${key} = '${finalValue}'`);
       }
       const updateQuery = `UPDATE notes SET ${updates.join(
@@ -381,7 +396,18 @@ const createInstaNote = async (req, res) => {
       const values = []
       for (const [key, value] of Object.entries(postData)) {
         const sanitizedValue = CleanHTMLData(CleanDBData(value));
-        const finalValue = key == 'description' ? Buffer.from(JSON.stringify(value)).toString('base64') : sanitizedValue;
+
+        let finalValue;
+        if (key === 'description') {
+          const arraySafe = Array.isArray(value) ? value : [value];
+          const stringified = JSON.stringify(arraySafe);             // Handles quotes safely
+          const escapedSingleQuotes = stringified.replace(/'/g, "''");  // SQL-safe for single quotes
+          const escapedBackslashes = escapedSingleQuotes.replace(/\\/g, '\\\\'); // SQL-safe for backslashes
+          finalValue = escapedBackslashes;
+        } else {
+          finalValue = sanitizedValue;
+        }
+
         columns.push(key);
         values.push(`'${finalValue}'`);
       }
@@ -519,7 +545,23 @@ const getUserNote = async (req, res) => {
       return Response.resWith202(res, "Operation Completed", []);
     }
 
-    const noteData = JSON.parse(JSON.stringify(data[0])); // deep clone to break Sequelize reference issues
+    // Extract and merge descriptions
+    const allDescriptions = data.map(row => {
+      try {
+        // Revert SQL-safe single quotes back to normal
+        const safeJson = row.description.replace(/''/g, "'");
+        return JSON.parse(safeJson);
+      } catch (err) {
+        console.error("Description parse error:", err.message, "Value:", row.description);
+        return [];
+      }
+    }).flat();
+
+    console.log(JSON.stringify(allDescriptions));
+    
+    // Use only first row for base data
+    const noteData = JSON.parse(JSON.stringify(data[0]));
+    noteData.description = allDescriptions;
 
     let finalTaggedUsers = [];
 
@@ -536,12 +578,11 @@ const getUserNote = async (req, res) => {
     // let descriptions1 = JSON.parse(noteData.description)
     noteData.taggedUsers = finalTaggedUsers;
 
-    try{
-      const decodedDescription = Buffer.from(noteData.description, 'base64').toString('utf8');
-      noteData.description = JSON.parse(decodedDescription);
-    }catch(err){
-      noteData.description = JSON.parse(noteData.description);
-    }    
+    try {
+      noteData.description = noteData.description;
+    } catch (err) {
+      noteData.description = [];
+    } 
 
     if(noteData?.socials){
       let noteSocials = noteData.socials.replace(/\\"/g, '"')
