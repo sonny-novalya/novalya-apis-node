@@ -35,7 +35,11 @@ module.exports = (sequelize, DataTypes) => {
     order_num: {
       type: DataTypes.INTEGER,
       allowNull: true
-    }
+    },
+       user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
   }, {
     sequelize,
     modelName: 'ProspectionGrpFolders',
