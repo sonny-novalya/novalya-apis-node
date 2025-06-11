@@ -268,12 +268,24 @@ const getGroupsInfo = async (req, res) => {
       }
     );
 
+    const tagUserRows = await sequelize.query(
+      `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
+      {
+        replacements: { user_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
     // Handle empty tagUserCounts safely
     const tagCountMap = {};
-    (tagUserCounts || []).forEach(row => {
-      if (row.tag_id) {
-        tagCountMap[row.tag_id] = parseInt(row.taggedUsersCount) || 0;
-      }
+    (tagUserRows || []).forEach(row => {
+      const tagIds = row.tag_id ? row.tag_id.split(',') : [];
+      tagIds.forEach(id => {
+        const trimmedId = id.trim();
+        if (trimmedId) {
+          tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
+        }
+      });
     });
 
     // Handle empty stageUserCounts safely
