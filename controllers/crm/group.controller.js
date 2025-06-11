@@ -298,15 +298,15 @@ const getGroupsInfo = async (req, res) => {
 
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
-      const tagId = tagItem.id;
-      const taggedCount = tagCountMap[tagId] || 0;
-      const validStageCount = stageCountMap[tagId] || 0;
-      return {
+    const tagId = tagItem.id.toString(); // tagCountMap keys are strings
+    const taggedCount = tagCountMap[tagId] || 0;
+    const validStageCount = stageCountMap[tagId] || 0;
+    return {
         ...tagItem.toJSON(),
-        taggedUsersCount: validStageCount // only include valid stage_id users
+        taggedUsersCount: taggedCount,         // total users with that tag
+        validStageUsersCount: validStageCount  // only those with valid stage
       };
     });
-
 
     return Response.resWith202(res, 'success', enrichedTags);
 
