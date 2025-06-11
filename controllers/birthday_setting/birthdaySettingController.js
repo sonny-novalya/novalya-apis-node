@@ -192,7 +192,7 @@ self.createBirthdaySettingListing = async (req, res) => {
     }
 
     // If it doesn't exist, create a new record
-    await BirthdaySetting.create({
+    const newSetting = await BirthdaySetting.create({
       user_id,
       name: name.trim(),
       type,
@@ -203,7 +203,12 @@ self.createBirthdaySettingListing = async (req, res) => {
       prospect
     });
 
-    return Response.resWith202(res, "birthday setting created successfully");
+    // Format response: convert to JSON and rename birthday_id → message_id
+    const result = newSetting.toJSON();
+    result.message_id = result.birthday_id;
+    delete result.birthday_id;
+
+    return Response.resWith202(res, "birthday setting created successfully", result);
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
@@ -236,7 +241,13 @@ self.updateBirthdaySettingListing = async (req, res) => {
       prospect
     });
 
-    return Response.resWith202(res, "birthday setting updated successfully");
+     // Fetch updated record again to ensure all changes are reflected
+    const updatedSetting = await BirthdaySetting.findOne({ where: { id } });
+    const result = updatedSetting.toJSON();
+    result.message_id = result.birthday_id;
+    delete result.birthday_id;
+
+    return Response.resWith202(res, "birthday setting updated successfully", result);
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
