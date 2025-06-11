@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
-       user_id: {
+       isFav: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
