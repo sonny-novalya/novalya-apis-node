@@ -7,8 +7,13 @@ const Response = require("../../helpers/response");
 self.getBirthdaySetting = async (req, res) => {
   try {
     const user_id = req.authUser;
+    const { id } = req.query;
+
+    if (!id) {
+      return Response.resWith422(res, "Missing birthday setting ID");
+    }
     const existingBirthdaySetting = await BirthdaySetting.findOne({
-      where: { user_id },
+      where: { user_id, id },
       include: [
         {
           model: MessageData,
@@ -31,6 +36,11 @@ self.getBirthdaySetting = async (req, res) => {
         },
       ],
     });
+    
+    if (!existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting not found");
+    }
+
     return Response.resWith202(res, "birthday setting fetched successfully", existingBirthdaySetting);
   } catch (error) {
     console.error("Error occurred:", error); 
