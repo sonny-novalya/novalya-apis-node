@@ -5973,7 +5973,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
           const insertResult = await Qry(
             `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat, isChatActive)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               mobile,
               userSponsorId,
