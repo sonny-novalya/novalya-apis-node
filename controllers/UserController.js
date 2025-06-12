@@ -5971,9 +5971,11 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             isChatBotActive = 0;
           }
 
+          console.log("Values going into insert:", [ mobile, userSponsorId, l2SponsorId, referral_side, email, encryptedPassword, email, country, company, address1, zip_code, city, language, firstname, lastname, randomCode, emailToken, maskedNumber, "Approved", customerId, subscriptionType, subscriptionPeriod, limitsName, planPrice, "verified", birthday, connections, parent_id, reseller_website, trial, trial_status, trial_start, trial_end, activated_at, currencyCode, subscriptionStatus, isChatBotActive, formatDateTimeFromTimestamp(created_at), formatDateTimeFromTimestamp(created_at)]);
+
           const insertResult = await Qry(
-            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat, isChatActive)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, isChatActive, createdat, updatedat)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               mobile,
               userSponsorId,
@@ -6011,9 +6013,9 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               activated_at,
               currencyCode,
               subscriptionStatus,
+              isChatBotActive,
               formatDateTimeFromTimestamp(created_at),
-              formatDateTimeFromTimestamp(created_at),
-              isChatBotActive
+              formatDateTimeFromTimestamp(created_at)
             ]
           );
           let newUserId = insertResult.insertId;
