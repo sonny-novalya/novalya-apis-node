@@ -673,8 +673,46 @@ const deleteNote = async (req, res) => {
     const user_id = await getAuthUser(req, res);
 
     const { id } = req.query;
+    const data = await note.findOne({ where: { id } });
 
-    const data = await note.destroy({ where: { id } });
+    if(data.type == "instagram"){
+      await instaTaggedUser.update(
+        { user_note: null, profession: null },
+        {where: {insta_user_id: data.insta_user_id, user_id}}
+      )
+    }else{
+      let fbUserId = data.fb_user_id
+      let fbUserE2eeId = data.fb_user_e2ee_id
+
+      let whereClause;
+
+      if (fbUserId && fbUserE2eeId) {
+        whereClause = {
+          user_id,
+          [Op.or]: [
+            { fb_user_id: fbUserId },
+            { fb_user_e2ee_id: fbUserE2eeId },
+          ]
+        };
+      } else if (fbUserId) {
+        whereClause = {
+          user_id,
+          fb_user_id : fbUserId
+        };
+      } else if (fbUserE2eeId) {
+        whereClause = {
+          user_id,
+          fb_user_e2ee_id : fbUserE2eeId
+        };
+      }
+
+      await taggedUser.update(
+        { user_note: null, profession: null },
+        {where: whereClause}
+      )
+    }
+
+    await note.destroy({ where: { id } });
 
     return Response.resWith202(res, "Operation Completed", data);
   } catch (error) {
