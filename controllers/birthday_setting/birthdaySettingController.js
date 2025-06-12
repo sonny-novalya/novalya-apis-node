@@ -7,8 +7,13 @@ const Response = require("../../helpers/response");
 self.getBirthdaySetting = async (req, res) => {
   try {
     const user_id = req.authUser;
+    const { id } = req.query;
+
+    if (!id) {
+      return Response.resWith422(res, "Missing birthday setting ID");
+    }
     const existingBirthdaySetting = await BirthdaySetting.findOne({
-      where: { user_id },
+      where: { user_id, id },
       include: [
         {
           model: MessageData,
@@ -31,6 +36,11 @@ self.getBirthdaySetting = async (req, res) => {
         },
       ],
     });
+    
+    if (!existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting not found");
+    }
+
     return Response.resWith202(res, "birthday setting fetched successfully", existingBirthdaySetting);
   } catch (error) {
     console.error("Error occurred:", error); 
@@ -181,17 +191,20 @@ self.createBirthdaySettingListing = async (req, res) => {
     const user_id = req.authUser;
     const { name, type, time_interval, message_id, birthday_type, action, prospect } = req.body;
 
-    if (name !== null && name !== undefined && name !== "") {
-      const existingBirthdaySetting = await BirthdaySetting.findOne({where: { user_id, name }});
-      if (existingBirthdaySetting) {
-        return Response.resWith422(res, "Birthday setting already exists with same name");
-      }
+    // ✅ Check if name is required
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return Response.resWith422(res, "Name is required");
     }
-    
+
+    const existingBirthdaySetting = await BirthdaySetting.findOne({ where: { user_id, name } });
+    if (existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting already exists with same name");
+    }
+
     // If it doesn't exist, create a new record
-    await BirthdaySetting.create({
+    const newSetting = await BirthdaySetting.create({
       user_id,
-      name: name || null,
+      name: name.trim(),
       type,
       time_interval: time_interval || 1,
       birthday_id: message_id,
@@ -200,7 +213,12 @@ self.createBirthdaySettingListing = async (req, res) => {
       prospect
     });
 
-    return Response.resWith202(res, "birthday setting created successfully");
+    // Format response: convert to JSON and rename birthday_id → message_id
+    const result = newSetting.toJSON();
+    result.message_id = result.birthday_id;
+    delete result.birthday_id;
+
+    return Response.resWith202(res, "birthday setting created successfully", result);
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");
@@ -211,23 +229,35 @@ self.updateBirthdaySettingListing = async (req, res) => {
   try {
     const user_id = req.authUser;
     const { id, name, type, time_interval, message_id, birthday_type, action, prospect } = req.body;
-    const existingBirthdaySetting = await BirthdaySetting.findOne({where: { id, user_id }});
-    
-    if (!existingBirthdaySetting) {
-      return Response.resWith422(res, "Birthday setting does not exists");
-    } else {
-      await existingBirthdaySetting.update({
-        name: name || null,
-        type,
-        time_interval: time_interval || 1,
-        birthday_id: message_id,
-        birthday_type,
-        action,
-        prospect
-      });
+
+    // ✅ Validate name is required
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return Response.resWith422(res, "Name is required");
     }
 
-    return Response.resWith202(res, "birthday setting updated successfully");
+    const existingBirthdaySetting = await BirthdaySetting.findOne({ where: { id, user_id } });
+
+    if (!existingBirthdaySetting) {
+      return Response.resWith422(res, "Birthday setting does not exist");
+    }
+
+    await existingBirthdaySetting.update({
+      name: name.trim(),
+      type,
+      time_interval: time_interval || 1,
+      birthday_id: message_id,
+      birthday_type,
+      action,
+      prospect
+    });
+
+     // Fetch updated record again to ensure all changes are reflected
+    const updatedSetting = await BirthdaySetting.findOne({ where: { id } });
+    const result = updatedSetting.toJSON();
+    result.message_id = result.birthday_id;
+    delete result.birthday_id;
+
+    return Response.resWith202(res, "birthday setting updated successfully", result);
   } catch (error) {
     console.error("Error occurred:", error); 
     return Response.resWith422(res, "something went wrong");

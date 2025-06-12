@@ -1,4 +1,5 @@
 const db = require("../../Models/crm");
+const wholeDB = require("../../Models");
 const {
   checkAuthorization,
   getAuthUser,
@@ -14,7 +15,9 @@ const campaign = db.campaign;
 const stage = db.stage;
 const taggedusers = db.taggedusers;
 const Statistic = db.Statistic;
-
+const tagsTable = db.tag
+const instaGramTag = db.instatag
+const userLimit =wholeDB.UserPlanLimit
 
 tag.hasMany(stage, { as: 'stages', foreignKey: 'tag_id' });
 stage.belongsTo(tag, { foreignKey: 'tag_id' });
@@ -31,6 +34,19 @@ const placetag = async (req, res) => {
     const params = req.body;
     const authUser = await getAuthUser(req, res);
     params.user_id = authUser;
+
+       const userLimitData = await userLimit.findOne({
+          where: { userid:authUser  },
+        });
+    
+        const fbCount = await tagsTable.count({ where: { user_id: authUser } });
+            const igCount = await instaGramTag.count({ where: { user_id: authUser } });
+            const total = fbCount + igCount;
+          console.log(userLimitData?.tags_pipelines,fbCount,igCount)
+    
+            if ( total >= userLimitData?.tags_pipelines) {
+               return Response.resWith201(res, 'success', "Limit Exceeded");
+            }
 
     const maxOrderNumTag = await tag.findOne({
       where: { user_id: authUser },
@@ -238,43 +254,59 @@ const getGroupsInfo = async (req, res) => {
     }
     );
 
-    const stageUserCounts = await sequelize.query(
-    `
-      SELECT stage_id, COUNT(*) as taggedUsersStageCount
-      FROM taggedusers
-      WHERE user_id = :user_id
-      GROUP BY stage_id
+    const validStageUserCounts = await sequelize.query(
+      `
+      SELECT t.tag_id, COUNT(*) as userStageCounts
+      FROM taggedusers t
+      INNER JOIN stages s ON t.stage_id = s.id
+      WHERE t.user_id = :user_id
+      GROUP BY t.tag_id
     `,
-    {
-      replacements: { user_id },
-      type: sequelize.QueryTypes.SELECT,
-    }
+      {
+        replacements: { user_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    const tagUserRows = await sequelize.query(
+      `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
+      {
+        replacements: { user_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
     );
 
     // Handle empty tagUserCounts safely
     const tagCountMap = {};
-    (tagUserCounts || []).forEach(row => {
-      if (row.tag_id) {
-        tagCountMap[row.tag_id] = parseInt(row.taggedUsersCount) || 0;
-      }
+    (tagUserRows || []).forEach(row => {
+      const tagIds = row.tag_id ? row.tag_id.split(',') : [];
+      tagIds.forEach(id => {
+        const trimmedId = id.trim();
+        if (trimmedId) {
+          tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
+        }
+      });
     });
 
     // Handle empty stageUserCounts safely
-    const stageCountMap = {};
-    (stageUserCounts || []).forEach(row => {
-      if (row.stage_id) {
-        stageCountMap[row.stage_id] = parseInt(row.taggedUsersStageCount) || 0;
+     const stageCountMap = {};
+    (validStageUserCounts || []).forEach(row => {
+      if (row.tag_id) {
+        stageCountMap[row.tag_id] = parseInt(row.userStageCounts) || 0;
       }
     });
 
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
-      return {
+    const tagId = tagItem.id.toString(); // tagCountMap keys are strings
+    const taggedCount = tagCountMap[tagId] || 0;
+    const validStageCount = stageCountMap[tagId] || 0;
+    return {
         ...tagItem.toJSON(),
-        taggedUsersCount: tagCountMap[tagItem.id] || 0
+        taggedUsersCount: taggedCount,         // total users with that tag
+        validStageUsersCount: validStageCount  // only those with valid stage
       };
     });
-
 
     return Response.resWith202(res, 'success', enrichedTags);
 

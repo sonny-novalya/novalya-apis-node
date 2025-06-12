@@ -852,7 +852,7 @@ exports.userdata = async (req, res) => {
     const authUser = await checkAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
 
     if (authUser) {
-      const userSelectQuery = `SELECT parent_id, isAlreadyCharge, sub_type,plan_period,plan_pkg,user_type, isChatActive,connection_type, sponsorid, username, randomcode, firstname, lastname, email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin, lastip, referral_side, kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank, novarank, connect_status, birthday_status, crm_status, unfollow_status, outside_bank_account_country, outside_bank_account_title, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,website, outside_bank_account_address, outside_bank_account_city, city, outside_bank_account_zip_code, zip_code, outside_bank_account_street, bank_account_address, bank_account_city, bank_account_zip_code, outside_payout_country, payout_country, subscription_status, language, language_status, currency, trial, trial_status, trial_end FROM usersdata WHERE id = ?`;
+      const userSelectQuery = `SELECT parent_id, isAlreadyCharge, sub_type,plan_period,plan_pkg,user_type, isChatActive, isTicketCenterActive, connection_type, sponsorid, username, randomcode, firstname, lastname, email, picture, admin_logo, fav_icon, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin, lastip, referral_side, kyc_status, user_type, customerid, masked_number, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, payout_details_update_request, rank, novarank, connect_status, birthday_status, crm_status, unfollow_status, outside_bank_account_country, outside_bank_account_title, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency,website, outside_bank_account_address, outside_bank_account_city, city, outside_bank_account_zip_code, zip_code, outside_bank_account_street, bank_account_address, bank_account_city, bank_account_zip_code, outside_payout_country, payout_country, subscription_status, language, language_status, currency, trial, trial_status, trial_end FROM usersdata WHERE id = ?`;
 
       const userSelectParams = [authUser];
       const userSelectResult = await Qry(userSelectQuery, userSelectParams);
@@ -5409,11 +5409,14 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             ]
           );
 
-          let billingPeriodAlt = billingPeriod
-            ? billingPeriod
-            : userData?.plan_period;
+          let isChatBotActive = 1;
+          if (planID.includes("Starter")) {
+            isChatBotActive = 0;
+          }
+
+          let billingPeriodAlt = billingPeriod ? billingPeriod : userData?.plan_period;
           await Qry(
-            "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=?, updatedat=? where id = ?",
+            "update usersdata set sub_type = ?,plan_period = ?,plan_pkg = ?, subscription_status = ?, for_renewal = ?, trial_status = ?, activated_at=?, next_billing_at=?, updatedat=?, isChatActive=? where id = ?",
             [
               billingPeriodUnit,
               billingPeriodAlt,
@@ -5424,6 +5427,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               activated_at,
               nextBillingAt,
               formatDateTimeFromTimestamp(billingStartAt),
+              isChatBotActive,
               userData?.id,
             ]
           );
@@ -5962,9 +5966,16 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
           console.log(trial, trialStatus, entityId);
 
+          let isChatBotActive = 1;
+          if (planID.includes("Starter")) {
+            isChatBotActive = 0;
+          }
+
+          console.log("Values going into insert:", [ mobile, userSponsorId, l2SponsorId, referral_side, email, encryptedPassword, email, country, company, address1, zip_code, city, language, firstname, lastname, randomCode, emailToken, maskedNumber, "Approved", customerId, subscriptionType, subscriptionPeriod, limitsName, planPrice, "verified", birthday, connections, parent_id, reseller_website, trial, trial_status, trial_start, trial_end, activated_at, currencyCode, subscriptionStatus, isChatBotActive, formatDateTimeFromTimestamp(created_at), formatDateTimeFromTimestamp(created_at)]);
+
           const insertResult = await Qry(
-            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, createdat, updatedat)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO usersdata (mobile,sponsorid,l2_sponsorid,leg_position,username,password,email,country, company, address1, zip_code, city, language, firstname, lastname, randomcode, emailtoken,masked_number,status,customerid, sub_type, plan_period,plan_pkg,plan_price, emailstatus, birth_date, connection_type, parent_id, website, trial, trial_status, trial_start, trial_end, activated_at, currency, subscription_status, isChatActive, createdat, updatedat)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               mobile,
               userSponsorId,
@@ -6002,8 +6013,9 @@ exports.ipnChagrbeWebhook = async (req, res) => {
               activated_at,
               currencyCode,
               subscriptionStatus,
+              isChatBotActive,
               formatDateTimeFromTimestamp(created_at),
-              formatDateTimeFromTimestamp(created_at),
+              formatDateTimeFromTimestamp(created_at)
             ]
           );
           let newUserId = insertResult.insertId;

@@ -231,7 +231,7 @@ self.createProspectFolder = async (req, res)=>{
   try {
     const user_id = req.authUser;
 
-    const { folder_name, social_type, selectedGroups, prospect_folder} = req.body;
+    const { folder_name, social_type, selectedGroups, prospect_folder,isFav=0} = req.body;
 
     // Check if a group with the same URL already exists
     const existingFolder = await ProspectionGrpFolders.findOne({ where: { user_id, folder_name } });
@@ -263,7 +263,8 @@ self.createProspectFolder = async (req, res)=>{
       folder_name,
       social_type,
       prospect_folder,
-      order_num: newOrderNum
+      order_num: newOrderNum,
+      isFav
     });
 
     // group map
@@ -313,80 +314,89 @@ self.createProspectFolder = async (req, res)=>{
   }
 }
 
-self.updateProspectFolder = async (req, res)=> {
+self.updateProspectFolder = async (req, res) => {
   try {
     const user_id = req.authUser;
+    const {
+      folder_id,
+      folder_name,
+      social_type,
+      selectedGroups = [],
+      isFav = 0,
+      type
+    } = req.body;
 
-    const { folder_id, folder_name, social_type, selectedGroups} = req.body;
+    let grpMsg = "No group selected to assign folder";
 
-    // Check if a group with the same URL already exists
-    const existingFolder = await ProspectionGrpFolders.findOne({ where: { user_id, id: folder_id } });
-    let grpMsg = "No Group Selected to Assign Folder"
+    const existingFolder = await ProspectionGrpFolders.findOne({
+      where: { user_id, id: folder_id }
+    });
 
     if (!existingFolder) {
-      return res.status(400).json({
-        status: "error",
-        message: "Folder not exists.",
+      return Response.resWith400(res, "Folder does not exist.");
+    }
+
+    // Only toggling favorite
+    if (type === "fav") {
+      const updated = await existingFolder.update({ isFav });
+      return Response.resWith202(res, "Operation completed", {
+        newFolder: updated,
+        message: grpMsg
       });
     }
 
-    const newFolder = await existingFolder.update({
+    // Update full folder details
+    const updatedFolder = await existingFolder.update({
       user_id,
       folder_name,
-      social_type
+      social_type,
+      isFav
     });
 
-    // group map
-    if(selectedGroups.length > 0){
+    // Group assignment
+    if (selectedGroups.length > 0) {
       await Promise.all(
         selectedGroups.map(async (grpData) => {
-          const {id, group_name, url} = grpData
-          let grpDataToInsert;
-          // let folderIds = [];
-          
-          const checkGrp = await Group.findOne({ where: { user_id, url } });
-          
-          if(!checkGrp){
-            throw new Error(`Selected group with id "${id}" not found.`);
+          const { id, url } = grpData;
+          const group = await Group.findOne({ where: { user_id, url } });
+
+          if (!group) {
+            throw new Error(`Selected group with ID "${id}" not found.`);
           }
-          
-          let previousData = checkGrp.grp_folder_ids
-          
-          
-          if(previousData != null && previousData != ""){  // merge folder ids
-            let parsedId = JSON.parse(previousData)
-            if(parsedId.includes(newFolder.id) == false){
-              parsedId.push(newFolder.id)
+
+          let folderIds = [];
+          if (group.grp_folder_ids) {
+            try {
+              folderIds = JSON.parse(group.grp_folder_ids);
+              if (!Array.isArray(folderIds)) folderIds = [];
+            } catch {
+              folderIds = [];
             }
-            grpDataToInsert = JSON.stringify(parsedId)
-          }else{
-            grpDataToInsert = JSON.stringify([newFolder.id])
           }
-          
-          await checkGrp.update({
+
+          if (!folderIds.includes(updatedFolder.id)) {
+            folderIds.push(updatedFolder.id);
+          }
+
+          await group.update({
             grp_social_type: social_type,
-            grp_folder_ids: grpDataToInsert, // stringyfy [1,2]
+            grp_folder_ids: JSON.stringify(folderIds)
           });
-          
         })
-      )
-      grpMsg = "Group updated Successfully"
+      );
+      grpMsg = "Group(s) updated successfully.";
     }
-    
-    // res.status(200).json({ status: "success", newFolder: newFolder, message: grpMsg});
-    return Response.resWith202(
-      res,
-      "Opration completed",
-      {
-        newFolder: newFolder,
-        message: grpMsg
-      }
-    );
+
+    return Response.resWith202(res, "Operation completed", {
+      newFolder: updatedFolder,
+      message: grpMsg
+    });
+
   } catch (error) {
     return Response.resWith422(res, error.message || "An error occurred.");
-
   }
-}
+};
+
 
 self.deleteProspectFolder = async (req, res)=>{
   try {

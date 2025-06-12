@@ -26,8 +26,16 @@ self.getEnckeysOld = async (req, res) => {
 
 self.getEnckeys = async (req, res) => {
   try {
+
+    const authUser = await checkAuthorization(req, res);
+    let selectUserQuery = `SELECT * FROM usersdata WHERE id=?`;
+    let selectUserResult = await Qry(selectUserQuery, [authUser]);
+
+    let email = selectUserResult[0]?.email;
+
     const apiKey = process.env.BRAVO_KEY;
     const crispKey = process.env.CRISP_KEY;
+    const crispTicketKey = process.env.CRISP_TICKET_KEY; 
     const secretKey = process.env.ENCRYPT_SECRET_KEY; // Must be 32 bytes hex string
     const iv = crypto.randomBytes(16); // 16 bytes IV
 
@@ -41,9 +49,18 @@ self.getEnckeys = async (req, res) => {
     let encryptedCrispKey = cipher2.update(crispKey, "utf8", "base64");
     encryptedCrispKey += cipher2.final("base64");
 
+    var secret = crispTicketKey;
+    var crisp_hmac = crypto.createHmac("sha256", secret).update(email).digest("hex");
+
+    // Encrypt crisp ticket center Key with a new cipher
+    const cipher3 = crypto.createCipheriv("aes-256-cbc", Buffer.from(secretKey, 'hex'), iv);
+    let encryptedCrispHMACKey = cipher3.update(crisp_hmac, "utf8", "base64");
+    encryptedCrispHMACKey += cipher3.final("base64");
+
     return Response.resWith202(res, "success", {
       // br_key: encryptedApiKey,
       crisp_key: encryptedCrispKey,
+      crisp_tkth_key: encryptedCrispHMACKey,
       iv: iv.toString("base64")
     });
   } catch (error) {
