@@ -2260,6 +2260,31 @@ exports.dashboarddata = async (req, res) => {
       [authUser]
     );
 
+    const pendingPayResult = await Qry(
+      `SELECT 
+        SUM(CASE WHEN type = 'Level 1 Bonus' THEN paid_amount ELSE 0 END) -
+        SUM(CASE WHEN type = 'Level 1 Bonus deducted' THEN paid_amount ELSE 0 END) AS net_bonus
+      FROM transactions
+      WHERE receiverid = ? 
+        AND createdat >= NOW() - INTERVAL 30 DAY
+        AND type IN ('Level 1 Bonus', 'Level 1 Bonus deducted')`,
+      [authUser]
+    );
+
+    const nextPayResult = await Qry(
+      `SELECT
+        SUM(CASE WHEN type = 'Level 1 Bonus' THEN paid_amount ELSE 0 END) -
+        SUM(CASE WHEN type = 'Level 1 Bonus deducted' THEN paid_amount ELSE 0 END) AS net_bonus
+      FROM transactions
+      WHERE receiverid = ? 
+        AND createdat < NOW() - INTERVAL 30 DAY
+        AND type IN ('Level 1 Bonus', 'Level 1 Bonus deducted')`,
+      [authUser]
+    );
+
+    const pendingPay = { net_bonus: pendingPayResult[0]?.net_bonus ?? 0 };
+    const nextPay = { net_bonus: nextPayResult[0]?.net_bonus ?? 0 };
+
     // Check if result is iterable (array) and contains data
     if (!result || !Array.isArray(result) || result.length === 0) {
       return Response.resWith422(res, "User data not found.");
@@ -2370,6 +2395,8 @@ exports.dashboarddata = async (req, res) => {
       lastMonthPayout,
       currentMonthEarning,
       pendingPayment,
+      pendingPay,
+      nextPay,
     };
 
     return Response.resWith202(res, "success", dashboardData);

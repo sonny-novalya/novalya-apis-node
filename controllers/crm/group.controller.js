@@ -253,28 +253,6 @@ const getGroupsInfo = async (req, res) => {
         type: sequelize.QueryTypes.SELECT,
       }
     );
-    // console.log(stageUserRows);
-    
-
-    const tagUserRows = await sequelize.query(
-      `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
-      {
-        replacements: { user_id },
-        type: sequelize.QueryTypes.SELECT,
-      }
-    );
-
-    // Handle empty tagUserCounts safely
-    const tagCountMap = {};
-    (tagUserRows || []).forEach(row => {
-      const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      tagIds.forEach(id => {
-        const trimmedId = id.trim();
-        if (trimmedId) {
-          tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
-        }
-      });
-    });
 
     // Handle empty stageUserCounts safely
     const stageCountMap = {};
@@ -290,12 +268,10 @@ const getGroupsInfo = async (req, res) => {
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
     const tagId = tagItem.id.toString(); // tagCountMap keys are strings
-    const taggedCount = tagCountMap[tagId] || 0;
     const validStageCount = stageCountMap[tagId] || 0;
     return {
         ...tagItem.toJSON(),
-        taggedUsersCount: validStageCount,
-        taggedUsersCount1: taggedCount
+        taggedUsersCount: validStageCount
       };
     });
 
