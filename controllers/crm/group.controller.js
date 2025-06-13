@@ -242,26 +242,13 @@ const getGroupsInfo = async (req, res) => {
       order: [["order_num", "DESC"]],
     });
 
-    const tagUserCounts = await sequelize.query(`
-      SELECT tag_id, COUNT(*) as taggedUsersCount
-      FROM taggedusers
-      WHERE user_id = :user_id
-      GROUP BY tag_id
-    `,
-    {
-      replacements: { user_id },
-      type: sequelize.QueryTypes.SELECT,
-    }
-    );
-
-    const validStageUserCounts = await sequelize.query(
+    const stageUserRows = await sequelize.query(
       `
-      SELECT t.tag_id, COUNT(*) as userStageCounts
+      SELECT t.tag_id
       FROM taggedusers t
-      INNER JOIN stages s ON t.stage_id = s.id
+      INNER JOIN stages s ON t.stage_id = s.id 
       WHERE t.user_id = :user_id
-      GROUP BY t.tag_id
-    `,
+      `,
       {
         replacements: { user_id },
         type: sequelize.QueryTypes.SELECT,
@@ -290,10 +277,14 @@ const getGroupsInfo = async (req, res) => {
 
     // Handle empty stageUserCounts safely
      const stageCountMap = {};
-    (validStageUserCounts || []).forEach(row => {
-      if (row.tag_id) {
-        stageCountMap[row.tag_id] = parseInt(row.userStageCounts) || 0;
-      }
+    (stageUserRows  || []).forEach(row => {
+      const tagIds = row.tag_id ? row.tag_id.split(',') : [];
+      tagIds.forEach(id => {
+        const trimmedId = id.trim();
+        if (trimmedId) {
+          stageCountMap[trimmedId] = (stageCountMap[trimmedId] || 0) + 1;
+        }
+      });
     });
 
     // Step 5: Enrich tags with counts
@@ -303,8 +294,8 @@ const getGroupsInfo = async (req, res) => {
     const validStageCount = stageCountMap[tagId] || 0;
     return {
         ...tagItem.toJSON(),
-        // taggedUsersCount: taggedCount,         // total users with that tag
-        taggedUsersCount: validStageCount  // only those with valid stage
+        taggedUsersCount: validStageCount,
+        taggedUsersCount1: taggedCount
       };
     });
 
