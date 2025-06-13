@@ -237,10 +237,16 @@ const getGroupsInfo = async (req, res) => {
     const user_id = authUser;
     const whereOptions = user_id ? { user_id: user_id } : {};
 
+    console.log('=== DEBUGGING START ===');
+    console.log('User ID:', user_id);
+
     const tags = await tag.findAll({
       where: whereOptions,
       order: [["order_num", "DESC"]],
     });
+
+    console.log('Total tags found:', tags.length);
+    console.log('Tag IDs:', tags.map(t => t.id));
 
     const stageUserRows = await sequelize.query(
       `
@@ -255,6 +261,9 @@ const getGroupsInfo = async (req, res) => {
       }
     );
 
+    console.log('Raw stageUserRows:', stageUserRows);
+    console.log('StageUserRows count:', stageUserRows.length);
+
     const tagUserRows = await sequelize.query(
       `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
       {
@@ -263,41 +272,77 @@ const getGroupsInfo = async (req, res) => {
       }
     );
 
+    console.log('Raw tagUserRows:', tagUserRows);
+    console.log('TagUserRows count:', tagUserRows.length);
+
     // Handle empty tagUserCounts safely
     const tagCountMap = {};
-    (tagUserRows || []).forEach(row => {
+    let totalTagUserEntries = 0;
+    (tagUserRows || []).forEach((row, index) => {
+      console.log(`TagUserRow ${index}:`, row.tag_id);
       const tagIds = row.tag_id ? row.tag_id.split(',') : [];
+      console.log(`  Split into:`, tagIds);
       tagIds.forEach(id => {
         const trimmedId = id.trim();
+        console.log(`    Processing: "${id}" -> "${trimmedId}"`);
         if (trimmedId) {
           tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
+          totalTagUserEntries++;
+          console.log(`    Added to count. Current count for ${trimmedId}: ${tagCountMap[trimmedId]}`);
+        } else {
+          console.log(`    Skipped empty/whitespace value`);
         }
       });
     });
 
+    console.log('Final TagCountMap:', tagCountMap);
+    console.log('Total tag user entries processed:', totalTagUserEntries);
+
     // Handle empty stageUserCounts safely
-     const stageCountMap = {};
-    (stageUserRows  || []).forEach(row => {
+    const stageCountMap = {};
+    let totalStageUserEntries = 0;
+    (stageUserRows || []).forEach((row, index) => {
+      console.log(`StageUserRow ${index}:`, row.tag_id);
       const tagIds = row.tag_id ? row.tag_id.split(',') : [];
+      console.log(`  Split into:`, tagIds);
       tagIds.forEach(id => {
         const trimmedId = id.trim();
+        console.log(`    Processing: "${id}" -> "${trimmedId}"`);
         if (trimmedId) {
           stageCountMap[trimmedId] = (stageCountMap[trimmedId] || 0) + 1;
+          totalStageUserEntries++;
+          console.log(`    Added to count. Current count for ${trimmedId}: ${stageCountMap[trimmedId]}`);
+        } else {
+          console.log(`    Skipped empty/whitespace value`);
         }
       });
     });
+
+    console.log('Final StageCountMap:', stageCountMap);
+    console.log('Total stage user entries processed:', totalStageUserEntries);
 
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
-    const tagId = tagItem.id.toString(); // tagCountMap keys are strings
-    const taggedCount = tagCountMap[tagId] || 0;
-    const validStageCount = stageCountMap[tagId] || 0;
-    return {
+      const tagId = tagItem.id.toString(); // tagCountMap keys are strings
+      const taggedCount = tagCountMap[tagId] || 0;
+      const validStageCount = stageCountMap[tagId] || 0;
+      
+      console.log(`Tag ID ${tagId}:`);
+      console.log(`  taggedUsersCount (from stages): ${validStageCount}`);
+      console.log(`  taggedUsersCount1 (from all): ${taggedCount}`);
+      
+      return {
         ...tagItem.toJSON(),
         taggedUsersCount: validStageCount,
         taggedUsersCount1: taggedCount
       };
     });
+
+    console.log('=== FINAL RESULTS ===');
+    enrichedTags.forEach(tag => {
+      console.log(`Tag ${tag.id}: taggedUsersCount=${tag.taggedUsersCount}, taggedUsersCount1=${tag.taggedUsersCount1}`);
+    });
+    console.log('=== DEBUGGING END ===');
 
     return Response.resWith202(res, 'success', enrichedTags);
 
