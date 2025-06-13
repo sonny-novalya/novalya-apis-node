@@ -242,18 +242,19 @@ const getGroupsInfo = async (req, res) => {
       order: [["order_num", "DESC"]],
     });
 
-    const stageUserRows = await sequelize.query(
-      `
-      SELECT t.tag_id
+    // in this query 'tag_id' is replaced by 'is_primary' as 'tag_id' has multiple values but we need one id
+    const stageUserRows = await sequelize.query(`
+      SELECT t.is_primary
       FROM taggedusers t
       INNER JOIN stages s ON t.stage_id = s.id 
-      WHERE t.user_id = :user_id
-      `,
+      WHERE t.user_id = :user_id`,
       {
         replacements: { user_id },
         type: sequelize.QueryTypes.SELECT,
       }
     );
+    // console.log(stageUserRows);
+    
 
     const tagUserRows = await sequelize.query(
       `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
@@ -276,16 +277,15 @@ const getGroupsInfo = async (req, res) => {
     });
 
     // Handle empty stageUserCounts safely
-     const stageCountMap = {};
-    (stageUserRows  || []).forEach(row => {
-      const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      tagIds.forEach(id => {
-        const trimmedId = id.trim();
-        if (trimmedId) {
-          stageCountMap[trimmedId] = (stageCountMap[trimmedId] || 0) + 1;
+    const stageCountMap = {};
+    (stageUserRows || []).forEach(row => {
+      if (row.is_primary != null) {                 // skip NULLs
+        const id = String(row.is_primary).trim();   // convert number → string
+        if (id) {
+          stageCountMap[id] = (stageCountMap[id] || 0) + 1;
         }
-      });
-    });
+      }
+    })
 
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
