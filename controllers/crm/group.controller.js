@@ -237,9 +237,6 @@ const getGroupsInfo = async (req, res) => {
     const user_id = authUser;
     const whereOptions = user_id ? { user_id: user_id } : {};
 
-    const TARGET_TAG_ID = '22072';
-    console.log('=== DEBUGGING FOR TAG_ID 22072 ===');
-
     const tags = await tag.findAll({
       where: whereOptions,
       order: [["order_num", "DESC"]],
@@ -268,75 +265,34 @@ const getGroupsInfo = async (req, res) => {
 
     // Handle empty tagUserCounts safely
     const tagCountMap = {};
-    let tag22072Count = 0;
-    (tagUserRows || []).forEach((row, index) => {
+    (tagUserRows || []).forEach(row => {
       const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      
-      // Check if this row contains our target tag
-      if (row.tag_id && row.tag_id.includes(TARGET_TAG_ID)) {
-        console.log(`TagUserRow ${index} contains 22072:`, row.tag_id);
-        console.log(`  Split into:`, tagIds);
-      }
-      
       tagIds.forEach(id => {
         const trimmedId = id.trim();
         if (trimmedId) {
           tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
-          
-          // Log only for our target tag
-          if (trimmedId === TARGET_TAG_ID) {
-            tag22072Count++;
-            console.log(`  Found 22072! Current count: ${tag22072Count}`);
-          }
         }
       });
     });
 
-    console.log('Final count for 22072 in tagCountMap:', tagCountMap[TARGET_TAG_ID] || 0);
-
     // Handle empty stageUserCounts safely
-    const stageCountMap = {};
-    let stage22072Count = 0;
-    (stageUserRows || []).forEach((row, index) => {
+     const stageCountMap = {};
+    (stageUserRows  || []).forEach(row => {
       const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      
-      // Check if this row contains our target tag
-      if (row.tag_id && row.tag_id.includes(TARGET_TAG_ID)) {
-        console.log(`StageUserRow ${index} contains 22072:`, row.tag_id);
-        console.log(`  Split into:`, tagIds);
-      }
-      
       tagIds.forEach(id => {
         const trimmedId = id.trim();
         if (trimmedId) {
           stageCountMap[trimmedId] = (stageCountMap[trimmedId] || 0) + 1;
-          
-          // Log only for our target tag
-          if (trimmedId === TARGET_TAG_ID) {
-            stage22072Count++;
-            console.log(`  Found 22072 in stages! Current count: ${stage22072Count}`);
-          }
         }
       });
     });
 
-    console.log('Final count for 22072 in stageCountMap:', stageCountMap[TARGET_TAG_ID] || 0);
-
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
-      const tagId = tagItem.id.toString();
-      const taggedCount = tagCountMap[tagId] || 0;
-      const validStageCount = stageCountMap[tagId] || 0;
-      
-      // Log only for our target tag
-      if (tagId === TARGET_TAG_ID) {
-        console.log(`=== FINAL RESULT FOR TAG 22072 ===`);
-        console.log(`taggedUsersCount (from stages): ${validStageCount}`);
-        console.log(`taggedUsersCount1 (from all): ${taggedCount}`);
-        console.log(`===================================`);
-      }
-      
-      return {
+    const tagId = tagItem.id.toString(); // tagCountMap keys are strings
+    const taggedCount = tagCountMap[tagId] || 0;
+    const validStageCount = stageCountMap[tagId] || 0;
+    return {
         ...tagItem.toJSON(),
         taggedUsersCount: validStageCount,
         taggedUsersCount1: taggedCount
@@ -414,8 +370,17 @@ const getOne = async (req, res) => {
 
     const taggedUsersDetails = await db.taggedusers.findAll({
       where: {
-        tag_id: { [Op.like]: `%${id}%` },
-        user_id: authUser,
+        [Op.and]: [
+          { user_id: authUser },
+          {
+            [Op.or]: [
+              { tag_id: id },                           // Exact match
+              { tag_id: { [Op.like]: `${id},%` } },     // At start: "22072,..."
+              { tag_id: { [Op.like]: `%,${id},%` } },   // In middle: "...,22072,..."
+              { tag_id: { [Op.like]: `%,${id}` } }      // At end: "...,22072"
+            ]
+          }
+        ]
       },
     });
 
