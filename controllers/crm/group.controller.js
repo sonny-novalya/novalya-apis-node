@@ -384,9 +384,18 @@ const getOne = async (req, res) => {
       },
     });
 
+    // Transform the response to replace tag_id with the queried ID
+    const transformedTaggedUsers = taggedUsersDetails.map(user => {
+      const userJson = user.toJSON();
+      return {
+        ...userJson,
+        tag_id: id  // Replace the comma-separated tag_id with the single ID we queried for
+      };
+    });
+
     var final_response = {
         tag_data: tagData.toJSON(),
-        taggedUsers: taggedUsersDetails,
+        taggedUsers: transformedTaggedUsers,
         stage: stageData,
         duplicate_stage: duplicateStages
     };
