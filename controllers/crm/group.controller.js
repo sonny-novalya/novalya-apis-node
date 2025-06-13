@@ -303,8 +303,8 @@ const getGroupsInfo = async (req, res) => {
     const validStageCount = stageCountMap[tagId] || 0;
     return {
         ...tagItem.toJSON(),
-        taggedUsersCount: taggedCount,         // total users with that tag
-        validStageUsersCount: validStageCount  // only those with valid stage
+        // taggedUsersCount: taggedCount,         // total users with that tag
+        taggedUsersCount: validStageCount  // only those with valid stage
       };
     });
 
