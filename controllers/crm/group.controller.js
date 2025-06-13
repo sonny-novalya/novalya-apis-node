@@ -237,16 +237,13 @@ const getGroupsInfo = async (req, res) => {
     const user_id = authUser;
     const whereOptions = user_id ? { user_id: user_id } : {};
 
-    console.log('=== DEBUGGING START ===');
-    console.log('User ID:', user_id);
+    const TARGET_TAG_ID = '22072';
+    console.log('=== DEBUGGING FOR TAG_ID 22072 ===');
 
     const tags = await tag.findAll({
       where: whereOptions,
       order: [["order_num", "DESC"]],
     });
-
-    console.log('Total tags found:', tags.length);
-    console.log('Tag IDs:', tags.map(t => t.id));
 
     const stageUserRows = await sequelize.query(
       `
@@ -261,9 +258,6 @@ const getGroupsInfo = async (req, res) => {
       }
     );
 
-    console.log('Raw stageUserRows:', stageUserRows);
-    console.log('StageUserRows count:', stageUserRows.length);
-
     const tagUserRows = await sequelize.query(
       `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
       {
@@ -272,64 +266,75 @@ const getGroupsInfo = async (req, res) => {
       }
     );
 
-    console.log('Raw tagUserRows:', tagUserRows);
-    console.log('TagUserRows count:', tagUserRows.length);
-
     // Handle empty tagUserCounts safely
     const tagCountMap = {};
-    let totalTagUserEntries = 0;
+    let tag22072Count = 0;
     (tagUserRows || []).forEach((row, index) => {
-      console.log(`TagUserRow ${index}:`, row.tag_id);
       const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      console.log(`  Split into:`, tagIds);
+      
+      // Check if this row contains our target tag
+      if (row.tag_id && row.tag_id.includes(TARGET_TAG_ID)) {
+        console.log(`TagUserRow ${index} contains 22072:`, row.tag_id);
+        console.log(`  Split into:`, tagIds);
+      }
+      
       tagIds.forEach(id => {
         const trimmedId = id.trim();
-        console.log(`    Processing: "${id}" -> "${trimmedId}"`);
         if (trimmedId) {
           tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
-          totalTagUserEntries++;
-          console.log(`    Added to count. Current count for ${trimmedId}: ${tagCountMap[trimmedId]}`);
-        } else {
-          console.log(`    Skipped empty/whitespace value`);
+          
+          // Log only for our target tag
+          if (trimmedId === TARGET_TAG_ID) {
+            tag22072Count++;
+            console.log(`  Found 22072! Current count: ${tag22072Count}`);
+          }
         }
       });
     });
 
-    console.log('Final TagCountMap:', tagCountMap);
-    console.log('Total tag user entries processed:', totalTagUserEntries);
+    console.log('Final count for 22072 in tagCountMap:', tagCountMap[TARGET_TAG_ID] || 0);
 
     // Handle empty stageUserCounts safely
     const stageCountMap = {};
-    let totalStageUserEntries = 0;
+    let stage22072Count = 0;
     (stageUserRows || []).forEach((row, index) => {
-      console.log(`StageUserRow ${index}:`, row.tag_id);
       const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      console.log(`  Split into:`, tagIds);
+      
+      // Check if this row contains our target tag
+      if (row.tag_id && row.tag_id.includes(TARGET_TAG_ID)) {
+        console.log(`StageUserRow ${index} contains 22072:`, row.tag_id);
+        console.log(`  Split into:`, tagIds);
+      }
+      
       tagIds.forEach(id => {
         const trimmedId = id.trim();
-        console.log(`    Processing: "${id}" -> "${trimmedId}"`);
         if (trimmedId) {
           stageCountMap[trimmedId] = (stageCountMap[trimmedId] || 0) + 1;
-          totalStageUserEntries++;
-          console.log(`    Added to count. Current count for ${trimmedId}: ${stageCountMap[trimmedId]}`);
-        } else {
-          console.log(`    Skipped empty/whitespace value`);
+          
+          // Log only for our target tag
+          if (trimmedId === TARGET_TAG_ID) {
+            stage22072Count++;
+            console.log(`  Found 22072 in stages! Current count: ${stage22072Count}`);
+          }
         }
       });
     });
 
-    console.log('Final StageCountMap:', stageCountMap);
-    console.log('Total stage user entries processed:', totalStageUserEntries);
+    console.log('Final count for 22072 in stageCountMap:', stageCountMap[TARGET_TAG_ID] || 0);
 
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
-      const tagId = tagItem.id.toString(); // tagCountMap keys are strings
+      const tagId = tagItem.id.toString();
       const taggedCount = tagCountMap[tagId] || 0;
       const validStageCount = stageCountMap[tagId] || 0;
       
-      console.log(`Tag ID ${tagId}:`);
-      console.log(`  taggedUsersCount (from stages): ${validStageCount}`);
-      console.log(`  taggedUsersCount1 (from all): ${taggedCount}`);
+      // Log only for our target tag
+      if (tagId === TARGET_TAG_ID) {
+        console.log(`=== FINAL RESULT FOR TAG 22072 ===`);
+        console.log(`taggedUsersCount (from stages): ${validStageCount}`);
+        console.log(`taggedUsersCount1 (from all): ${taggedCount}`);
+        console.log(`===================================`);
+      }
       
       return {
         ...tagItem.toJSON(),
@@ -337,12 +342,6 @@ const getGroupsInfo = async (req, res) => {
         taggedUsersCount1: taggedCount
       };
     });
-
-    console.log('=== FINAL RESULTS ===');
-    enrichedTags.forEach(tag => {
-      console.log(`Tag ${tag.id}: taggedUsersCount=${tag.taggedUsersCount}, taggedUsersCount1=${tag.taggedUsersCount1}`);
-    });
-    console.log('=== DEBUGGING END ===');
 
     return Response.resWith202(res, 'success', enrichedTags);
 
