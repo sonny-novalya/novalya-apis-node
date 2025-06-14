@@ -706,6 +706,9 @@ const deleteNote = async (req, res) => {
         };
       }
 
+      console.log('whereClause--709', whereClause);
+      
+
       await taggedUser.update(
         { user_note: null, profession: null },
         {where: whereClause}
