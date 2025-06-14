@@ -334,7 +334,8 @@ const createInstaNote = async (req, res) => {
           numeric_insta_id: numeric_insta_id,
           thread_id,
           user_note: req.body.short_description || null,
-          profession: req.body.profession || null
+          profession: req.body.profession || null,
+          type: 'instagram'
         };
 
         if (existingRecord) {
