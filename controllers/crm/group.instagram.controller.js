@@ -222,18 +222,6 @@ const getGroupsInfo = async (req, res) => {
       where: whereOptions,
       order: [["order_num", "DESC"]]
     });
-
-    const tagUserCounts = await sequelize.query(`
-      SELECT tag_id, COUNT(*) as userTagsCount
-      FROM instataggedusers
-      WHERE user_id = :user_id
-      GROUP BY tag_id
-    `,
-    {
-      replacements: { user_id },
-      type: sequelize.QueryTypes.SELECT,
-    }
-    );
     
     // Get count of users per stage_id where stage_id exists in instastages
     const validStageUserCounts = await sequelize.query(
@@ -250,14 +238,6 @@ const getGroupsInfo = async (req, res) => {
       }
     );
 
-    // Handle empty tagUserCounts safely
-    const tagCountMap = {};
-    (tagUserCounts || []).forEach(row => {
-      if (row.tag_id) {
-        tagCountMap[row.tag_id] = parseInt(row.userTagsCount) || 0;
-      }
-    });
-
     // Handle empty stageUserCounts safely
     const stageCountMap = {};
     (validStageUserCounts || []).forEach(row => {
@@ -269,7 +249,6 @@ const getGroupsInfo = async (req, res) => {
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
       const tagId = tagItem.id;
-      const taggedCount = tagCountMap[tagId] || 0;
       const validStageCount = stageCountMap[tagId] || 0;
       return {
         ...tagItem.toJSON(),

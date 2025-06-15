@@ -242,69 +242,36 @@ const getGroupsInfo = async (req, res) => {
       order: [["order_num", "DESC"]],
     });
 
-    const tagUserCounts = await sequelize.query(`
-      SELECT tag_id, COUNT(*) as taggedUsersCount
-      FROM taggedusers
-      WHERE user_id = :user_id
-      GROUP BY tag_id
-    `,
-    {
-      replacements: { user_id },
-      type: sequelize.QueryTypes.SELECT,
-    }
-    );
-
-    const validStageUserCounts = await sequelize.query(
-      `
-      SELECT t.tag_id, COUNT(*) as userStageCounts
+    // in this query 'tag_id' is replaced by 'is_primary' as 'tag_id' has multiple values but we need one id
+    const stageUserRows = await sequelize.query(`
+      SELECT t.is_primary
       FROM taggedusers t
-      INNER JOIN stages s ON t.stage_id = s.id
-      WHERE t.user_id = :user_id
-      GROUP BY t.tag_id
-    `,
+      INNER JOIN stages s ON t.stage_id = s.id 
+      WHERE t.user_id = :user_id`,
       {
         replacements: { user_id },
         type: sequelize.QueryTypes.SELECT,
       }
     );
-
-    const tagUserRows = await sequelize.query(
-      `SELECT tag_id FROM taggedusers WHERE user_id = :user_id`,
-      {
-        replacements: { user_id },
-        type: sequelize.QueryTypes.SELECT,
-      }
-    );
-
-    // Handle empty tagUserCounts safely
-    const tagCountMap = {};
-    (tagUserRows || []).forEach(row => {
-      const tagIds = row.tag_id ? row.tag_id.split(',') : [];
-      tagIds.forEach(id => {
-        const trimmedId = id.trim();
-        if (trimmedId) {
-          tagCountMap[trimmedId] = (tagCountMap[trimmedId] || 0) + 1;
-        }
-      });
-    });
 
     // Handle empty stageUserCounts safely
-     const stageCountMap = {};
-    (validStageUserCounts || []).forEach(row => {
-      if (row.tag_id) {
-        stageCountMap[row.tag_id] = parseInt(row.userStageCounts) || 0;
+    const stageCountMap = {};
+    (stageUserRows || []).forEach(row => {
+      if (row.is_primary != null) {                 // skip NULLs
+        const id = String(row.is_primary).trim();   // convert number → string
+        if (id) {
+          stageCountMap[id] = (stageCountMap[id] || 0) + 1;
+        }
       }
-    });
+    })
 
     // Step 5: Enrich tags with counts
     const enrichedTags = tags.map(tagItem => {
     const tagId = tagItem.id.toString(); // tagCountMap keys are strings
-    const taggedCount = tagCountMap[tagId] || 0;
     const validStageCount = stageCountMap[tagId] || 0;
     return {
         ...tagItem.toJSON(),
-        taggedUsersCount: taggedCount,         // total users with that tag
-        validStageUsersCount: validStageCount  // only those with valid stage
+        taggedUsersCount: validStageCount
       };
     });
 
@@ -379,14 +346,32 @@ const getOne = async (req, res) => {
 
     const taggedUsersDetails = await db.taggedusers.findAll({
       where: {
-        tag_id: { [Op.like]: `%${id}%` },
-        user_id: authUser,
+        [Op.and]: [
+          { user_id: authUser },
+          {
+            [Op.or]: [
+              { tag_id: id },                           // Exact match
+              { tag_id: { [Op.like]: `${id},%` } },     // At start: "22072,..."
+              { tag_id: { [Op.like]: `%,${id},%` } },   // In middle: "...,22072,..."
+              { tag_id: { [Op.like]: `%,${id}` } }      // At end: "...,22072"
+            ]
+          }
+        ]
       },
+    });
+
+    // Transform the response to replace tag_id with the queried ID
+    const transformedTaggedUsers = taggedUsersDetails.map(user => {
+      const userJson = user.toJSON();
+      return {
+        ...userJson,
+        tag_id: id  // Replace the comma-separated tag_id with the single ID we queried for
+      };
     });
 
     var final_response = {
         tag_data: tagData.toJSON(),
-        taggedUsers: taggedUsersDetails,
+        taggedUsers: transformedTaggedUsers,
         stage: stageData,
         duplicate_stage: duplicateStages
     };

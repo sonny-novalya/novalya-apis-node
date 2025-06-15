@@ -294,6 +294,8 @@ const createInstaNote = async (req, res) => {
       type = "instagram"
     } = req.body;
 
+    postData.type = "instagram";
+    
     let folderName = "notes";
     let dateImg = Date.now()
     let imageUrl;
@@ -675,6 +677,8 @@ const deleteNote = async (req, res) => {
     const { id } = req.query;
     const data = await note.findOne({ where: { id } });
 
+    console.log('data--678', data);
+
     if(data.type == "instagram"){
       await instaTaggedUser.update(
         { user_note: null, profession: null },
@@ -685,6 +689,9 @@ const deleteNote = async (req, res) => {
       let fbUserE2eeId = data.fb_user_e2ee_id
 
       let whereClause;
+
+      console.log('fbUserId--709', fbUserId);
+      console.log('fbUserE2eeId--709', fbUserE2eeId);
 
       if (fbUserId && fbUserE2eeId) {
         whereClause = {
@@ -706,10 +713,14 @@ const deleteNote = async (req, res) => {
         };
       }
 
-      await taggedUser.update(
-        { user_note: null, profession: null },
-        {where: whereClause}
-      )
+      console.log('whereClause--709', whereClause);
+      if(whereClause != undefined){
+
+        await taggedUser.update(
+          { user_note: null, profession: null },
+          {where: whereClause}
+        )
+      }
     }
 
     await note.destroy({ where: { id } });
