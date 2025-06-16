@@ -347,6 +347,7 @@ exports.manualSignIn = async (req, res) => {
     const userSelectParams = [authUser];
     const userSelectResult = await Qry(userSelectQuery, userSelectParams);
     const userdbData = userSelectResult[0];
+    console.log('userdbData', userdbData);
 
     // logger.info(`Admin has logged in user ${userdbData.username} successfully from admin panel`, { type: 'user' });
 
@@ -360,6 +361,8 @@ exports.manualSignIn = async (req, res) => {
       return;
     }
   } catch (error) {
+    console.log('error', error);
+    
     res.json({
       status: "error",
       message: "Server error occurred",
