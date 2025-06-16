@@ -3,7 +3,8 @@ const { checkAuthorization,Qry } = require("../../helpers/functions");
 const Response = require("../../helpers/response");
 const fs = require('fs');
 const path = require('path');
-const { Terms, findPlan, findPlanPeriod, findPlanCurrName } = require("../../utils/chargeBeeSubscriptionChange");
+const axios = require('axios');
+const { Terms, nuskinTerms, michelTerms, findPlan, findPlanPeriod, findPlanCurrName } = require("../../utils/chargeBeeSubscriptionChange");
 
 chargebee.configure({
   site: process.env.CHARGEBEE_SITE,
@@ -256,7 +257,7 @@ chargebee.hosted_page.checkout_existing_for_items({
 
 exports.updateSubscriptionPlanPreserveEverything = async (req, res) => {
   try {
-    const filePath = path.join(__dirname, "../../Subscriptions.json");
+    const filePath = path.join(__dirname, "../../newSubscriptions.json");
     const rawData = fs.readFileSync(filePath, "utf-8");
     const subscriptions = JSON.parse(rawData);
 
@@ -281,61 +282,140 @@ exports.updateSubscriptionPlanPreserveEverything = async (req, res) => {
         continue;
       }
 
-      // Use your utils with the planId from JSON
-      const newPlan = findPlan(planId);
-      const period = findPlanPeriod(planId);
-      const currPlan = findPlanCurrName(planId);
+      let newPriceId = null;
 
-      if (!newPlan || !period || !currPlan) {
-        results.push({
-          subscriptionId,
-          status: "skipped",
-          reason: "Invalid plan data from utils",
-        });
-        continue;
-      }
+      //For Nuskin
+      if (planId.toLowerCase().includes("nuskin")) {
+        const period = findPlanPeriod(planId);      // month | year | quater
+        const currency = findPlanCurrName(planId);  // USD | EUR
 
-      const term = Terms.find(t =>
-        Array.isArray(t.old_plan) &&
-        t.old_plan.includes(newPlan) &&
-        t.period_unit === period &&
-        t.currency_code === currPlan
-      );
+        const nuskinTerm = nuskinTerms.find(
+          (t) =>
+            Array.isArray(t.old_plan) &&
+            t.old_plan.some((old) => planId.includes(old)) &&
+            t.period_unit === period &&
+            t.currency_code === currency,
+        );
 
-      if(!term){
-        results.push({
-          subscriptionId,
-          status: "skipped",
-          reason: "No matching subscription found in New Plans",
-        });
-        continue;
-      }
+        if (!nuskinTerm) {
+          results.push({
+            subscriptionId,
+            status: "skipped",
+            reason: "No matching Nuskin term found",
+          });
+          continue;
+        }
 
-      const newPriceId = term.plan_id;
-      if (!newPriceId) {
-        results.push({
-          subscriptionId,
-          status: "failed",
-          reason: "No new price ID found in New Plans",
-        });
-        continue;
+        newPriceId = nuskinTerm.plan_id;
+      } //for michel plans
+      else if (planId.toLowerCase().includes("michel-destruel")) {
+        const period = findPlanPeriod(planId);
+        const currency = findPlanCurrName(planId);
+
+        const michelTerm = michelTerms.find(
+          (t) =>
+            t.old_plan === planId &&
+            t.period_unit === period &&
+            t.currency_code === currency,
+        );
+
+        if (!michelTerm) {
+          results.push({
+            subscriptionId,
+            status: "skipped",
+            reason: "No matching Michel term found",
+          });
+          continue;
+        }
+
+        newPriceId = michelTerm.plan_id;
+      } // Default Novalya other plans
+      else {
+        const newPlan = findPlan(planId);
+        const period = findPlanPeriod(planId);
+        const currency = findPlanCurrName(planId);
+
+        if (!newPlan || !period || !currency) {
+          results.push({
+            subscriptionId,
+            status: "skipped",
+            reason: "Invalid plan data from utils",
+          });
+          continue;
+        }
+
+        const term = Terms.find(t =>
+          Array.isArray(t.old_plan) &&
+          t.old_plan.includes(newPlan) &&
+          t.period_unit === period &&
+          t.currency_code === currency
+        );
+
+        if(!term){
+          results.push({
+            subscriptionId,
+            status: "skipped",
+            reason: "No matching subscription found in New Plans",
+          });
+          continue;
+        }
+
+        newPriceId = term.plan_id;
+        if (!newPriceId) {
+          results.push({
+            subscriptionId,
+            status: "failed",
+            reason: "No new price ID found in New Plans",
+          });
+          continue;
+        }
       }
 
       try {
-        const result = await chargebee.subscription
-          .update_for_items(subscriptionId, {
-            subscription_items: [
-              {
-                item_price_id: newPriceId,
-                item_type: "plan",
-                quantity: 1,
-                unit_price: planUnitPrice*100, // preserve existing price exactly in cents
-              },
-            ],
-            replace_items: true,
-          })
-          .request();
+          // await chargebee.subscription
+          //   .update_for_items(subscriptionId, {
+          //     subscription_items: [
+          //       {
+          //         item_price_id: newPriceId,
+          //         item_type: "plan",
+          //         quantity: 1,
+          //         unit_price: planUnitPrice * 100 // in cents
+          //       }
+          //     ],
+          //     replace_items: true
+          //   })
+          //   .request({
+          //     headers: {
+          //       "chargebee-notify-customer": "false", // suppress email
+          //       "chargebee-event-silent": "true"      // suppress webhooks
+          //     }
+          //   });
 
+
+            const site = "novalya"; // e.g. "yourcompany-test"
+            const apiKey = "live_GMc7QBUC98cuOnx44QADmkigLQcuMEmrDs";
+            const payload = {
+              subscription_items: [
+                {
+                  item_price_id: newPriceId,
+                  item_type: "plan",
+                  quantity: 1,
+                  unit_price: planUnitPrice * 100 // in cents
+                }
+              ],
+              replace_items: true
+            };
+            await axios.post(`https://${site}.chargebee.com/api/v2/subscriptions/${subscriptionId}/update_for_items`, payload, {
+              auth: {
+                username: apiKey,
+                password: ""
+              },
+              headers: {
+                "chargebee-notify-customer": "false", // suppress emails
+                "chargebee-event-silent": "true"      // suppress webhooks
+              }
+            }).then((res)=>console.log(res.data.subscription));
+            
         results.push({
           subscriptionId,
           status: "success",
