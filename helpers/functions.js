@@ -2529,7 +2529,7 @@ async function total_payment_function(userid, month,year) {
 }
 
 // total payment function affilate payment
-async function total_payment_function_afcm_tblOld(userid, month,year) {
+async function total_payment_function_afcm_tbl(userid, month,year) {
   try {
     let currentMonth = currentMonthFun();
     let cmonth = month || currentMonth;
@@ -2831,7 +2831,7 @@ async function total_payment_function_afcm_tblOld(userid, month,year) {
 }
 
 // total payment function affilate payment
-async function total_payment_function_afcm_tbl(userid, month, year) {
+async function total_payment_function_afcm_tblNew(userid, month, year) {
   try {
     const cmonth = month || currentMonthFun();
     const cyear = year || new Date().getFullYear();
