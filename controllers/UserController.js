@@ -2752,6 +2752,10 @@ exports.payout = async (req, res) => {
       await Qry(`SELECT * FROM usersdata WHERE id = ?`, [auth_user])
     )[0]; 
 
+    const kyc_data = await Qry(`SELECT kyc_status  FROM usersdata WHERE id = ?`, [auth_user]);
+    // console.log(kyc_data,"kyc_data +++.")
+    let kyc_status = kyc_data[0]?.kyc_status === "Verified" ?true:false; 
+
     // User balances 
     const usd_balance = user.current_balance_usd_lastmonth || 0;
     const eur_balance = user.current_balance_eur_lastmonth || 0;
@@ -2840,26 +2844,67 @@ exports.payout = async (req, res) => {
       status = "Pending";
     }
 
+    const now = new Date();
+    const month = now.getMonth() + 1; // 0 = January, so add 1
+    const year = now.getFullYear();
+
     // Build response payout object if payout available
     const payouts = [...(prev_payouts || [])];
     if (payout_amount > 0) {
-      const now = new Date().toISOString();
-      payouts.unshift({
-        id: 0,
-        approvedat: now,
-        amount: payout_amount,
-        final_amount,
-        payoutmethod: payout_method,
-        payout_fee,
-        fee: payout_fee,
-        bank_account_title: "*******",
-        bank_account_iban: "*******",
-        bank_account_bic: "*******",
-        bank_account_country: "*******",
-        status,
-        createdat: now,
-        currency,
-      });
+      const now = new Date();
+      const firstDateOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      if(kyc_status ){
+        if (month !== 6 && year !== 2025) {
+          payouts.unshift({
+            id: 0,
+            approvedat: now,
+            amount: payout_amount,
+            final_amount,
+            payoutmethod: payout_method,
+            payout_fee,
+            fee: payout_fee,
+            bank_account_title: "*******",
+            bank_account_iban: "*******",
+            bank_account_bic: "*******",
+            bank_account_country: "*******",
+            status,
+            createdat: now,
+            currency,
+          });
+        }
+      }else{
+        // Step 1: Query data from the balance_transfer_for_payout table
+        const payoutTransfers = await Qry(
+          `SELECT * FROM balance_transfer_for_payout WHERE userid = ? ORDER BY dat DESC`,
+          [auth_user]
+        );
+        
+        if (payoutTransfers.length > 0) {
+          for (let i = 1; i < payoutTransfers.length; i++) { //i=1 for skipping current month entry
+            const transfer = payoutTransfers[i];
+            payout_amount = currency == "EUR"?transfer.amount_eur + (transfer.amount_usd * eur_rate):transfer.amount_eur + (transfer.eur *usd_rate );
+            final_amount = payout_amount - flat_fee;
+
+            payouts.push({
+              id: i,
+              approvedat: transfer.dat,
+              amount: payout_amount  ,
+              final_amount,
+              payoutmethod: "Bank",
+              payout_fee,
+              fee: payout_fee,
+              bank_account_title: "*******",
+              bank_account_iban: "*******",
+              bank_account_bic: "*******",
+              bank_account_country: "*******",
+              status,
+              createdat: transfer.dat,
+              currency,
+            });
+          }
+        }
+      }
     }
 
     var final_response = {
