@@ -343,7 +343,7 @@ exports.manualSignIn = async (req, res) => {
     const updateLoginParams = [date, req.ip, authUser];
     const updateLoginResult = await Qry(updateLoginQuery, updateLoginParams);
 
-    const userSelectQuery = `SELECT username, randomcode, firstname, lastname, email, picture, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin,subscription_status, lastip, user_type FROM usersdata WHERE id = ?`;
+    const userSelectQuery = `SELECT username, randomcode, firstname, lastname, email, picture, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin,subscription_status, lastip, user_type,website FROM usersdata WHERE id = ?`;
     const userSelectParams = [authUser];
     const userSelectResult = await Qry(userSelectQuery, userSelectParams);
     const userdbData = userSelectResult[0];
