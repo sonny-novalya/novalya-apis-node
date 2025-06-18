@@ -3,7 +3,8 @@ const { checkAuthorization,Qry } = require("../../helpers/functions");
 const Response = require("../../helpers/response");
 const fs = require('fs');
 const path = require('path');
-const { Terms, findPlan, findPlanPeriod, findPlanCurrName } = require("../../utils/chargeBeeSubscriptionChange");
+const axios = require('axios');
+const { Terms, nuskinTerms, michelTerms, findPlan, findPlanPeriod, findPlanCurrName } = require("../../utils/chargeBeeSubscriptionChange");
 
 chargebee.configure({
   site: process.env.CHARGEBEE_SITE,
@@ -255,105 +256,181 @@ chargebee.hosted_page.checkout_existing_for_items({
 };
 
 exports.updateSubscriptionPlanPreserveEverything = async (req, res) => {
-  try {
-    const filePath = path.join(__dirname, "../../Subscriptions.json");
-    const rawData = fs.readFileSync(filePath, "utf-8");
-    const subscriptions = JSON.parse(rawData);
+  return Response.resWith200(res, "Code removed", '');
+//   try {
+//     const filePath = path.join(__dirname, "../../newSubscriptions.json");
+//     const rawData = fs.readFileSync(filePath, "utf-8");
+//     const subscriptions = JSON.parse(rawData);
 
-    if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
-      return Response.resWith400(res, "No subscriptions found in Subscriptions.json");
-    }
+//     if (!Array.isArray(subscriptions) || subscriptions.length === 0) {
+//       return Response.resWith400(res, "No subscriptions found in Subscriptions.json");
+//     }
 
-    const results = [];
+//     const results = [];
 
-    for (const sub of subscriptions) {
-      // Access properties with exact keys including dots
-      const subscriptionId = sub["subscriptions.id"];
-      const planId = sub["subscriptions.plan_id"];
-      const planUnitPrice = sub["subscriptions.plan_unit_price"];
+//     for (const sub of subscriptions) {
+//       // Access properties with exact keys including dots
+//       const subscriptionId = sub["subscriptions.id"];
+//       const planId = sub["subscriptions.plan_id"];
+//       const planUnitPrice = sub["subscriptions.plan_unit_price"];
 
-      if (!subscriptionId || !planId || typeof planUnitPrice !== "number") {
-        results.push({
-          subscriptionId,
-          status: "failed",
-          reason: "Missing subscription id, plan_id or plan_unit_price",
-        });
-        continue;
-      }
+//       if (!subscriptionId || !planId || typeof planUnitPrice !== "number") {
+//         results.push({
+//           subscriptionId,
+//           status: "failed",
+//           reason: "Missing subscription id, plan_id or plan_unit_price",
+//         });
+//         continue;
+//       }
 
-      // Use your utils with the planId from JSON
-      const newPlan = findPlan(planId);
-      const period = findPlanPeriod(planId);
-      const currPlan = findPlanCurrName(planId);
+//       let newPriceId = null;
 
-      if (!newPlan || !period || !currPlan) {
-        results.push({
-          subscriptionId,
-          status: "skipped",
-          reason: "Invalid plan data from utils",
-        });
-        continue;
-      }
+//       //For Nuskin
+//       if (planId.toLowerCase().includes("nuskin")) {
+//         const period = findPlanPeriod(planId);      // month | year | quater
+//         const currency = findPlanCurrName(planId);  // USD | EUR
 
-      const term = Terms.find(t =>
-        Array.isArray(t.old_plan) &&
-        t.old_plan.includes(newPlan) &&
-        t.period_unit === period &&
-        t.currency_code === currPlan
-      );
+//         const nuskinTerm = nuskinTerms.find(
+//           (t) =>
+//             Array.isArray(t.old_plan) &&
+//             t.old_plan.some((old) => planId.includes(old)) &&
+//             t.period_unit === period &&
+//             t.currency_code === currency,
+//         );
 
-      if(!term){
-        results.push({
-          subscriptionId,
-          status: "skipped",
-          reason: "No matching subscription found in New Plans",
-        });
-        continue;
-      }
+//         if (!nuskinTerm) {
+//           results.push({
+//             subscriptionId,
+//             status: "skipped",
+//             reason: "No matching Nuskin term found",
+//           });
+//           continue;
+//         }
 
-      const newPriceId = term.plan_id;
-      if (!newPriceId) {
-        results.push({
-          subscriptionId,
-          status: "failed",
-          reason: "No new price ID found in New Plans",
-        });
-        continue;
-      }
+//         newPriceId = nuskinTerm.plan_id;
+//       } //for michel plans
+//       else if (planId.toLowerCase().includes("michel-destruel")) {
+//         const period = findPlanPeriod(planId);
+//         const currency = findPlanCurrName(planId);
 
-      try {
-        const result = await chargebee.subscription
-          .update_for_items(subscriptionId, {
-            subscription_items: [
-              {
-                item_price_id: newPriceId,
-                item_type: "plan",
-                quantity: 1,
-                unit_price: planUnitPrice*100, // preserve existing price exactly in cents
-              },
-            ],
-            replace_items: true,
-          })
-          .request();
+//         const michelTerm = michelTerms.find(
+//           (t) =>
+//             t.old_plan === planId &&
+//             t.period_unit === period &&
+//             t.currency_code === currency,
+//         );
 
-        results.push({
-          subscriptionId,
-          status: "success",
-          new_price_id: newPriceId,
-        });
-      } catch (err) {
-        console.error(`Chargebee error for subscription ${subscriptionId}:`, err.message);
-        results.push({
-          subscriptionId,
-          status: "failed",
-          reason: err.message,
-        });
-      }
-    }
+//         if (!michelTerm) {
+//           results.push({
+//             subscriptionId,
+//             status: "skipped",
+//             reason: "No matching Michel term found",
+//           });
+//           continue;
+//         }
 
-    return Response.resWith200(res, "Processed subscriptions", results);
-  } catch (error) {
-    console.error("Fatal error:", error);
-    return Response.resWith500(res, "Failed to process subscriptions");
-  }
+//         newPriceId = michelTerm.plan_id;
+//       } // Default Novalya other plans
+//       else {
+//         const newPlan = findPlan(planId);
+//         const period = findPlanPeriod(planId);
+//         const currency = findPlanCurrName(planId);
+
+//         if (!newPlan || !period || !currency) {
+//           results.push({
+//             subscriptionId,
+//             status: "skipped",
+//             reason: "Invalid plan data from utils",
+//           });
+//           continue;
+//         }
+
+//         const term = Terms.find(t =>
+//           Array.isArray(t.old_plan) &&
+//           t.old_plan.includes(newPlan) &&
+//           t.period_unit === period &&
+//           t.currency_code === currency
+//         );
+
+//         if(!term){
+//           results.push({
+//             subscriptionId,
+//             status: "skipped",
+//             reason: "No matching subscription found in New Plans",
+//           });
+//           continue;
+//         }
+
+//         newPriceId = term.plan_id;
+//         if (!newPriceId) {
+//           results.push({
+//             subscriptionId,
+//             status: "failed",
+//             reason: "No new price ID found in New Plans",
+//           });
+//           continue;
+//         }
+//       }
+
+//       try {
+//         const params = new URLSearchParams();
+//         params.append("subscription_items[item_price_id][0]", newPriceId);
+//         params.append("subscription_items[quantity][0]", "1");
+//         params.append("subscription_items[unit_price][0]", String(planUnitPrice * 100));
+//         params.append("replace_items_list", "true");
+
+//         await axios.post(
+//           `https://${process.env.CHARGEBEE_SITE}.chargebee.com/api/v2/subscriptions/${subscriptionId}/update_for_items`,
+//           params,
+//           {
+//             auth: {
+//               username: process.env.CHARGEBEE_API_KEY,
+//               password: ""
+//             },
+//             headers: {
+//               "Content-Type": "application/x-www-form-urlencoded"
+//             }
+//           }
+//         );
+
+//         // await chargebee.subscription
+//         //   .update_for_items(subscriptionId, {
+//         //     subscription_items: [
+//         //       {
+//         //         item_price_id: newPriceId,
+//         //         item_type: "plan",
+//         //         quantity: 1,
+//         //         unit_price: planUnitPrice * 100 // in cents
+//         //       }
+//         //     ],
+//         //     replace_items: true
+//         //   })
+//         //   .request({
+//         //     headers: {
+//         //       "chargebee-notify-customer": "false", // suppress email
+//         //       "chargebee-event-silent": "true"      // suppress webhooks
+//         //     }
+//         //   });
+            
+//         results.push({
+//           subscriptionId,
+//           status: "success",
+//           new_price_id: newPriceId,
+//         });
+//       } catch (err) {
+//         console.error(`Chargebee error for subscription ${subscriptionId}:`, err.message);
+//         results.push({
+//           subscriptionId,
+//           status: "failed",
+//           reason: err.message,
+//         });
+//       }
+//       console.log("newPriceId: "+ newPriceId);  
+//     }
+
+//     return Response.resWith200(res, "Processed subscriptions", results);
+//   } catch (error) {
+//     console.error("Fatal error:", error);
+//     return Response.resWith500(res, "Failed to process subscriptions");
+//   }
 };

@@ -343,7 +343,7 @@ exports.manualSignIn = async (req, res) => {
     const updateLoginParams = [date, req.ip, authUser];
     const updateLoginResult = await Qry(updateLoginQuery, updateLoginParams);
 
-    const userSelectQuery = `SELECT username, randomcode, firstname, lastname, email, picture, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin,subscription_status, lastip, user_type FROM usersdata WHERE id = ?`;
+    const userSelectQuery = `SELECT username, randomcode, firstname, lastname, email, picture, current_balance, status, mobile, emailstatus, address1,company, country, createdat, login_status, lastlogin,subscription_status, lastip, user_type,website FROM usersdata WHERE id = ?`;
     const userSelectParams = [authUser];
     const userSelectResult = await Qry(userSelectQuery, userSelectParams);
     const userdbData = userSelectResult[0];
@@ -2750,9 +2750,13 @@ exports.payout = async (req, res) => {
     // Get user data
     const user = (
       await Qry(`SELECT * FROM usersdata WHERE id = ?`, [auth_user])
-    )[0];
+    )[0]; 
 
-    // User balances
+    const kyc_data = await Qry(`SELECT kyc_status  FROM usersdata WHERE id = ?`, [auth_user]);
+    // console.log(kyc_data,"kyc_data +++.")
+    let kyc_status = kyc_data[0]?.kyc_status === "Verified" ?true:false; 
+
+    // User balances 
     const usd_balance = user.current_balance_usd_lastmonth || 0;
     const eur_balance = user.current_balance_eur_lastmonth || 0;
 
@@ -2840,26 +2844,67 @@ exports.payout = async (req, res) => {
       status = "Pending";
     }
 
+    const now = new Date();
+    const month = now.getMonth() + 1; // 0 = January, so add 1
+    const year = now.getFullYear();
+
     // Build response payout object if payout available
     const payouts = [...(prev_payouts || [])];
     if (payout_amount > 0) {
-      const now = new Date().toISOString();
-      payouts.unshift({
-        id: 0,
-        approvedat: now,
-        amount: payout_amount,
-        final_amount,
-        payoutmethod: payout_method,
-        payout_fee,
-        fee: payout_fee,
-        bank_account_title: "*******",
-        bank_account_iban: "*******",
-        bank_account_bic: "*******",
-        bank_account_country: "*******",
-        status,
-        createdat: now,
-        currency,
-      });
+      const now = new Date();
+      const firstDateOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      if(kyc_status ){
+        if (month !== 6 && year !== 2025) {
+          payouts.unshift({
+            id: 0,
+            approvedat: now,
+            amount: payout_amount,
+            final_amount,
+            payoutmethod: payout_method,
+            payout_fee,
+            fee: payout_fee,
+            bank_account_title: "*******",
+            bank_account_iban: "*******",
+            bank_account_bic: "*******",
+            bank_account_country: "*******",
+            status,
+            createdat: now,
+            currency,
+          });
+        }
+      }else{
+        // Step 1: Query data from the balance_transfer_for_payout table
+        const payoutTransfers = await Qry(
+          `SELECT * FROM balance_transfer_for_payout WHERE userid = ? ORDER BY dat DESC`,
+          [auth_user]
+        );
+        
+        if (payoutTransfers.length > 0) {
+          for (let i = 1; i < payoutTransfers.length; i++) { //i=1 for skipping current month entry
+            const transfer = payoutTransfers[i];
+            payout_amount = currency == "EUR"?transfer.amount_eur + (transfer.amount_usd * eur_rate):transfer.amount_eur + (transfer.eur *usd_rate );
+            final_amount = payout_amount - flat_fee;
+
+            payouts.push({
+              id: i,
+              approvedat: transfer.dat,
+              amount: payout_amount  ,
+              final_amount,
+              payoutmethod: "Bank",
+              payout_fee,
+              fee: payout_fee,
+              bank_account_title: "*******",
+              bank_account_iban: "*******",
+              bank_account_bic: "*******",
+              bank_account_country: "*******",
+              status,
+              createdat: transfer.dat,
+              currency,
+            });
+          }
+        }
+      }
     }
 
     var final_response = {
@@ -5819,7 +5864,11 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         );
 
         let limitsData = limitsQueury[0];
-        await Qry(
+
+        const existingEntryCheck = await Qry("SELECT 1 FROM users_limits WHERE userid = ?", [userData?.id]);
+
+        if (existingEntryCheck.length > 0) {
+          await Qry(
           "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ?, fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ? , message_limit = ? where userid = ?",
           [
             limitsData.fb_no_crm_group,
@@ -5846,6 +5895,41 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             userData?.id,
           ]
         );
+        } else{
+          await Qry(
+            `INSERT INTO users_limits (
+              userid, fb_no_crm_group, fb_no_stages_group, fb_no_friend_request, fb_no_crm_message, fb_no_ai_comment,
+              fb_advanced_novadata, fb_no_friend_requests_received, fb_no_of_birthday_wishes,
+              insta_no_crm_group, insta_no_stages_group, insta_no_friend_request, insta_no_crm_message, insta_no_ai_comment,
+              insta_advanced_novadata, insta_no_friend_requests_received, insta_no_of_birthday_wishes,
+              fb_messages, insta_messages, ai_credits_new, tags_pipelines
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              userData?.id,
+              limitsData.fb_no_crm_group,
+              limitsData.fb_no_stages_group,
+              limitsData.fb_no_friend_request,
+              limitsData.fb_no_crm_message,
+              limitsData.fb_no_ai_comment,
+              limitsData.fb_advanced_novadata,
+              limitsData.fb_no_friend_requests_received,
+              limitsData.fb_no_of_birthday_wishes,
+              limitsData.inst_no_crm_group,
+              limitsData.inst_no_stages_group,
+              limitsData.inst_no_friend_request,
+              limitsData.inst_no_crm_message,
+              limitsData.inst_no_ai_comment,
+              limitsData.inst_advanced_novadata,
+              limitsData.inst_no_friend_requests_received,
+              limitsData.inst_no_of_birthday_wishes,
+              limitsData.fb_messages,
+              limitsData.insta_messages,
+              limitsData.ai_credits_new,
+              limitsData.tags_pipelines
+            ]
+          );
+        }
+        
         //end plan limits
 
         if (eventType === "subscription_changed") {
