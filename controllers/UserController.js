@@ -2750,9 +2750,9 @@ exports.payout = async (req, res) => {
     // Get user data
     const user = (
       await Qry(`SELECT * FROM usersdata WHERE id = ?`, [auth_user])
-    )[0];
+    )[0]; 
 
-    // User balances
+    // User balances 
     const usd_balance = user.current_balance_usd_lastmonth || 0;
     const eur_balance = user.current_balance_eur_lastmonth || 0;
 
