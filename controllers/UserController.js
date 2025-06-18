@@ -5819,7 +5819,11 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         );
 
         let limitsData = limitsQueury[0];
-        await Qry(
+
+        const existingEntryCheck = await Qry("SELECT 1 FROM users_limits WHERE userid = ?", [userData?.id]);
+
+        if (existingEntryCheck.length > 0) {
+          await Qry(
           "update users_limits set fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ?, fb_no_of_birthday_wishes = ?, insta_no_crm_group = ?, insta_no_stages_group = ?, insta_no_friend_request = ?, insta_no_crm_message = ?, insta_no_ai_comment = ?, insta_advanced_novadata = ?, insta_no_friend_requests_received = ?, insta_no_of_birthday_wishes = ?, fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ? , message_limit = ? where userid = ?",
           [
             limitsData.fb_no_crm_group,
@@ -5846,6 +5850,41 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             userData?.id,
           ]
         );
+        } else{
+          await Qry(
+            `INSERT INTO users_limits (
+              userid, fb_no_crm_group, fb_no_stages_group, fb_no_friend_request, fb_no_crm_message, fb_no_ai_comment,
+              fb_advanced_novadata, fb_no_friend_requests_received, fb_no_of_birthday_wishes,
+              insta_no_crm_group, insta_no_stages_group, insta_no_friend_request, insta_no_crm_message, insta_no_ai_comment,
+              insta_advanced_novadata, insta_no_friend_requests_received, insta_no_of_birthday_wishes,
+              fb_messages, insta_messages, ai_credits_new, tags_pipelines
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              userData?.id,
+              limitsData.fb_no_crm_group,
+              limitsData.fb_no_stages_group,
+              limitsData.fb_no_friend_request,
+              limitsData.fb_no_crm_message,
+              limitsData.fb_no_ai_comment,
+              limitsData.fb_advanced_novadata,
+              limitsData.fb_no_friend_requests_received,
+              limitsData.fb_no_of_birthday_wishes,
+              limitsData.inst_no_crm_group,
+              limitsData.inst_no_stages_group,
+              limitsData.inst_no_friend_request,
+              limitsData.inst_no_crm_message,
+              limitsData.inst_no_ai_comment,
+              limitsData.inst_advanced_novadata,
+              limitsData.inst_no_friend_requests_received,
+              limitsData.inst_no_of_birthday_wishes,
+              limitsData.fb_messages,
+              limitsData.insta_messages,
+              limitsData.ai_credits_new,
+              limitsData.tags_pipelines
+            ]
+          );
+        }
+        
         //end plan limits
 
         if (eventType === "subscription_changed") {
