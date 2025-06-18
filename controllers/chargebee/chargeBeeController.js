@@ -255,7 +255,8 @@ chargebee.hosted_page.checkout_existing_for_items({
 
 };
 
-// exports.updateSubscriptionPlanPreserveEverything = async (req, res) => {
+exports.updateSubscriptionPlanPreserveEverything = async (req, res) => {
+  return Response.resWith200(res, "Code removed", '');
 //   try {
 //     const filePath = path.join(__dirname, "../../newSubscriptions.json");
 //     const rawData = fs.readFileSync(filePath, "utf-8");
@@ -432,4 +433,4 @@ chargebee.hosted_page.checkout_existing_for_items({
 //     console.error("Fatal error:", error);
 //     return Response.resWith500(res, "Failed to process subscriptions");
 //   }
-// };
+};
