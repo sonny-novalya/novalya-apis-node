@@ -277,6 +277,219 @@ const createFbNote = async (req, res) => {
   }
 }
 
+const createFbNoteNew = async (req, res) => {
+  try {
+    const user_id = await getAuthUser(req, res);
+    const postData = req.body;
+
+    const {
+      fb_user_id,
+      fb_alphanumeric_id,
+      fb_user_e2ee_id,
+      is_e2ee,
+      fb_name,
+      profile_pic,
+      is_primary,
+      is_verified_acc,
+      first_name,
+      last_name,
+      email,
+      phone,
+      profession,
+      short_description,
+      Socials,
+      description,
+      selected_tag_stage_ids,
+      type = "facebook"
+    } = req.body;
+
+    let folderName = "notes";
+    let dateImg = Date.now()
+    let imageUrl;
+
+    let baseWhereClause;
+    if (!fb_user_id) {
+      baseWhereClause = {
+        user_id: user_id,
+        fb_user_e2ee_id: fb_user_e2ee_id,
+      };
+    } else if (fb_user_id && fb_user_e2ee_id) {
+      baseWhereClause = {
+        user_id: user_id,
+        [Op.or]: [
+          { fb_user_e2ee_id: fb_user_e2ee_id },
+          { fb_user_id: fb_user_id }
+        ]
+      };
+    } else {
+      baseWhereClause = {
+        user_id: user_id,
+        fb_user_id: fb_user_id,
+      };
+    }
+
+
+    // CODE FOR ASSIGN OR EDIT TAGS FOR FB
+    if (selected_tag_stage_ids && selected_tag_stage_ids.length > 0) {
+      // const {fb_user_id, fb_alphanumeric_id, fb_user_e2ee_id, is_e2ee, fb_name} = req.body
+
+      const tagsRes = selected_tag_stage_ids.map(async (data) => {
+        const { tag_id, stage_id } = data;
+
+        // tag_id: tag_id,   add this for multi tagging
+
+        if (profile_pic && profile_pic.includes("novalya-assets") != true) {
+
+          imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+        }else{
+          imageUrl = profile_pic;
+        }
+
+        const whereClause = {
+          ...baseWhereClause,
+          tag_id,
+          stage_id,
+        };
+        const existingRecord = await taggedUser.findOne({ where: whereClause });
+
+        const taggedUserData = {
+          tag_id: tag_id,
+          stage_id: stage_id,
+          fb_name: fb_name,
+          is_primary,
+          is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
+          fb_user_id,
+          profile_pic: imageUrl,
+          fb_image_id: null,
+          numeric_fb_id: fb_alphanumeric_id,
+          fb_user_e2ee_id: fb_user_e2ee_id,
+          is_e2ee,
+          user_note: req.body.short_description || null,
+          profession: req.body.profession || null
+        };
+
+        if (existingRecord) {
+          await taggedUser.update(taggedUserData, { where: whereClause });
+        } else {
+          await taggedUser.create({ ...taggedUserData, user_id });
+        }
+
+
+      })
+      await Promise.all(tagsRes);
+
+    }
+
+    delete postData.is_primary;
+    delete postData.is_verified_acc;
+    delete postData.selected_tag_stage_ids;
+    delete postData.fb_alphanumeric_id;
+    delete postData.is_e2ee;
+    delete postData.fb_name;
+    delete postData.profile_pic;
+
+    const updates = [];
+    const date = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    postData.updatedAt = date;
+
+    const notesData = {
+      user_id,
+      fb_user_id: fb_user_id || null,
+      fb_user_e2ee_id: fb_user_e2ee_id || null,
+      first_name: first_name || null,
+      last_name: last_name || null,
+      email: email || null,
+      phone: phone || null,
+      profession: profession || null,
+      short_description: short_description || null,
+      socials: Socials || null,
+      // description: description,
+      description: Array.isArray(description) ? description : [description],
+      type
+    };
+    
+    const existingNotes = await note.findOne({ where: baseWhereClause });
+
+    const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+    // Helper function to format value for SQL
+    const formatSQLValue = (value, key) => {
+      if (value === null || value === undefined) {
+        return 'NULL';
+      }
+
+      if (key === 'description') {
+        const arraySafe = Array.isArray(value) ? value : [value];
+        const stringified = JSON.stringify(arraySafe);             // handles double quotes and adds backslashes
+        const escapedSingleQuotes = stringified.replace(/'/g, "''");  // escape single quotes for SQL
+        const escapedBackslashes = escapedSingleQuotes.replace(/\\/g, '\\\\'); // escape backslashes
+        return `'${escapedBackslashes}'`;
+      }
+
+      return `'${value}'`;
+    };
+
+    if (existingNotes) {
+      // Dynamic Update logic
+      const updateFields = [];
+      
+      // Add insta_user_id as NULL for Facebook notes
+      updateFields.push('insta_user_id = NULL');
+      
+      // Dynamically build update fields from notesData
+      Object.keys(notesData).forEach(key => {
+        if (key !== 'user_id') { // Skip user_id as it shouldn't be updated
+          updateFields.push(`${key} = ${formatSQLValue(notesData[key], key)}`);
+        }
+      });
+      
+      // Add updatedAt
+      updateFields.push(`updatedAt = '${now}'`);
+      
+      const updateQuery = `
+        UPDATE notes SET 
+          ${updateFields.join(',\n          ')}
+        WHERE id = '${existingNotes.id}'
+      `;
+
+      const updateResult = await Qry(updateQuery);
+      if (updateResult) {
+        return Response.resWith202(res, "Note updated", updateResult);
+      } else {
+        return Response.resWith422(res, "Failed to update note");
+      }
+    } else {
+      // Dynamic Create logic
+      const fields = Object.keys(notesData);
+      const values = Object.values(notesData);
+      
+      // Add insta_user_id, createdAt, updatedAt
+      fields.push('insta_user_id', 'createdAt', 'updatedAt');
+      values.push(null, now, now);
+      
+      const formattedValues = fields.map((key, index) => formatSQLValue(values[index], key));
+      
+      const createQuery = `
+        INSERT INTO notes (${fields.join(', ')}) 
+        VALUES (${formattedValues.join(', ')})
+      `;
+
+      const createResult = await Qry(createQuery);
+      if (createResult) {
+        return Response.resWith202(res, "Note created", createResult);
+      } else {
+        return Response.resWith422(res, "Failed to create note");
+      }
+    }
+
+  } catch (e) {
+
+    console.log('create-note-error', e);
+    
+    return Response.resWith422(res, e.message);
+  }
+}
+
 const createInstaNote = async (req, res) => {
   try {
     const user_id = await getAuthUser(req, res);
@@ -428,6 +641,161 @@ const createInstaNote = async (req, res) => {
   }
 }
 
+const createInstaNoteNew = async (req, res) => {
+  try {
+    const user_id = await getAuthUser(req, res);
+    const postData = req.body;
+
+    const {
+      insta_user_id,
+      numeric_insta_id = null,
+      profile_pic,
+      insta_name,
+      is_primary,
+      is_verified_acc,
+      selected_tag_stage_ids,
+      thread_id,
+      type = "instagram"
+    } = req.body;
+
+    postData.type = "instagram";
+    
+    let folderName = "notes";
+    let dateImg = Date.now()
+    let imageUrl;
+
+    let baseWhereClause = {
+      user_id: user_id,
+      insta_user_id,
+    };
+
+
+    // CODE FOR ASSIGN OR EDIT TAGS FOR FB
+    if (selected_tag_stage_ids && selected_tag_stage_ids.length > 0) {
+      // const {insta_user_id, numeric_insta_id, insta_name, profile_pic, thread_id} = req.body
+
+      const tagsRes = selected_tag_stage_ids.map(async (data) => {
+        const { tag_id, stage_id } = data;
+
+        // tag_id: tag_id,   add this for multi tagging
+
+        if(profile_pic && profile_pic.includes("novalya-assets") != true) {
+
+          imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+        }else{
+          imageUrl = profile_pic;
+        }
+
+        const whereClause = {
+          ...baseWhereClause,
+          tag_id,
+          stage_id,
+        };
+        const existingRecord = await instaTaggedUser.findOne({where : whereClause});
+
+        const instaTaggedUserData = {
+          tag_id: tag_id,
+          stage_id: stage_id,
+          insta_name: insta_name,
+          is_primary,
+          is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
+          insta_user_id,
+          profile_pic: imageUrl,
+          insta_image_id: null,
+          numeric_insta_id: numeric_insta_id,
+          thread_id,
+          user_note: req.body.short_description || null,
+          profession: req.body.profession || null
+        };
+
+        if (existingRecord) {
+          await instaTaggedUser.update(instaTaggedUserData, { where: whereClause });
+        } else {
+          await instaTaggedUser.create({ ...instaTaggedUserData, user_id });
+        }
+
+
+      })
+      await Promise.all(tagsRes);
+
+    }
+
+    delete postData.is_primary;
+    delete postData.is_verified_acc;
+    delete postData.selected_tag_stage_ids;
+    delete postData.thread_id;
+    delete postData.insta_name;
+    delete postData.profile_pic;
+
+    const updates = [];
+    const date = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    postData.updatedAt = date;    
+
+    const existingNotes = await note.findOne({ where: baseWhereClause });
+
+    if (existingNotes) {  // update user notes
+      for (const [key, value] of Object.entries(postData)) {
+        const sanitizedValue = CleanHTMLData(CleanDBData(value));
+
+        let finalValue;
+        if (key === 'description') {
+          const arraySafe = Array.isArray(value) ? value : [value];
+          const stringified = JSON.stringify(arraySafe);             // Handles quotes safely
+          const escapedSingleQuotes = stringified.replace(/'/g, "''");  // SQL-safe for single quotes
+          const escapedBackslashes = escapedSingleQuotes.replace(/\\/g, '\\\\'); // SQL-safe for backslashes
+          finalValue = escapedBackslashes;
+        } else {
+          finalValue = sanitizedValue;
+        }
+
+        updates.push(`${key} = '${finalValue}'`);
+      }
+      const updateQuery = `UPDATE notes SET ${updates.join(
+        ", "
+      )} WHERE id = '${existingNotes.id}'`;
+      const updateResult = await Qry(updateQuery);
+
+      if (updateResult) {
+        return Response.resWith202(res, "Operation Completed", updateResult);
+      } else {
+        return Response.resWith422(res, "An error occurred while updating the notes");
+      }
+    }else{ // create user notes
+      postData.user_id = user_id
+      postData.createdAt = date;
+      const columns = []
+      const values = []
+      for (const [key, value] of Object.entries(postData)) {
+        const sanitizedValue = CleanHTMLData(CleanDBData(value));
+
+        let finalValue;
+        if (key === 'description') {
+          const arraySafe = Array.isArray(value) ? value : [value];
+          const stringified = JSON.stringify(arraySafe);             // Handles quotes safely
+          const escapedSingleQuotes = stringified.replace(/'/g, "''");  // SQL-safe for single quotes
+          const escapedBackslashes = escapedSingleQuotes.replace(/\\/g, '\\\\'); // SQL-safe for backslashes
+          finalValue = escapedBackslashes;
+        } else {
+          finalValue = sanitizedValue;
+        }
+
+        columns.push(key);
+        values.push(`'${finalValue}'`);
+      }
+      const createQuery = `INSERT INTO notes (${columns.join(", ")}) VALUES (${values.join(", ")})`;
+      const createResult = await Qry(createQuery);
+
+      if (createResult) {
+        return Response.resWith202(res, "Operation Completed", createResult);
+      } else {
+        return Response.resWith422(res, "An error occurred while creating the notes");
+      }
+    }
+
+  } catch (e) {
+    return Response.resWith422(res, e.message);
+  }
+}
 
 const getUserNote = async (req, res) => {
   try {
@@ -822,7 +1190,9 @@ module.exports = {
   deleteOne,
   getByUser,
   createFbNote,
+  createFbNoteNew,
   createInstaNote,
+  createInstaNoteNew,
   getUserNote,
   deleteNote
 };

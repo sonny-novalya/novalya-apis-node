@@ -176,7 +176,9 @@ router
 // note
 router.post("/note/", noteController.placeNote); // old code of notes
 router.post("/create-note", noteController.createFbNote);
+router.post("/create-note-new", noteController.createFbNoteNew);
 router.post("/create-insta-note", noteController.createInstaNote);
+router.post("/create-insta-note-new", noteController.createInstaNoteNew);
 router.post("/delete-note", noteController.deleteNote);
 router.post("/get-user-note", noteController.getUserNote);
 router.post("/get-all-note", noteController.getAll); // old code of notes
