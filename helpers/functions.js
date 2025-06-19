@@ -2830,6 +2830,144 @@ async function total_payment_function_afcm_tbl(userid, month,year) {
   }
 }
 
+// total payment function affilate payment
+async function total_payment_function_afcm_tblNew(userid, month, year) {
+  try {
+    const cmonth = month || currentMonthFun();
+    const cyear = year || new Date().getFullYear();
+    const cdate = getLastDateOfMonth(cyear, cmonth);
+    const course_plans =  ['Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR',
+      'Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-USD',
+      'Formation-Leads-en-RDV-Qualifies-Basic-Plan-EUR-Monthly',
+      'Formation-Leads-en-RDV-Qualifies-Basic-Plan-USD-Monthly'];
+
+    const [{ userCount }] = await Qry(
+      `SELECT COUNT(*) AS userCount 
+        FROM usersdata 
+        WHERE sponsorid = ? 
+          AND subscription_status NOT IN ('payment_refunded', 'subscription_cancelled', 'payment_failed') 
+          AND createdat <= ? 
+          AND trial_status = ?`,
+      [userid, cdate, "inactive"]
+    );
+
+    console.log("2203=====>", userCount)
+
+    const [unilevel] = await Qry(
+      `SELECT * FROM unilevels WHERE number_of_users <= ? ORDER BY id DESC LIMIT 1`,
+      [userCount]
+    );
+
+    const nac_date = new Date(cdate);
+    const nac_cutoff = new Date(Date.UTC(2025, 4, 1, 0, 0, 0));
+    let nac_status = nac_date >= nac_cutoff?true:false;
+
+    let dataArry = [];
+    let x = 1;
+
+    const transactionTypes = [
+      {
+        types: ["Level 1 Bonus", "Level 2 Bonus", "Bonus Add By Admin"],
+        isDeduct: false
+      },
+      {
+        types: ["Level 1 Bonus Deducted", "Level 2 Bonus Deducted", "Bonus Deduct By Admin"],
+        isDeduct: true
+      }
+    ];
+
+    for (const { types, isDeduct } of transactionTypes) {
+      const placeholders = types.map(() => '?').join(', ');
+      const query = `SELECT * FROM transactions 
+                     WHERE receiverid = ? 
+                       AND type IN (${placeholders}) 
+                       AND MONTH(createdat) = ? 
+                       AND YEAR(createdat) = ?`;
+
+      const result = await Qry(query, [userid, ...types, cmonth, cyear]);
+      
+      for (const data of result) {
+        const {
+          senderid,
+          type,
+          paid_amount,
+          createdat,
+          currency,
+          amount,
+          details,
+          reason = ""
+        } = data;
+        
+        if (type.includes("By Admin")) {
+          dataArry.push({
+            id: x++,
+            amount: amount.toFixed(2),
+            username: "",
+            firstname: "",
+            lastname: "",
+            type,
+            details,
+            createdat,
+            currency,
+            payOutPer: "",
+            reason
+          });
+          continue;
+        }
+
+        const [sender] = await Qry(`SELECT username, firstname, lastname FROM usersdata WHERE id = ?`, [senderid]);
+
+        let bonus = 0;
+        let payOutPer = 0;
+        if(nac_status){
+
+          bonus = paid_amount * 0.4;
+          payOutPer = 40;
+        }else{
+
+          const levelBonus = (() => {
+            if (type.includes("Level 1")) return unilevel?.level1 ?? 0;
+            if (type.includes("Level 2")) return unilevel?.level2 ?? 0;
+            return 0;
+          })();
+          bonus = (paid_amount / 100) * levelBonus;
+          payOutPer = levelBonus;
+
+          if (details && course_plans.includes(details)) {
+            bonus = paid_amount?paid_amount * 0.4 : 40;
+            payOutPer = 40;
+          }
+        }
+        
+        let detailMsg = isDeduct
+          ? `${bonus.toFixed(2)} ${currency} has been deducted successfully as ${type}.`
+          : `You have received ${bonus.toFixed(2)} ${currency} amount as ${type}.`;
+
+        if (bonus !== 0) {
+          dataArry.push({
+            id: x++,
+            amount: bonus.toFixed(2),
+            username: sender?.username || "",
+            firstname: sender?.firstname || "",
+            lastname: sender?.lastname || "",
+            type,
+            details: detailMsg,
+            createdat,
+            currency,
+            payOutPer: payOutPer,
+            reason
+          });
+        }
+      }
+    }
+
+    return dataArry;
+  } catch (error) {
+    console.error("error", error);
+    return null;
+  }
+}
+
 async function Grand_total_payment_function(userid,month,usersdata,transactions,unilevels,new_packages){
 
   try{
