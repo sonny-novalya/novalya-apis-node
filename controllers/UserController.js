@@ -2263,26 +2263,86 @@ exports.dashboarddata = async (req, res) => {
       [authUser]
     );
 
+    // const pendingPayResult = await Qry(
+    //   `SELECT 
+    //     SUM(CASE WHEN type = 'Level 1 Bonus' THEN paid_amount ELSE 0 END) -
+    //     SUM(CASE WHEN type = 'Level 1 Bonus deducted' THEN paid_amount ELSE 0 END) AS net_bonus
+    //   FROM transactions
+    //   WHERE receiverid = ? 
+    //     AND createdat >= NOW() - INTERVAL 30 DAY
+    //     AND type IN ('Level 1 Bonus', 'Level 1 Bonus deducted')`,
+    //   [authUser]
+    // );
+
+    // const nextPayResult = await Qry(
+    //   `SELECT
+    //     SUM(CASE WHEN type = 'Level 1 Bonus' THEN paid_amount ELSE 0 END) -
+    //     SUM(CASE WHEN type = 'Level 1 Bonus deducted' THEN paid_amount ELSE 0 END) AS net_bonus
+    //   FROM transactions
+    //   WHERE receiverid = ? 
+    //     AND createdat < NOW() - INTERVAL 30 DAY
+    //     AND type IN ('Level 1 Bonus', 'Level 1 Bonus deducted')`,
+    //   [authUser]
+    // );
+
+    // Calculates the net Level 1 Bonus for the current user within the last 30 days, including only transactions from the current and previous calendar months.
     const pendingPayResult = await Qry(
-      `SELECT 
-        SUM(CASE WHEN type = 'Level 1 Bonus' THEN paid_amount ELSE 0 END) -
-        SUM(CASE WHEN type = 'Level 1 Bonus deducted' THEN paid_amount ELSE 0 END) AS net_bonus
-      FROM transactions
-      WHERE receiverid = ? 
-        AND createdat >= NOW() - INTERVAL 30 DAY
-        AND type IN ('Level 1 Bonus', 'Level 1 Bonus deducted')`,
-      [authUser]
+      `SELECT (
+          SELECT COALESCE(SUM(paid_amount), 0) 
+          FROM transactions 
+          WHERE receiverid = ? 
+            AND createdat >= NOW() - INTERVAL 30 DAY 
+            AND type = 'Level 1 Bonus' 
+            AND (
+              (YEAR(createdat) = YEAR(CURDATE()) AND MONTH(createdat) = MONTH(CURDATE())) 
+              OR 
+              (YEAR(createdat) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(createdat) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
+            )
+        ) 
+        - 
+        (
+          SELECT COALESCE(SUM(paid_amount), 0) 
+          FROM transactions 
+          WHERE receiverid = ? 
+            AND createdat >= NOW() - INTERVAL 30 DAY 
+            AND type = 'Level 1 Bonus deducted' 
+            AND (
+              (YEAR(createdat) = YEAR(CURDATE()) AND MONTH(createdat) = MONTH(CURDATE())) 
+              OR 
+              (YEAR(createdat) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(createdat) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
+            )
+        ) AS net_bonus`,
+      [authUser, authUser]
     );
 
+    // Calculates the net Level 1 Bonus for the current user that is older than 30 days, but still within the current or previous calendar months.
     const nextPayResult = await Qry(
-      `SELECT
-        SUM(CASE WHEN type = 'Level 1 Bonus' THEN paid_amount ELSE 0 END) -
-        SUM(CASE WHEN type = 'Level 1 Bonus deducted' THEN paid_amount ELSE 0 END) AS net_bonus
-      FROM transactions
-      WHERE receiverid = ? 
-        AND createdat < NOW() - INTERVAL 30 DAY
-        AND type IN ('Level 1 Bonus', 'Level 1 Bonus deducted')`,
-      [authUser]
+      `SELECT COALESCE((
+          SELECT SUM(paid_amount) 
+          FROM transactions 
+          WHERE receiverid = ? 
+            AND type = 'Level 1 Bonus' 
+            AND createdat < NOW() - INTERVAL 30 DAY 
+            AND (
+              (YEAR(createdat) = YEAR(CURDATE()) AND MONTH(createdat) = MONTH(CURDATE())) 
+              OR 
+              (YEAR(createdat) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(createdat) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
+            )
+        ), 0) 
+        - 
+        COALESCE((
+          SELECT SUM(paid_amount) 
+          FROM transactions 
+          WHERE receiverid = ? 
+            AND type = 'Level 1 Bonus Deducted' 
+            AND createdat < NOW() - INTERVAL 30 DAY 
+            AND (
+              (YEAR(createdat) = YEAR(CURDATE()) AND MONTH(createdat) = MONTH(CURDATE())) 
+              OR 
+              (YEAR(createdat) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND MONTH(createdat) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
+            )
+        ), 0) AS net_bonus`,
+      [authUser, authUser]
     );
 
     const pendingPay = { net_bonus: pendingPayResult[0]?.net_bonus ?? 0 };
