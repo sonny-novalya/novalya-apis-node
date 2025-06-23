@@ -2833,6 +2833,7 @@ async function total_payment_function(userid, month,year) {
 // total payment function affilate payment
 async function total_payment_function_afcm_tbl(userid, month, year) {
   try {
+    // commissions before 1 may will remain same as previous while commissions after 1 may will be 40% 
     function getLevel1Rate({ month, year, unilevelRate }) {
       return Number(year) > 2025 || (Number(year) === 2025 && Number(month) >= 5)
         ? 40
@@ -2857,8 +2858,10 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
       [totalUser]
     );
 
-    const selectUsersPkgData = `SELECT * FROM new_packages WHERE userid = ? and type = ?`;
-    let resultUserPkgData = await Qry(selectUsersPkgData, [userid, "package"]);
+    const resultUserPkgData = await Qry(
+      `SELECT * FROM new_packages WHERE userid = ? and type = ?`,
+      [userid, "package"]
+    );
     let currentUserPlanId = resultUserPkgData[0].planid;
     let dataArry = [];
     let detail = "";
@@ -2866,16 +2869,13 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
     let levelTypes = isBeforeMay2025
       ? ["Level 1 Bonus", "Level 2 Bonus", "Bonus Add By Admin"]
       : ["Level 1 Bonus", "Bonus Add By Admin"];
-
     const placeholders = levelTypes.map(() => "?").join(", ");
-
     const selectTraLevelTpay = `
       SELECT * FROM transactions 
       WHERE receiverid = ? 
       AND type IN (${placeholders}) 
       AND MONTH(createdat) = ? 
       AND YEAR(createdat) = ${year}`;
-
     let resultTraLevelTPay = await Qry(selectTraLevelTpay, [
       userid,
       ...levelTypes,
@@ -2901,107 +2901,114 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
           payOutPer: "",
           reason,
         });
-      } else {
-        const resultUserPkgData1122 = await Qry(
-          `SELECT * FROM new_packages WHERE userid = ? and type = ?`,
-          [senderid, "package"]
-        );
+        continue;
+      }
 
-        let senderPlanId = resultUserPkgData1122[0]?.planid;
-        const resultSender1 = await Qry(`SELECT * FROM usersdata WHERE id = ?`, [senderid]);
+      const resultUserPkgData1122 = await Qry(
+        `SELECT * FROM new_packages WHERE userid = ? and type = ?`,
+        [senderid, "package"]
+      );
+      const resultSender1 = await Qry(
+        `SELECT * FROM usersdata WHERE id = ?`,
+        [senderid]
+      );
 
-        let senderCreatedat = resultSender1[0]?.createdat;
-        const date = new Date(senderCreatedat);
-        const monthh = date.getMonth() + 1;
-        const day = date.getDate();
+      let senderPlanId = resultUserPkgData1122[0]?.planid;
+      let senderCreatedat = resultSender1[0]?.createdat;
+      const date = new Date(senderCreatedat);
+      const monthh = date.getMonth() + 1;
+      const day = date.getDate();
+      const currency = data.currency;
+      const amount = data.paid_amount;
+      let levelBonus = 0;
+      let payOutPer = 0;
 
-        let levelBonus = getLevel1Rate({ month, year, unilevelRate: unilevelData[0].level1 });
-        let payOutPer = levelBonus;
-        let amount = data.paid_amount;
-        let bonus = (amount / 100) * levelBonus;
-        let currency = data.currency;
+      if (data.type === "Level 1 Bonus") {
+        levelBonus = getLevel1Rate({ month, year, unilevelRate: unilevelData[0].level1 }); // L1 will be 40% after 1 may
+      } else if (data.type === "Level 2 Bonus") {
+        levelBonus = unilevelData[0].level2; // DO NOT apply 40% to Level 2
+      }
 
-        if (levelBonus !== 40) {
-          if (
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-USD-Monthly" ||
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-EUR-Monthly" ||
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-USD-Monthly" ||
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-EUR-Monthly"
-          ) {
-            if (month === 4 && monthh === 4 && day >= 14 && day <= 21) {
-              levelBonus = 50;
-              payOutPer = 50;
-              bonus = (amount / 100) * 50;
-            }
-          }
+      payOutPer = levelBonus;
+      let bonus = (amount / 100) * levelBonus;
 
-          if (month === 4 && monthh === 4 && day >= 22 && day <= 28) {
-            levelBonus = 50;
-            payOutPer = 50;
-            bonus = (amount / 100) * 50;
-          }
-
-          if (month === 2 && data.event_type === "subscription_created") {
-            levelBonus = 50;
-            payOutPer = 50;
-            bonus = (amount / 100) * 50;
-          }
-        }
-
+      if (data.type === "Level 1 Bonus" && levelBonus !== 40) {
         if (
-          (senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-USD-Monthly" ||
-            senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-EUR-Monthly") &&
-          (monthh === 4 || (monthh === 5 && day <= 10))
+          currentUserPlanId?.includes("Offre-Spciale-Challenge") &&
+          month === 4 &&
+          monthh === 4 &&
+          day >= 14 &&
+          day <= 21
         ) {
+          levelBonus = 50;
+          payOutPer = 50;
+          bonus = (amount / 100) * 50;
+        }
+        if (month === 4 && monthh === 4 && day >= 22 && day <= 28) {
+          levelBonus = 50;
+          payOutPer = 50;
+          bonus = (amount / 100) * 50;
+        }
+        if (month === 2 && data.event_type === "subscription_created") {
+          levelBonus = 50;
+          payOutPer = 50;
+          bonus = (amount / 100) * 50;
+        }
+      }
+
+      if (
+        (senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-USD-Monthly" ||
+          senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-EUR-Monthly") &&
+        (monthh === 4 || (monthh === 5 && day <= 10))
+      ) {
+        if (data.type === "Level 1 Bonus") {
           bonus = 50;
           payOutPer = 0;
         }
-
-        if (
-          data.details ===
-          "Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR"
-        ) {
-          bonus = data.paid_amount ? data.paid_amount * 0.4 : 40;
-          detail = data.details;
-        } else {
-          detail = `You have received ${bonus.toFixed(2)} ${currency} amount as ${data.type}.`;
+        if (data.type === "Level 2 Bonus") {
+          bonus = 0;
+          payOutPer = 0;
         }
+      }
 
-        if (bonus !== 0) {
-          dataArry.push({
-            id: x++,
-            amount: bonus.toFixed(2),
-            username: resultSender1[0]?.username,
-            firstname: resultSender1[0]?.firstname,
-            lastname: resultSender1[0]?.lastname,
-            type: data.type,
-            details: detail,
-            createdat: data.createdat,
-            currency: currency,
-            payOutPer: payOutPer,
-            reason,
-          });
-        }
+      if (
+        data.details ===
+        "Formation-Sonny-Novalya-Transformer-vos-leads-en-RDV-qualifies-EUR"
+      ) {
+        bonus = data.paid_amount ? data.paid_amount * 0.4 : 40;
+        detail = data.details;
+      } else {
+        detail = `You have received ${bonus.toFixed(2)} ${currency} amount as ${data.type}.`;
+      }
+
+      if (bonus !== 0) {
+        dataArry.push({
+          id: x++,
+          amount: bonus.toFixed(2),
+          username: resultSender1[0]?.username,
+          firstname: resultSender1[0]?.firstname,
+          lastname: resultSender1[0]?.lastname,
+          type: data.type,
+          details: detail,
+          createdat: data.createdat,
+          currency: currency,
+          payOutPer: payOutPer,
+          reason,
+        });
       }
     }
 
+    // Handle deducted commissions
     let levelDeductTypes = isBeforeMay2025
       ? ["Level 1 Bonus Deducted", "Level 2 Bonus Deducted", "Bonus Deduct By Admin"]
       : ["Level 1 Bonus Deducted", "Bonus Deduct By Admin"];
-
     const deductPlaceholders = levelDeductTypes.map(() => "?").join(", ");
-
     const selectTraLevelDedTPay = `
       SELECT * FROM transactions 
       WHERE receiverid = ? 
       AND type IN (${deductPlaceholders}) 
       AND MONTH(createdat) = ? 
       AND YEAR(createdat) = ${year}`;
-
     let resultTraLevelDedTPAY = await Qry(selectTraLevelDedTPay, [
       userid,
       ...levelDeductTypes,
@@ -3026,77 +3033,86 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
           payOutPer: "",
           reason,
         });
-      } else {
-        const resultUserPkgData1122 = await Qry(
-          `SELECT * FROM new_packages WHERE userid = ? and type = ?`,
-          [senderid, "package"]
-        );
+        continue;
+      }
 
-        let senderPlanId = resultUserPkgData1122[0]?.planid;
-        const resultSender1 = await Qry(`SELECT * FROM usersdata WHERE id = ?`, [senderid]);
+      const resultUserPkgData1122 = await Qry(
+        `SELECT * FROM new_packages WHERE userid = ? and type = ?`,
+        [senderid, "package"]
+      );
+      const resultSender1 = await Qry(
+        `SELECT * FROM usersdata WHERE id = ?`,
+        [senderid]
+      );
 
-        let senderCreatedat = resultSender1[0]?.createdat;
-        const date = new Date(senderCreatedat);
-        const monthh = date.getMonth() + 1;
-        const day = date.getDate();
+      let senderPlanId = resultUserPkgData1122[0]?.planid;
+      let senderCreatedat = resultSender1[0]?.createdat;
+      const date = new Date(senderCreatedat);
+      const monthh = date.getMonth() + 1;
+      const day = date.getDate();
+      const currency = data.currency;
+      const amount = data.paid_amount;
 
-        let levelBonus = getLevel1Rate({ month, year, unilevelRate: unilevelData[0].level1 });
-        let payOutPer = levelBonus;
-        let amount = data.paid_amount;
-        let bonus = (amount / 100) * levelBonus;
-        let currency = data.currency;
+      let levelBonus = 0;
 
-        if (levelBonus !== 40) {
-          if (
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-USD-Monthly" ||
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-1X297-EUR-Monthly" ||
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-USD-Monthly" ||
-            currentUserPlanId ===
-              "Offre-Spciale-Challenge-7-Jours-1-An-Novalya-2X149-EUR-Monthly"
-          ) {
-            if (monthh === 4 && day >= 14 && day <= 21) {
-              levelBonus = 50;
-              payOutPer = 50;
-              bonus = (amount / 100) * 50;
-            }
-          }
+      if (data.type === "Level 1 Bonus Deducted") {
+        levelBonus = getLevel1Rate({ month, year, unilevelRate: unilevelData[0].level1 });
+      } else if (data.type === "Level 2 Bonus Deducted") {
+        levelBonus = unilevelData[0].level2;
+      }
 
-          if (monthh === 4 && day >= 22 && day <= 28) {
-            levelBonus = 50;
-            payOutPer = 50;
-            bonus = (amount / 100) * 50;
-          }
-        }
+      let payOutPer = levelBonus;
+      let bonus = (amount / 100) * levelBonus;
 
+      if (data.type === "Level 1 Bonus Deducted" && levelBonus !== 40) {
         if (
-          (senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-USD-Monthly" ||
-            senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-EUR-Monthly") &&
-          (monthh === 4 || (monthh === 5 && day <= 10))
+          currentUserPlanId?.includes("Offre-Spciale-Challenge") &&
+          monthh === 4 &&
+          day >= 14 &&
+          day <= 21
         ) {
+          levelBonus = 50;
+          payOutPer = 50;
+          bonus = (amount / 100) * 50;
+        }
+        if (monthh === 4 && day >= 22 && day <= 28) {
+          levelBonus = 50;
+          payOutPer = 50;
+          bonus = (amount / 100) * 50;
+        }
+      }
+
+      if (
+        (senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-USD-Monthly" ||
+          senderPlanId === "Challenge-Affiliate-PRO-FR-2x147-EUR-Monthly") &&
+        (monthh === 4 || (monthh === 5 && day <= 10))
+      ) {
+        if (data.type === "Level 1 Bonus Deducted") {
           bonus = 50;
           payOutPer = 0;
         }
-
-        detail = `${bonus.toFixed(2)} ${currency} has been deducted successfully as ${data.type}.`;
-
-        if (bonus !== 0) {
-          dataArry.push({
-            id: x++,
-            amount: bonus.toFixed(2),
-            username: resultSender1[0]?.username,
-            firstname: resultSender1[0]?.firstname,
-            lastname: resultSender1[0]?.lastname,
-            type: data.type,
-            details: detail,
-            createdat: data.createdat,
-            currency: currency,
-            payOutPer: payOutPer,
-            reason,
-          });
+        if (data.type === "Level 2 Bonus Deducted") {
+          bonus = 0;
+          payOutPer = 0;
         }
+      }
+
+      detail = `${bonus.toFixed(2)} ${currency} has been deducted successfully as ${data.type}.`;
+
+      if (bonus !== 0) {
+        dataArry.push({
+          id: x++,
+          amount: bonus.toFixed(2),
+          username: resultSender1[0]?.username,
+          firstname: resultSender1[0]?.firstname,
+          lastname: resultSender1[0]?.lastname,
+          type: data.type,
+          details: detail,
+          createdat: data.createdat,
+          currency: currency,
+          payOutPer: payOutPer,
+          reason,
+        });
       }
     }
 
