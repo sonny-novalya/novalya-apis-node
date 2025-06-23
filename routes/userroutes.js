@@ -149,7 +149,9 @@ router.patch("/taggeduser/multiple/", taggedUserController.updateMultiple);
 router
   .get("/taggeduser/:id", taggedUserController.getOne)
   .patch("/taggeduser/:id", taggedUserController.updateOne)
-  .delete("/taggeduser/:id", taggedUserController.deleteOne);
+  .delete("/taggeduser/:id", taggedUserController.deleteOne)
+  .delete("/taggeduser/delete", taggedUserController.deleteMany);
+
   
 router.patch("/taggedusersmove/", taggedUserController.taggedusersmove);
 router.patch("/changeUserTagGroup/", taggedUserController.changeUserTagGroup);

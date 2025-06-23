@@ -256,6 +256,33 @@ const deleteOne = async (req, res) => {
   }
 };
 
+const deleteMany = async (req, res) => {
+  try {
+    const { ids = [] } = req.body;
+    const { type = "facebook" } = req.query;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return Response.resWith422(res, 'Please provide a list of IDs to delete');
+    }
+
+    const taggedusersTable = type === "instagram" ? db.instataggedusers : taggedusers;
+
+    const rowsDeleted = await taggedusersTable.destroy({
+      where: { id: ids }
+    });
+
+    if (rowsDeleted === 0) {
+      return Response.resWith422(res, 'No matching records found to delete');
+    }
+
+    return Response.resWith202(res, `${rowsDeleted} tagged user(s) successfully deleted`);
+  } catch (error) {
+    console.log('error', error);
+    return Response.resWith422(res, error.message);
+  }
+};
+
+
 const importTaggedUsers = async (req, res) => {
   const taggedUsersData = require("../../routes/csvfiles/taggged_users.json");
 
@@ -310,4 +337,5 @@ module.exports = {
   changeUserTagGroup,
   updateMultiple,
   importTaggedUsers,
+  deleteMany
 };
