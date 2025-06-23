@@ -265,6 +265,8 @@ const deleteMany = async (req, res) => {
       return Response.resWith422(res, 'Please provide a list of IDs to delete');
     }
 
+    console.log(type,"type")
+
     const taggedusersTable = type === "instagram" ? db.instataggedusers : taggedusers;
 
     const rowsDeleted = await taggedusersTable.destroy({
