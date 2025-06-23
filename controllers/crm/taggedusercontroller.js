@@ -259,7 +259,7 @@ const deleteOne = async (req, res) => {
 const deleteMany = async (req, res) => {
   try {
     const { ids = [] } = req.body;
-    const { type = "facebook" } = req.query;
+    const { type = "facebook" } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return Response.resWith422(res, 'Please provide a list of IDs to delete');
