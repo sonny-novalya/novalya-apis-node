@@ -334,10 +334,10 @@ module.exports = {
   getAll,
   getOne,
   updateOne,
+  deleteMany,
   deleteOne,
   taggedusersmove,
   changeUserTagGroup,
   updateMultiple,
   importTaggedUsers,
-  deleteMany
 };

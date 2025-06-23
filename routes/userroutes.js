@@ -150,7 +150,7 @@ router
   .get("/taggeduser/:id", taggedUserController.getOne)
   .patch("/taggeduser/:id", taggedUserController.updateOne)
   .delete("/taggeduser/:id", taggedUserController.deleteOne)
-  .delete("/taggeduser/delete", taggedUserController.deleteMany);
+  .post("/taggeduser/deleteMany", taggedUserController.deleteMany);
 
   
 router.patch("/taggedusersmove/", taggedUserController.taggedusersmove);
