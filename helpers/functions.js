@@ -2839,6 +2839,8 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
         : unilevelRate;
     }
 
+    const isBeforeMay2025 = Number(year) < 2025 || (Number(year) === 2025 && Number(month) < 5);
+
     let currentMonth = currentMonthFun();
     let cmonth = month || currentMonth;
     let cyear = year || new Date().getFullYear();
@@ -2861,16 +2863,22 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
     let dataArry = [];
     let detail = "";
 
+    let levelTypes = isBeforeMay2025
+      ? ["Level 1 Bonus", "Level 2 Bonus", "Bonus Add By Admin"]
+      : ["Level 1 Bonus", "Bonus Add By Admin"];
+
+    const placeholders = levelTypes.map(() => "?").join(", ");
+
     const selectTraLevelTpay = `
       SELECT * FROM transactions 
       WHERE receiverid = ? 
-      AND (type = ? OR type = ?) 
+      AND type IN (${placeholders}) 
       AND MONTH(createdat) = ? 
       AND YEAR(createdat) = ${year}`;
+
     let resultTraLevelTPay = await Qry(selectTraLevelTpay, [
       userid,
-      "Level 1 Bonus",
-      "Bonus Add By Admin",
+      ...levelTypes,
       month,
     ]);
 
@@ -2981,16 +2989,22 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
       }
     }
 
+    let levelDeductTypes = isBeforeMay2025
+      ? ["Level 1 Bonus Deducted", "Level 2 Bonus Deducted", "Bonus Deduct By Admin"]
+      : ["Level 1 Bonus Deducted", "Bonus Deduct By Admin"];
+
+    const deductPlaceholders = levelDeductTypes.map(() => "?").join(", ");
+
     const selectTraLevelDedTPay = `
       SELECT * FROM transactions 
       WHERE receiverid = ? 
-      AND (type = ? OR type = ?) 
+      AND type IN (${deductPlaceholders}) 
       AND MONTH(createdat) = ? 
       AND YEAR(createdat) = ${year}`;
+
     let resultTraLevelDedTPAY = await Qry(selectTraLevelDedTPay, [
       userid,
-      "Level 1 Bonus Deducted",
-      "Bonus Deduct By Admin",
+      ...levelDeductTypes,
       month,
     ]);
 
