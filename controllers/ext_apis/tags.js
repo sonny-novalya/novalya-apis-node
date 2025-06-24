@@ -201,8 +201,10 @@ const TagsController = {
             });
 
             if (profile_pic && base64Str.test(profile_pic) && profile_pic.includes("novalya-assets") != true) {
-
-              imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+              const dateTimeStamp = Date.now();
+              const randomStr = Math.random().toString(36).substring(2, 10);
+              const uniqueImageId = `${dateTimeStamp}_${fb_user_id || fb_user_alphanumeric_id || randomStr}`;
+              imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, uniqueImageId);
             }else{
               imageUrl = profile_pic
             }
