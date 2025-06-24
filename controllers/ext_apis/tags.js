@@ -194,6 +194,8 @@ const TagsController = {
               }
             }
 
+            let imageUrl = profile_pic;
+            
             const existingRecord = await taggedUser.findOne({
               where: whereClause
             });
