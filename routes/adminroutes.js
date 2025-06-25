@@ -3712,198 +3712,133 @@ router.post("/updatelimitsdata", async (req, res) => {
     const postData = req.body;
     const authUser = await adminAuthorization(req, res);
     if (authUser) {
-      let pkg_plane = postData.pkg_plane;
-      let plan1_id = postData.plan1_id;
-      // let plan1_fb_no_crm_group = postData.plan1_fb_no_crm_group;
-      // let plan1_fb_no_stages_group = postData.plan1_fb_no_stages_group;
-      // let plan1_fb_no_friend_request = postData.plan1_fb_no_friend_request;
-      // let plan1_fb_no_crm_message = postData.plan1_fb_no_crm_message;
-      // let plan1_fb_no_ai_comment = postData.plan1_fb_no_ai_comment;
-      // let plan1_fb_advanced_novadata = postData.plan1_fb_advanced_novadata;
-      // let plan1_fb_no_friend_requests_received =
-      //   postData.plan1_fb_no_friend_requests_received;
-      // let plan1_fb_no_of_birthday_wishes =
-      //   postData.plan1_fb_no_of_birthday_wishes;
+      // let pkg_plane = postData.pkg_plane;
+      // let plan1_id = postData.plan1_id;
 
-      let plan2_id = postData.plan2_id;
-      // let plan2_fb_no_crm_group = postData.plan2_fb_no_crm_group;
-      // let plan2_fb_no_stages_group = postData.plan2_fb_no_stages_group;
-      // let plan2_fb_no_friend_request = postData.plan2_fb_no_friend_request;
-      // let plan2_fb_no_crm_message = postData.plan2_fb_no_crm_message;
-      // let plan2_fb_no_ai_comment = postData.plan2_fb_no_ai_comment;
-      // let plan2_fb_advanced_novadata = postData.plan2_fb_advanced_novadata;
-      // let plan2_fb_no_friend_requests_received =
-      //   postData.plan2_fb_no_friend_requests_received;
-      // let plan2_fb_no_of_birthday_wishes =
-      //   postData.plan2_fb_no_of_birthday_wishes;
 
-      let plan3_id = postData.plan3_id;
-      // let plan3_fb_no_crm_group = postData.plan3_fb_no_crm_group;
-      // let plan3_fb_no_stages_group = postData.plan3_fb_no_stages_group;
-      // let plan3_fb_no_friend_request = postData.plan3_fb_no_friend_request;
-      // let plan3_fb_no_crm_message = postData.plan3_fb_no_crm_message;
-      // let plan3_fb_no_ai_comment = postData.plan3_fb_no_ai_comment;
-      // let plan3_fb_advanced_novadata = postData.plan3_fb_advanced_novadata;
-      // let plan3_fb_no_friend_requests_received =
-      //   postData.plan3_fb_no_friend_requests_received;
-      // let plan3_fb_no_of_birthday_wishes =
-      //   postData.plan3_fb_no_of_birthday_wishes;
+      // let plan2_id = postData.plan2_id;
+     
 
-      // let plan1_inst_no_crm_group = postData.plan1_inst_no_crm_group;
-      // let plan1_inst_no_stages_group = postData.plan1_inst_no_stages_group;
-      // let plan1_inst_no_friend_request = postData.plan1_inst_no_friend_request;
-      // let plan1_inst_no_crm_message = postData.plan1_inst_no_crm_message;
-      // let plan1_inst_no_ai_comment = postData.plan1_inst_no_ai_comment;
-      // let plan1_inst_advanced_novadata = postData.plan1_inst_advanced_novadata;
-      // let plan1_inst_no_friend_requests_received =
-      //   postData.plan1_inst_no_friend_requests_received;
-      // let plan1_inst_no_of_birthday_wishes =
-      //   postData.plan1_inst_no_of_birthday_wishes;
+      // let plan3_id = postData.plan3_id;
 
-      // let plan2_inst_no_crm_group = postData.plan2_inst_no_crm_group;
-      // let plan2_inst_no_stages_group = postData.plan2_inst_no_stages_group;
-      // let plan2_inst_no_friend_request = postData.plan2_inst_no_friend_request;
-      // let plan2_inst_no_crm_message = postData.plan2_inst_no_crm_message;
-      // let plan2_inst_no_ai_comment = postData.plan2_inst_no_ai_comment;
-      // let plan2_inst_advanced_novadata = postData.plan2_inst_advanced_novadata;
-      // let plan2_inst_no_friend_requests_received =
-      //   postData.plan2_inst_no_friend_requests_received;
-      // let plan2_inst_no_of_birthday_wishes =
-      //   postData.plan2_inst_no_of_birthday_wishes;
 
-      // let plan3_inst_no_crm_group = postData.plan3_inst_no_crm_group;
-      // let plan3_inst_no_stages_group = postData.plan3_inst_no_stages_group;
-      // let plan3_inst_no_friend_request = postData.plan3_inst_no_friend_request;
-      // let plan3_inst_no_crm_message = postData.plan3_inst_no_crm_message;
-      // let plan3_inst_no_ai_comment = postData.plan3_inst_no_ai_comment;
-      // let plan3_inst_advanced_novadata = postData.plan3_inst_advanced_novadata;
-      // let plan3_inst_no_friend_requests_received =
-      //   postData.plan3_inst_no_friend_requests_received;
-      // let plan3_inst_no_of_birthday_wishes =
-      //   postData.plan3_inst_no_of_birthday_wishes;
+      // if (pkg_plane === "FaceBook") {
+      //   const updateQuery = `UPDATE chargbee_packages_limits SET pkg_id = ?, fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ? ,fb_no_of_birthday_wishes = ? WHERE id = ?`;
+      //   await Qry(updateQuery, [
+      //     plan1_id,
+      //     plan1_fb_no_crm_group,
+      //     plan1_fb_no_stages_group,
+      //     plan1_fb_no_friend_request,
+      //     plan1_fb_no_crm_message,
+      //     plan1_fb_no_ai_comment,
+      //     plan1_fb_advanced_novadata,
+      //     plan1_fb_no_friend_requests_received,
+      //     plan1_fb_no_of_birthday_wishes,
+      //     1,
+      //   ]);
 
-      if (pkg_plane === "FaceBook") {
-        const updateQuery = `UPDATE chargbee_packages_limits SET pkg_id = ?, fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ? ,fb_no_of_birthday_wishes = ? WHERE id = ?`;
-        await Qry(updateQuery, [
-          plan1_id,
-          plan1_fb_no_crm_group,
-          plan1_fb_no_stages_group,
-          plan1_fb_no_friend_request,
-          plan1_fb_no_crm_message,
-          plan1_fb_no_ai_comment,
-          plan1_fb_advanced_novadata,
-          plan1_fb_no_friend_requests_received,
-          plan1_fb_no_of_birthday_wishes,
-          1,
-        ]);
+      //   const updateQuery2 = `UPDATE chargbee_packages_limits SET pkg_id = ?, fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ? , fb_no_of_birthday_wishes = ? WHERE id = ?`;
+      //   await Qry(updateQuery, [
+      //     plan2_id,
+      //     plan2_fb_no_crm_group,
+      //     plan2_fb_no_stages_group,
+      //     plan2_fb_no_friend_request,
+      //     plan2_fb_no_crm_message,
+      //     plan2_fb_no_ai_comment,
+      //     plan2_fb_advanced_novadata,
+      //     plan2_fb_no_friend_requests_received,
+      //     plan2_fb_no_of_birthday_wishes,
+      //     2,
+      //   ]);
 
-        const updateQuery2 = `UPDATE chargbee_packages_limits SET pkg_id = ?, fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ? , fb_no_of_birthday_wishes = ? WHERE id = ?`;
-        await Qry(updateQuery, [
-          plan2_id,
-          plan2_fb_no_crm_group,
-          plan2_fb_no_stages_group,
-          plan2_fb_no_friend_request,
-          plan2_fb_no_crm_message,
-          plan2_fb_no_ai_comment,
-          plan2_fb_advanced_novadata,
-          plan2_fb_no_friend_requests_received,
-          plan2_fb_no_of_birthday_wishes,
-          2,
-        ]);
+      //   const updateQuery3 = `UPDATE chargbee_packages_limits SET pkg_id = ?, fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ? , fb_no_of_birthday_wishes = ? WHERE id = ?`;
+      //   await Qry(updateQuery, [
+      //     plan3_id,
+      //     plan3_fb_no_crm_group,
+      //     plan3_fb_no_stages_group,
+      //     plan3_fb_no_friend_request,
+      //     plan3_fb_no_crm_message,
+      //     plan3_fb_no_ai_comment,
+      //     plan3_fb_advanced_novadata,
+      //     plan3_fb_no_friend_requests_received,
+      //     plan3_fb_no_of_birthday_wishes,
+      //     3,
+      //   ]);
 
-        const updateQuery3 = `UPDATE chargbee_packages_limits SET pkg_id = ?, fb_no_crm_group = ?, fb_no_stages_group = ?, fb_no_friend_request = ?, fb_no_crm_message = ?, fb_no_ai_comment = ?, fb_advanced_novadata = ?, fb_no_friend_requests_received = ? , fb_no_of_birthday_wishes = ? WHERE id = ?`;
-        await Qry(updateQuery, [
-          plan3_id,
-          plan3_fb_no_crm_group,
-          plan3_fb_no_stages_group,
-          plan3_fb_no_friend_request,
-          plan3_fb_no_crm_message,
-          plan3_fb_no_ai_comment,
-          plan3_fb_advanced_novadata,
-          plan3_fb_no_friend_requests_received,
-          plan3_fb_no_of_birthday_wishes,
-          3,
-        ]);
+      //   res.status(200).json({
+      //     status: "success",
+      //     message: "Limits has been updated successfully.",
+      //   });
+      // } else if (pkg_plane === "Instagram") {
+      //   const updateQuery = `UPDATE chargbee_packages_limits SET pkg_id = ?, inst_no_crm_group = ?, inst_no_stages_group = ?, inst_no_friend_request = ?, inst_no_crm_message = ?, inst_no_ai_comment = ?, inst_advanced_novadata = ?, inst_no_friend_requests_received = ? ,inst_no_of_birthday_wishes = ? WHERE id = ?`;
+      //   await Qry(updateQuery, [
+      //     plan1_id,
+      //     plan1_inst_no_crm_group,
+      //     plan1_inst_no_stages_group,
+      //     plan1_inst_no_friend_request,
+      //     plan1_inst_no_crm_message,
+      //     plan1_inst_no_ai_comment,
+      //     plan1_inst_advanced_novadata,
+      //     plan1_inst_no_friend_requests_received,
+      //     plan1_inst_no_of_birthday_wishes,
+      //     1,
+      //   ]);
 
-        res.status(200).json({
-          status: "success",
-          message: "Limits has been updated successfully.",
-        });
-      } else if (pkg_plane === "Instagram") {
-        const updateQuery = `UPDATE chargbee_packages_limits SET pkg_id = ?, inst_no_crm_group = ?, inst_no_stages_group = ?, inst_no_friend_request = ?, inst_no_crm_message = ?, inst_no_ai_comment = ?, inst_advanced_novadata = ?, inst_no_friend_requests_received = ? ,inst_no_of_birthday_wishes = ? WHERE id = ?`;
-        await Qry(updateQuery, [
-          plan1_id,
-          plan1_inst_no_crm_group,
-          plan1_inst_no_stages_group,
-          plan1_inst_no_friend_request,
-          plan1_inst_no_crm_message,
-          plan1_inst_no_ai_comment,
-          plan1_inst_advanced_novadata,
-          plan1_inst_no_friend_requests_received,
-          plan1_inst_no_of_birthday_wishes,
-          1,
-        ]);
+      //   const updateQuery2 = `UPDATE chargbee_packages_limits SET pkg_id = ?, inst_no_crm_group = ?, inst_no_stages_group = ?, inst_no_friend_request = ?, inst_no_crm_message = ?, inst_no_ai_comment = ?, inst_advanced_novadata = ?, inst_no_friend_requests_received = ? , inst_no_of_birthday_wishes = ? WHERE id = ?`;
+      //   await Qry(updateQuery, [
+      //     plan2_id,
+      //     plan2_inst_no_crm_group,
+      //     plan2_inst_no_stages_group,
+      //     plan2_inst_no_friend_request,
+      //     plan2_inst_no_crm_message,
+      //     plan2_inst_no_ai_comment,
+      //     plan2_inst_advanced_novadata,
+      //     plan2_inst_no_friend_requests_received,
+      //     plan2_inst_no_of_birthday_wishes,
+      //     2,
+      //   ]);
 
-        const updateQuery2 = `UPDATE chargbee_packages_limits SET pkg_id = ?, inst_no_crm_group = ?, inst_no_stages_group = ?, inst_no_friend_request = ?, inst_no_crm_message = ?, inst_no_ai_comment = ?, inst_advanced_novadata = ?, inst_no_friend_requests_received = ? , inst_no_of_birthday_wishes = ? WHERE id = ?`;
-        await Qry(updateQuery, [
-          plan2_id,
-          plan2_inst_no_crm_group,
-          plan2_inst_no_stages_group,
-          plan2_inst_no_friend_request,
-          plan2_inst_no_crm_message,
-          plan2_inst_no_ai_comment,
-          plan2_inst_advanced_novadata,
-          plan2_inst_no_friend_requests_received,
-          plan2_inst_no_of_birthday_wishes,
-          2,
-        ]);
+      //   const updateQuery3 = `UPDATE chargbee_packages_limits SET pkg_id = ?, inst_no_crm_group = ?, inst_no_stages_group = ?, inst_no_friend_request = ?, inst_no_crm_message = ?, inst_no_ai_comment = ?, inst_advanced_novadata = ?, inst_no_friend_requests_received = ? , inst_no_of_birthday_wishes = ? WHERE id = ?`;
+      //   await Qry(updateQuery, [
+      //     plan3_id,
+      //     plan3_inst_no_crm_group,
+      //     plan3_inst_no_stages_group,
+      //     plan3_inst_no_friend_request,
+      //     plan3_inst_no_crm_message,
+      //     plan3_inst_no_ai_comment,
+      //     plan3_inst_advanced_novadata,
+      //     plan3_inst_no_friend_requests_received,
+      //     plan3_inst_no_of_birthday_wishes,
+      //     3,
+      //   ]);
 
-        const updateQuery3 = `UPDATE chargbee_packages_limits SET pkg_id = ?, inst_no_crm_group = ?, inst_no_stages_group = ?, inst_no_friend_request = ?, inst_no_crm_message = ?, inst_no_ai_comment = ?, inst_advanced_novadata = ?, inst_no_friend_requests_received = ? , inst_no_of_birthday_wishes = ? WHERE id = ?`;
-        await Qry(updateQuery, [
-          plan3_id,
-          plan3_inst_no_crm_group,
-          plan3_inst_no_stages_group,
-          plan3_inst_no_friend_request,
-          plan3_inst_no_crm_message,
-          plan3_inst_no_ai_comment,
-          plan3_inst_advanced_novadata,
-          plan3_inst_no_friend_requests_received,
-          plan3_inst_no_of_birthday_wishes,
-          3,
-        ]);
-
-        res.status(200).json({
-          status: "success",
-          message: "Limits has been updated successfully.",
-        });
-      }
+      //   res.status(200).json({
+      //     status: "success",
+      //     message: "Limits has been updated successfully.",
+      //   });
+      // }
     
 
-      const updateQuery = `UPDATE chargbee_packages_limits SET fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ?  WHERE  id = ?`;
+      const updateQuery = `UPDATE chargbee_packages_limits SET message_limit=?, ai_credits_new = ?, tags_pipelines = ?  WHERE  id = ?`;
       await Qry(updateQuery, [
-       postData.plan1_fb_messages,
-       postData.plan1_insta_messages,
+       postData.plan1_message_limit,
        postData.plan1_AI_credits,
        postData.plan1_Tags_pipelines,
-        4,
+        10,
       ]);
 
-      const updateQuery2 = `UPDATE chargbee_packages_limits SET fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ?  WHERE  id = ?`;
       await Qry(updateQuery, [
-       postData.plan2_fb_messages,
-       postData.plan2_insta_messages,
+       postData.plan2_message_limit,
        postData.plan2_AI_credits,
        postData.plan2_Tags_pipelines,
-        5,
+      11,
       ]);
 
-      const updateQuery3 = `UPDATE chargbee_packages_limits SET fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ?  WHERE  id = ?`;
       await Qry(updateQuery, [
-        postData.plan3_fb_messages,
-        postData.plan3_insta_messages,
+        postData.plan3_message_limit,
         postData.plan3_AI_credits,
         postData.plan3_Tags_pipelines,
-        6,
+        12,
       ]);
 
       res.status(200).json({
@@ -5185,8 +5120,7 @@ router.post("/updateuserlimits", async (req, res) => {
     const postData = req.body;
     const {
       userid,
-      fb_messages,
-      insta_messages,
+     message_limit,
       ai_credits_new,
       tags_pipelines,
     } = postData;
@@ -5194,11 +5128,10 @@ router.post("/updateuserlimits", async (req, res) => {
     if (authUser) {
       const updateQuery = `
       UPDATE users_limits SET 
-        fb_messages = ?, insta_messages = ?, ai_credits_new = ?, tags_pipelines = ?  WHERE userid = ?`;
+        message_limit = ?, ai_credits_new = ?, tags_pipelines = ?  WHERE userid = ?`;
 
       await Qry(updateQuery, [
-        fb_messages,
-      insta_messages,
+       message_limit,
       ai_credits_new,
       tags_pipelines,
         userid,
