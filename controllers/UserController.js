@@ -5546,7 +5546,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
             ]
           );
 
-          let isChatBotActive = 1;
+          let isChatBotActive = 0; //update 1 when sonny will say about this
           if (planID.includes("Starter")) {
             isChatBotActive = 0;
           }
@@ -6142,7 +6142,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
 
           console.log(trial, trialStatus, entityId);
 
-          let isChatBotActive = 1;
+          let isChatBotActive = 0;
           if (planID.includes("Starter")) {
             isChatBotActive = 0;
           }
