@@ -5378,6 +5378,8 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         let userTrialStatus = userData?.trial_status;
         let if_pro = true;
 
+        let cancelled_at = postData?.content?.subscription?.cancelled_at || postData?.content?.subscription?.created_at;
+
         if (subDomain === "app" && userTrialStatus === "Inactive") {
           // start level bonus
           let s_id = userData.sponsorid;
