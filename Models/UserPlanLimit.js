@@ -31,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         insta_messages:DataTypes.INTEGER,
         ai_credits_new:DataTypes.INTEGER,
         tags_pipelines:DataTypes.INTEGER,
+        message_limit:DataTypes.INTEGER,
     },
     {
       sequelize,
