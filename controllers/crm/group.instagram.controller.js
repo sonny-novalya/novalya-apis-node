@@ -309,8 +309,9 @@ const getAllUsers = async (req, res) => {
       'numeric_insta_id',
       'tag_id',
       'thread_id',
+      'is_primary',
       'createdAt',
-      'updatedAt'
+      'updatedAt',
     ]}
 
     const data = await taggedusers.findAll(query);
