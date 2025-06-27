@@ -350,10 +350,9 @@ const getOne = async (req, res) => {
           { user_id: authUser },
           {
             [Op.or]: [
-              { tag_id: id },                           // Exact match
-              { tag_id: { [Op.like]: `${id},%` } },     // At start: "22072,..."
-              { tag_id: { [Op.like]: `%,${id},%` } },   // In middle: "...,22072,..."
-              { tag_id: { [Op.like]: `%,${id}` } }      // At end: "...,22072"
+              { tag_id: id },                       
+              { tag_id: { [Op.like]: `%${id}%` } },     
+         
             ]
           }
         ]
@@ -439,11 +438,11 @@ const deleteOne = async (req, res) => {
 
 const limitDowngrade = async (req, res) => {
   try {
-    const data = req.data;
+    const {tagData} = req.body;
   
     // Use Promise.all to handle multiple asynchronous operations
     await Promise.all(
-      data.map(async (item) => {
+      tagData.map(async (item) => {
         const { tag_id, stage_id, type, current_tag_id } = item;
   
         if (type === "fb") {
@@ -457,7 +456,9 @@ const limitDowngrade = async (req, res) => {
             },
             {
               where: {
-                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` }, // Check if `tag_id` contains `id`
+                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` },
+                
+                // Check if `tag_id` contains `id`
               },
             }
           );
@@ -474,12 +475,13 @@ const limitDowngrade = async (req, res) => {
             },
             {
               where: {
-                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` }, // Check if `tag_id` contains `id`
+                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` },
+                 // Check if `tag_id` contains `id`
               },
             }
           );
   
-          await tag.destroy({ where: { id: current_tag_id } });
+          await db.instatag.destroy({ where: { id: current_tag_id } });
         }
       })
     );
