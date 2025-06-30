@@ -8,24 +8,22 @@ const {
 const Response = require("../../helpers/response");
 const { Model, fn, col, literal } = require("sequelize");
 const { Sequelize } = require("../../Models");
-const sequelize = db.sequelize
+const sequelize = db.sequelize;
 const Op = Sequelize.Op;
 const tag = db.tag;
 const campaign = db.campaign;
 const stage = db.stage;
 const taggedusers = db.taggedusers;
 const Statistic = db.Statistic;
-const tagsTable = db.tag
-const instaGramTag = db.instatag
-const userLimit =wholeDB.UserPlanLimit
+const tagsTable = db.tag;
+const instaGramTag = db.instatag;
+const userLimit = wholeDB.UserPlanLimit;
 
-tag.hasMany(stage, { as: 'stages', foreignKey: 'tag_id' });
-stage.belongsTo(tag, { foreignKey: 'tag_id' });
+tag.hasMany(stage, { as: "stages", foreignKey: "tag_id" });
+stage.belongsTo(tag, { foreignKey: "tag_id" });
 
-tag.hasMany(taggedusers, { foreignKey: 'tag_id', as: 'tagTaggedUsers' });
-stage.hasMany(taggedusers, { foreignKey: 'stage_id', as: 'stageTaggedUsers' });
-
-
+tag.hasMany(taggedusers, { foreignKey: "tag_id", as: "tagTaggedUsers" });
+stage.hasMany(taggedusers, { foreignKey: "stage_id", as: "stageTaggedUsers" });
 
 const placetag = async (req, res) => {
   try {
@@ -35,18 +33,18 @@ const placetag = async (req, res) => {
     const authUser = await getAuthUser(req, res);
     params.user_id = authUser;
 
-       const userLimitData = await userLimit.findOne({
-          where: { userid:authUser  },
-        });
-    
-        const fbCount = await tagsTable.count({ where: { user_id: authUser } });
-            const igCount = await instaGramTag.count({ where: { user_id: authUser } });
-            const total = fbCount + igCount;
-          console.log(userLimitData?.tags_pipelines,fbCount,igCount)
-    
-            if ( total >= userLimitData?.tags_pipelines) {
-               return Response.resWith201(res, 'success', "Limit Exceeded");
-            }
+    const userLimitData = await userLimit.findOne({
+      where: { userid: authUser },
+    });
+
+    const fbCount = await tagsTable.count({ where: { user_id: authUser } });
+    const igCount = await instaGramTag.count({ where: { user_id: authUser } });
+    const total = fbCount + igCount;
+    console.log(userLimitData?.tags_pipelines, fbCount, igCount);
+
+    if (total >= userLimitData?.tags_pipelines) {
+      return Response.resWith201(res, "success", "Limit Exceeded");
+    }
 
     const maxOrderNumTag = await tag.findOne({
       where: { user_id: authUser },
@@ -64,8 +62,8 @@ const placetag = async (req, res) => {
 
     let statistic = await Statistic.create({
       user_id: authUser,
-      type : 'fb_crm',
-      message_count: 1, 
+      type: "fb_crm",
+      message_count: 1,
     });
 
     if (createdTag) {
@@ -100,9 +98,9 @@ const placetag = async (req, res) => {
         include: "stage",
       });
     }
-    return Response.resWith202(res, 'success', createdTag);
+    return Response.resWith202(res, "success", createdTag);
   } catch (error) {
-    console.log('error', error);    
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -123,34 +121,35 @@ const getAll = async (req, res) => {
       order: [["order_num", "DESC"]],
     });
 
-    const tagUserCounts = await sequelize.query(`
+    const tagUserCounts = await sequelize.query(
+      `
       SELECT tag_id, COUNT(*) as taggedUsersCount
       FROM taggedusers
       WHERE user_id = :user_id
       GROUP BY tag_id
     `,
-    {
-      replacements: { user_id },
-      type: sequelize.QueryTypes.SELECT,
-    }
+      {
+        replacements: { user_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
     );
 
     const stageUserCounts = await sequelize.query(
-    `
+      `
       SELECT stage_id, COUNT(*) as taggedUsersStageCount
       FROM taggedusers
       WHERE user_id = :user_id
       GROUP BY stage_id
     `,
-    {
-      replacements: { user_id },
-      type: sequelize.QueryTypes.SELECT,
-    }
+      {
+        replacements: { user_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
     );
 
     // Handle empty tagUserCounts safely
     const tagCountMap = {};
-    (tagUserCounts || []).forEach(row => {
+    (tagUserCounts || []).forEach((row) => {
       if (row.tag_id) {
         tagCountMap[row.tag_id] = parseInt(row.taggedUsersCount) || 0;
       }
@@ -158,15 +157,15 @@ const getAll = async (req, res) => {
 
     // Handle empty stageUserCounts safely
     const stageCountMap = {};
-    (stageUserCounts || []).forEach(row => {
+    (stageUserCounts || []).forEach((row) => {
       if (row.stage_id) {
         stageCountMap[row.stage_id] = parseInt(row.taggedUsersStageCount) || 0;
       }
     });
 
     // Step 5: Enrich tags with counts
-    const enrichedTags = tags.map(tagItem => {
-      const enrichedStages = (tagItem.stage || []).map(stageItem => ({
+    const enrichedTags = tags.map((tagItem) => {
+      const enrichedStages = (tagItem.stage || []).map((stageItem) => ({
         ...stageItem.toJSON(),
         taggedUsersStageCount: stageCountMap[stageItem.id] || 0,
       }));
@@ -178,9 +177,7 @@ const getAll = async (req, res) => {
       };
     });
 
-
-    return Response.resWith202(res, 'success', enrichedTags);
-
+    return Response.resWith202(res, "success", enrichedTags);
 
     // const tags = await db.tag.findAll({
     //   where: whereOptions,
@@ -221,11 +218,9 @@ const getAll = async (req, res) => {
     //   })
     // );
 
-
     // return Response.resWith202(res, 'success', enrichedTags);
   } catch (error) {
-
-    console.log('error', error);    
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -243,7 +238,8 @@ const getGroupsInfo = async (req, res) => {
     });
 
     // in this query 'tag_id' is replaced by 'is_primary' as 'tag_id' has multiple values but we need one id
-    const stageUserRows = await sequelize.query(`
+    const stageUserRows = await sequelize.query(
+      `
       SELECT t.is_primary
       FROM taggedusers t
       INNER JOIN stages s ON t.stage_id = s.id 
@@ -256,29 +252,29 @@ const getGroupsInfo = async (req, res) => {
 
     // Handle empty stageUserCounts safely
     const stageCountMap = {};
-    (stageUserRows || []).forEach(row => {
-      if (row.is_primary != null) {                 // skip NULLs
-        const id = String(row.is_primary).trim();   // convert number → string
+    (stageUserRows || []).forEach((row) => {
+      if (row.is_primary != null) {
+        // skip NULLs
+        const id = String(row.is_primary).trim(); // convert number → string
         if (id) {
           stageCountMap[id] = (stageCountMap[id] || 0) + 1;
         }
       }
-    })
+    });
 
     // Step 5: Enrich tags with counts
-    const enrichedTags = tags.map(tagItem => {
-    const tagId = tagItem.id.toString(); // tagCountMap keys are strings
-    const validStageCount = stageCountMap[tagId] || 0;
-    return {
+    const enrichedTags = tags.map((tagItem) => {
+      const tagId = tagItem.id.toString(); // tagCountMap keys are strings
+      const validStageCount = stageCountMap[tagId] || 0;
+      return {
         ...tagItem.toJSON(),
-        taggedUsersCount: validStageCount
+        taggedUsersCount: validStageCount,
       };
     });
 
-    return Response.resWith202(res, 'success', enrichedTags);
-
+    return Response.resWith202(res, "success", enrichedTags);
   } catch (error) {
-    console.log('error', error);    
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -304,7 +300,6 @@ function findDuplicateStages(stageData) {
 }
 
 const getOne = async (req, res) => {
-
   const id = req.params.id;
   const authUser = await getAuthUser(req, res);
 
@@ -315,8 +310,7 @@ const getOne = async (req, res) => {
     });
 
     if (!tagData) {
-      
-      return Response.resWith422(res, 'Tag not found');
+      return Response.resWith422(res, "Tag not found");
     }
 
     let stageData = await db.stage.findAll({
@@ -350,33 +344,33 @@ const getOne = async (req, res) => {
           { user_id: authUser },
           {
             [Op.or]: [
-              { tag_id: id },                           // Exact match
-              { tag_id: { [Op.like]: `${id},%` } },     // At start: "22072,..."
-              { tag_id: { [Op.like]: `%,${id},%` } },   // In middle: "...,22072,..."
-              { tag_id: { [Op.like]: `%,${id}` } }      // At end: "...,22072"
-            ]
-          }
-        ]
+              { tag_id: id.toString() }, // exact match
+              { tag_id: { [Op.like]: `${id},%` } }, // start
+              { tag_id: { [Op.like]: `%,${id},%` } }, // middle
+              { tag_id: { [Op.like]: `%,${id}` } }, // end
+            ],
+          },
+        ],
       },
     });
 
     // Transform the response to replace tag_id with the queried ID
-    const transformedTaggedUsers = taggedUsersDetails.map(user => {
+    const transformedTaggedUsers = taggedUsersDetails.map((user) => {
       const userJson = user.toJSON();
       return {
         ...userJson,
-        tag_id: id  // Replace the comma-separated tag_id with the single ID we queried for
+        tag_id: id, // Replace the comma-separated tag_id with the single ID we queried for
       };
     });
 
     var final_response = {
-        tag_data: tagData.toJSON(),
-        taggedUsers: transformedTaggedUsers,
-        stage: stageData,
-        duplicate_stage: duplicateStages
+      tag_data: tagData.toJSON(),
+      taggedUsers: transformedTaggedUsers,
+      stage: stageData,
+      duplicate_stage: duplicateStages,
     };
-    return Response.resWith202(res, 'success', final_response);
-    
+    return Response.resWith202(res, "success", final_response);
+
     // res.json({
     //   ...tagData.toJSON(),
     //   taggedUsers: taggedUsersDetails,
@@ -384,26 +378,22 @@ const getOne = async (req, res) => {
     //   duplicateStages,
     // });
   } catch (error) {
-
-    console.log('error', error);    
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
 
 const updateOne = async (req, res) => {
-  
   try {
-    
     const id = req.params.id;
     const authUser = await getAuthUser(req, res);
     let params = req.body;
     params.user_id = authUser;
 
     const data = await tag.update(params, { where: { id: id } });
-    return Response.resWith202(res, 'success', data);
+    return Response.resWith202(res, "success", data);
   } catch (error) {
-    
-    console.log('error', error);    
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -429,27 +419,26 @@ const deleteOne = async (req, res) => {
 
     await tag.destroy({ where: { id: id } });
 
-    return Response.resWith202(res, null, 'tag successfully deleted');
+    return Response.resWith202(res, null, "tag successfully deleted");
   } catch (error) {
-
-    console.log('error', error);    
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
 
 const limitDowngrade = async (req, res) => {
   try {
-    const data = req.data;
-  
+    const { tagData } = req.body;
+
     // Use Promise.all to handle multiple asynchronous operations
     await Promise.all(
-      data.map(async (item) => {
+      tagData.map(async (item) => {
         const { tag_id, stage_id, type, current_tag_id } = item;
-  
+
         if (type === "fb") {
           // Handle Facebook tags
           await db.stage.destroy({ where: { tag_id: current_tag_id } });
-  
+
           await db.taggedusers.update(
             {
               tag_id,
@@ -457,16 +446,18 @@ const limitDowngrade = async (req, res) => {
             },
             {
               where: {
-                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` }, // Check if `tag_id` contains `id`
+                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` },
+
+                // Check if `tag_id` contains `id`
               },
             }
           );
-  
+
           await tag.destroy({ where: { id: current_tag_id } });
         } else {
           // Handle Instagram tags
           await db.instastage.destroy({ where: { tag_id: current_tag_id } });
-  
+
           await db.instataggedusers.update(
             {
               tag_id,
@@ -474,23 +465,21 @@ const limitDowngrade = async (req, res) => {
             },
             {
               where: {
-                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` }, // Check if `tag_id` contains `id`
+                tag_id: { [Sequelize.Op.like]: `%${current_tag_id}%` },
+                // Check if `tag_id` contains `id`
               },
             }
           );
-  
-          await tag.destroy({ where: { id: current_tag_id } });
+
+          await db.instatag.destroy({ where: { id: current_tag_id } });
         }
       })
     );
-  
-    // Send a single response after all operations are complete
-    return Response.resWith202(res, null, 'All tags successfully processed.');
-    
-    
-  } catch (error) {
 
-    console.log('error', error);    
+    // Send a single response after all operations are complete
+    return Response.resWith202(res, null, "All tags successfully processed.");
+  } catch (error) {
+    console.log("error", error);
     return Response.resWith422(res, error.message);
   }
 };
@@ -524,5 +513,5 @@ module.exports = {
   updateOne,
   deleteOne,
   reorderGroup,
-  limitDowngrade
+  limitDowngrade,
 };
