@@ -81,6 +81,8 @@ const chargeBeeController = require("../controllers/chargebee/chargeBeeControlle
 
 const Response = require("../helpers/response");
 
+const { BirthdayWishes } = require('../Models')
+
 exports.login = async (req, res) => {
   const postData = req.body;
   const { website = false } = req.body;
@@ -7185,6 +7187,29 @@ exports.cronjobwithdrawalstatus = async (req, res) => {
     res.status(500).json({ status: "error", message: e });
   }
 };
+
+exports.deleteOldMessagesCron = async (req, res) => {
+  try {
+    const tenDaysAgo = moment().subtract(10, "days").toDate();
+
+    const deletedMessages = await BirthdayWishes.destroy({
+      where: {
+        created_at: { [Op.lt]: tenDaysAgo }, 
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: `Messages older than 10 days deleted successfully.`,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: "An error occurred while deleting old messages.",
+      error: error.message,
+    });
+  }
+}
 
 exports.cronjobbalancetransfer = async (req, res) => {
   try {
