@@ -5380,7 +5380,7 @@ exports.ipnChagrbeWebhook = async (req, res) => {
         let userTrialStatus = userData?.trial_status;
         let if_pro = true;
 
-        let cancelled_at = postData?.content?.subscription?.cancelled_at || postData?.content?.subscription?.created_at;
+        let creation_date = postData?.content?.transaction?.date || postData?.content?.subscription?.updated_at;
 
         if (subDomain === "app" && userTrialStatus === "Inactive") {
           // start level bonus
@@ -5420,8 +5420,8 @@ exports.ipnChagrbeWebhook = async (req, res) => {
                 billingPeriod,
                 activatedAt,
                 nextBillingAt,
-                formatDateTimeFromTimestamp(cancelled_at),
-                formatDateTimeFromTimestamp(cancelled_at),
+                formatDateTimeFromTimestamp(creation_date),
+                formatDateTimeFromTimestamp(creation_date),
               ]
             );
             s_id = parseInt(sponsorData?.[0]?.sponsorid || 0); // Move to next level sponsor, or stop if no sponsor
