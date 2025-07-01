@@ -166,18 +166,18 @@ self.getDashboardSocialAccountData = async (req, res) => {
         const totalFbContact = await taggedusers.count({
             where: {
                     user_id: user_id,
-                    createdAt: {
-                    [Op.between]: [startOfMonth, endOfMonth],
-                },
+                //     createdAt: {
+                //     [Op.between]: [startOfMonth, endOfMonth],
+                // },
             },
         });
 
         const totalInstaContact = await instataggedusers.count({
             where: {
                     user_id: user_id,
-                    createdAt: {
-                    [Op.between]: [startOfMonth, endOfMonth],
-                },
+                //     createdAt: {
+                //     [Op.between]: [startOfMonth, endOfMonth],
+                // },
             },
         });
 
