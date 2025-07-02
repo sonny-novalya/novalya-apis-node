@@ -348,7 +348,7 @@ const createFbNoteNew = async (req, res) => {
       for (const record of existingTaggedRecords) {
         const key = `${record.tag_id}_${record.stage_id}`;
         if (!incomingTagStageKeys.has(key)) {
-          await taggedUser.deleteOne({ 
+          await taggedUser.destroy({ 
             where: {
               ...baseWhereClause,
               tag_id: record.tag_id,
