@@ -41,6 +41,8 @@ router.post('/tag/get-insta-tagged-user/filter', checkAuthUser, InstaTagsGroupCo
 // new tags endpoints for multiple tagging API
 router.post('/tag/get-tagged-user-new', checkAuthUser, TagsController.getTaggedUserNew);
 
+router.post('/tag/update-user-tagged-status', checkAuthUser, TagsController.updateTaggedUserStatus);
+
 // check gender
 router.get('/check-gender/:name', GroupController.checkGender);
 

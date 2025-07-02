@@ -869,6 +869,220 @@ const TagsController = {
     }
   },
 
+  updateTaggedUserStatus: async (req, res) => {
+    try {
+      const user_id = await getAuthUser(req, res);
+      const {
+        type,
+        fb_user_id,
+        fb_user_alphanumeric_id,
+        fb_image_id,
+        fb_name,
+        profile_pic,
+        is_primary,
+        is_verified_acc,
+        stage_id,
+        is_e2ee = 0,
+        fb_user_e2ee_id
+      } = req.body;
+
+      var { tag_id } = req.body;
+      let folderName = "facebook-crm";
+      let dateImg = Date.now()
+      let imageUrl;
+      let base64Str = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/
+
+    if (type === "add") {
+      try {
+        const { members, selected_tag_stage_ids, is_primary } = req.body;
+        const membersInfo = JSON.parse(members).info || [];
+    
+        const folderName = "facebook-crm";
+        const dateImg = Date.now();
+        const base64Str = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/;
+    
+        const taggingPromises = [];
+    
+        for (const member of membersInfo) {
+          const {
+            fb_user_id,
+            fb_user_alphanumeric_id,
+            fb_image_id,
+            fbName,
+            profile_pic,
+            fb_user_e2ee_id,
+            is_verified_acc,
+            is_e2ee
+          } = member;
+    
+          let imageUrl = profile_pic;
+          if (profile_pic && base64Str.test(profile_pic) && !profile_pic.includes("novalya-assets")) {
+            imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
+          }
+    
+          for (const { tag_id, stage_id } of selected_tag_stage_ids) {
+            taggingPromises.push((async () => {
+              let whereClause;
+              if (!fb_user_id) {
+                whereClause = {
+                  user_id: user_id,
+                  fb_user_e2ee_id: fb_user_e2ee_id,
+                  tag_id,
+                  stage_id
+                };
+              } else if (fb_user_id && fb_user_e2ee_id) {
+                whereClause = {
+                  user_id: user_id,
+                  tag_id,
+                  stage_id,
+                  [Op.or]: [
+                    { fb_user_id },
+                    { fb_user_e2ee_id }
+                  ]
+                };
+              } else {
+                whereClause = {
+                  user_id: user_id,
+                  fb_user_id,
+                  tag_id,
+                  stage_id
+                };
+              }
+    
+              const taggedUserData = {
+                user_id,
+                fb_user_id,
+                numeric_fb_id: fb_user_alphanumeric_id,
+                fb_image_id,
+                fb_name: fbName,
+                profile_pic: imageUrl,
+                is_primary,
+                is_verified_acc: typeof is_verified_acc !== "undefined" ? Boolean(Number(is_verified_acc)) : false,
+                tag_id,
+                stage_id,
+                is_e2ee,
+                fb_user_e2ee_id
+              };
+    
+              const existingRecord = await taggedUser.findOne({ where: whereClause });
+    
+              if (existingRecord) {
+                return taggedUser.update(taggedUserData, { where: whereClause });
+              } else {
+                return taggedUser.create(taggedUserData);
+              }
+            })());
+          }
+        }
+    
+        await Promise.all(taggingPromises);
+    
+        return Response.resWith202(res, "Bulk tagging completed successfully", {});
+      } catch (error) {
+        return Response.resWith422(res, error.message);
+      }
+    }
+    
+    else if (type == "get") {
+        var final_response = [];
+        // Find the Facebook user by fb_user_id
+        try {
+          const records = await taggedUser.findAll({ where: { user_id } });
+
+          const taggedUsersWithTags = await Promise.all(
+            records.map(async (user) => {
+              const payload = user.toJSON();              // plain object
+
+              // If tag_id is a CSV string → convert to array
+              if (typeof payload.tag_id === "string" && payload.tag_id.length) {
+                const tagIds = payload.tag_id
+                  .split(",")
+                  .map((id) => id.trim())
+                  .filter(Boolean);
+
+                // Replace the string with the array
+                payload.tag_id = tagIds;
+
+                const userTags = await tags.findAll({
+                  where: { id: { [Op.in]: tagIds } },
+                });
+                payload.tags = userTags;
+              }
+
+              return payload;
+            })
+          );
+
+          return Response.resWith202(
+            res,
+            "Tagged user fetched successfully",
+            taggedUsersWithTags
+          );
+        } catch (err) {
+          return Response.resWith422(res, err.message);
+        }
+    }
+
+    else if (type === "remove") {
+      try {
+        const membersInfo = JSON.parse(req.body.members).info || [];
+        const selectedTagStageIds = req.body.selected_tag_stage_ids || [];
+    
+        const removePromises = [];
+    
+        for (const member of membersInfo) {
+          const {
+            fb_user_id,
+            fb_user_e2ee_id
+          } = member;
+    
+          for (const { tag_id, stage_id } of selectedTagStageIds) {
+            let whereClause;
+    
+            if (!fb_user_id) {
+              whereClause = {
+                user_id,
+                fb_user_e2ee_id,
+                tag_id,
+                stage_id
+              };
+            } else if (fb_user_id && fb_user_e2ee_id) {
+              whereClause = {
+                user_id,
+                tag_id,
+                stage_id,
+                [Op.or]: [
+                  { fb_user_id },
+                  { fb_user_e2ee_id }
+                ]
+              };
+            } else {
+              whereClause = {
+                user_id,
+                fb_user_id,
+                tag_id,
+                stage_id
+              };
+            }
+    
+            removePromises.push(taggedUser.destroy({ where: whereClause }));
+          }
+        }
+    
+        await Promise.all(removePromises);
+    
+        return Response.resWith202(res, "Selected tags removed from users successfully", {});
+      } catch (error) {
+        return Response.resWith422(res, "Error during bulk remove: " + error.message);
+      }
+    }
+
+  
+    } catch (error) {
+      res.status(200).json({ status: "error", message: error.message });
+    }
+  },
+
   fetchTagDetails: function (id) {
     return new Promise(async (resolve, reject) => {
       const data = await tags.findOne({ where: { id: id } });
