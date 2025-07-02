@@ -58,7 +58,7 @@ const createInstaCampaign = async (req, res) => {
             [Op.in]: userIds,  // <-- handeling the userIds array
           },
         },
-        attributes: ['user_id', 'id', 'insta_name', 'insta_user_id', 'numeric_insta_id', 'tag_id', '	is_verified_acc', 'thread_id', 'profile_pic', 'user_note']
+        attributes: ['user_id', 'id', 'insta_name', 'insta_user_id', 'numeric_insta_id', 'tag_id', 'is_verified_acc', 'thread_id', 'profile_pic', 'user_note']
       });
   
       return Response.resWith202(res, 'success', {
