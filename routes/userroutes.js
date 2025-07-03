@@ -120,6 +120,7 @@ router.post("/group", groupController.placetag);
 router.post("/facebook/get-all-groups", groupController.getAll);
 router.post("/facebook/get-groups-info", groupController.getGroupsInfo);
 router.post("/reorderGroup", groupController.reorderGroup);
+router.post("/transfer",groupController.limitDowngrade)
 
 router
   .get("/group/:id", groupController.getOne)
@@ -151,6 +152,8 @@ router
   .patch("/taggeduser/:id", taggedUserController.updateOne)
   .delete("/taggeduser/:id", taggedUserController.deleteOne)
   .post("/taggeduser/deleteMany", taggedUserController.deleteMany);
+  
+
 
   
 router.patch("/taggedusersmove/", taggedUserController.taggedusersmove);
