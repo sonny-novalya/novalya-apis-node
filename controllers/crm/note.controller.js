@@ -695,6 +695,17 @@ const createInstaNoteNew = async (req, res) => {
       insta_user_id,
     };
 
+    console.log('baseWhereClause', baseWhereClause);
+    
+    console.log('selected_tag_stage_ids.length', selected_tag_stage_ids.length);
+    if(selected_tag_stage_ids.length == 0){
+
+      await instaTaggedUser.destroy({ 
+        where: {
+          ...baseWhereClause
+        }
+      });
+    }
 
     // CODE FOR ASSIGN OR EDIT TAGS FOR FB
     if (selected_tag_stage_ids && selected_tag_stage_ids.length > 0) {
@@ -710,9 +721,12 @@ const createInstaNoteNew = async (req, res) => {
         selected_tag_stage_ids.map(data => `${data.tag_id}_${data.stage_id}`)
       );
 
+      console.log('incomingTagStageKeys', incomingTagStageKeys);
+
       // Step 3: Identify and delete records not in incoming payload
       for (const record of existingTaggedRecords) {
         const key = `${record.tag_id}_${record.stage_id}`;
+        console.log('key', key);
         if (!incomingTagStageKeys.has(key)) {
           await instaTaggedUser.destroy({ 
             where: {
