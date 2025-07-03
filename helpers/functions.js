@@ -3123,6 +3123,40 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
   }
 }
 
+async function calculateAffiliateCommission({ auth_user_id, plan_price, createdat }) {
+  function getLevel1Rate({ month, year, unilevelRate }) {
+    return Number(year) > 2025 || (Number(year) === 2025 && Number(month) >= 5)
+      ? 40
+      : unilevelRate;
+  }
+
+  const date = new Date(createdat);
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  // Step 1: Get sponsor's total downline count
+  const downlineCountResult = await Qry(
+    `SELECT COUNT(*) AS userCount FROM usersdata 
+     WHERE sponsorid = ? 
+     AND subscription_status NOT IN ('payment_refunded', 'subscription_cancelled', 'payment_failed')
+     AND trial_status = ?`,
+    [auth_user_id, "inactive"]
+  );
+  const totalUserCount = downlineCountResult[0]?.userCount || 0;
+
+  // Step 2: Get unilevel commission rate based on downline size
+  const unilevelData = await Qry(
+    "SELECT * FROM unilevels WHERE number_of_users <= ? ORDER BY id DESC LIMIT 1",
+    [totalUserCount]
+  );
+  const unilevelRate = unilevelData[0]?.level1 || 0;
+
+  const level1Rate = getLevel1Rate({ month, year, unilevelRate });
+
+  const commission = ((Number(plan_price) || 0) / 100) * level1Rate;
+  return commission.toFixed(2);
+}
+
 // total payment function affilate payment
 async function total_payment_function_afcm_tblNew(userid, month, year) {
   try {
@@ -4798,4 +4832,5 @@ module.exports = {
   total_payment_function_afcm_tbl,
   formatDateTimeFromTimestamp,
   get_dashboard_affiliate_summary,
+  calculateAffiliateCommission
 };

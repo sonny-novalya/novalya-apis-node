@@ -41,6 +41,7 @@ const {
   total_payment_function_afcm_tbl,
   formatDateTimeFromTimestamp,
   get_dashboard_affiliate_summary,
+  calculateAffiliateCommission
 } = require("../helpers/functions");
 const { insert_affiliate_commission } = require("../helpers/affiliate_helper");
 const {
@@ -1287,6 +1288,8 @@ exports.affiliateCustomers = async (req, res) => {
 
     const sponsor_clause = `(u.sponsorid = ? OR u.l2_sponsorid = ?)`;
     const base_params = [auth_user, auth_user];
+    console.log("base_params: "+ base_params);
+    
 
     const addDateAndSearchFilter = (query, alias, type = "default") => {
       if (month && year) {
@@ -1381,6 +1384,14 @@ exports.affiliateCustomers = async (req, res) => {
       active_customer_params
     );
 
+    for (const user of active_customers) {
+      user.commission = await calculateAffiliateCommission({
+        auth_user_id: auth_user,
+        plan_price: user.plan_price || 0,
+        createdat: user.createdat
+      });
+    }
+
     // Trial Cancelled Users
     let trial_cancelled_query = `
       SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date, p.is_cancellation_scheduled,
@@ -1449,6 +1460,14 @@ exports.affiliateCustomers = async (req, res) => {
       customer_cancelled_params
     );
 
+    for (const user of customer_cancelled) {
+      user.commission = await calculateAffiliateCommission({
+        auth_user_id: auth_user,
+        plan_price: user.plan_price || 0,
+        createdat: user.createdat
+      });
+    }
+
     // All Customers
     let all_customer_query = `
       SELECT u.*, p.pkg_name, p.amount, p.currency, p.cancellation_date,
@@ -1473,6 +1492,14 @@ exports.affiliateCustomers = async (req, res) => {
     );
     all_customer_query += ` ORDER BY u.id DESC`;
     const all_customers = await Qry(all_customer_query, all_customer_params);
+
+    for (const user of all_customers) {
+      user.commission = await calculateAffiliateCommission({
+        auth_user_id: auth_user,
+        plan_price: user.plan_price || 0,
+        createdat: user.createdat
+      });
+    }
 
     // Total Active User Count
     const total_active_query = `
