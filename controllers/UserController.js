@@ -354,6 +354,18 @@ exports.manualSignIn = async (req, res) => {
     // logger.info(`Admin has logged in user ${userdbData.username} successfully from admin panel`, { type: 'user' });
 
     if (updateLoginResult.affectedRows > 0) {
+      if (
+        userdbData.subscription_status === "payment_failed" ||
+        userdbData.subscription_status === "subscription_cancelled" ||
+        userdbData.subscription_status === "payment_refunded" ||
+        userdbData.login_status === "Block"
+      ) {
+        return res.status(401).json({
+          status: "error",
+          message:
+            "You are not able to logged in. Please contact with support.",
+        });
+      }
       res.json({
         status: "success",
         message: "Login Successfully",
