@@ -697,6 +697,15 @@ const createInstaNoteNew = async (req, res) => {
 
     console.log('baseWhereClause', baseWhereClause);
     
+    console.log('selected_tag_stage_ids.length', selected_tag_stage_ids.length);
+    if(selected_tag_stage_ids.length == 0){
+
+      await instaTaggedUser.destroy({ 
+        where: {
+          ...baseWhereClause
+        }
+      });
+    }
 
     // CODE FOR ASSIGN OR EDIT TAGS FOR FB
     if (selected_tag_stage_ids && selected_tag_stage_ids.length > 0) {
