@@ -495,10 +495,7 @@ const createFbNoteNew = async (req, res) => {
       
       const formattedValues = fields.map((key, index) => formatSQLValue(values[index], key));
       
-      const createQuery = `
-        INSERT INTO notes (${fields.join(', ')}) 
-        VALUES (${formattedValues.join(', ')})
-      `;
+      const createQuery = `INSERT INTO notes (${fields.join(', ')}) VALUES (${formattedValues.join(', ')})`;
 
       const createResult = await Qry(createQuery);
       if (createResult) {

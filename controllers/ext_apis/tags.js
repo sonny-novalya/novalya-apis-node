@@ -919,6 +919,9 @@ const TagsController = {
           if (profile_pic && base64Str.test(profile_pic) && !profile_pic.includes("novalya-assets")) {
             imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
           }
+
+          console.log('imageUrl---923', imageUrl);
+          
     
           for (const { tag_id, stage_id } of selected_tag_stage_ids) {
             taggingPromises.push((async () => {
