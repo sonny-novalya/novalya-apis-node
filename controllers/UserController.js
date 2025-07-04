@@ -41,7 +41,8 @@ const {
   total_payment_function_afcm_tbl,
   formatDateTimeFromTimestamp,
   get_dashboard_affiliate_summary,
-  calculateAffiliateCommission
+  calculateAffiliateCommission,
+  next_payout_helper
 } = require("../helpers/functions");
 const { insert_affiliate_commission } = require("../helpers/affiliate_helper");
 const {
@@ -7420,6 +7421,9 @@ exports.cronjobbalancetransfer = async (req, res) => {
         dataCommission.totalPaymentUSD,
         dataCommission.totalPaymentEUR,
       ]);
+
+      // Adding the Next payout in "next_payout" table
+      await next_payout_helper(userID);
 
       x = x + 1;
     }

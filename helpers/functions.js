@@ -1986,6 +1986,65 @@ function getLastDateOfMonth(year, month) {
   return `${year}-${formattedMonth}-${lastDay}`;
 }
 
+//Next Payout function by cron job
+async function next_payout_helper(userID) {
+  const nextPayResultEUR = await Qry(
+    `SELECT COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus' 
+          AND currency = 'EUR'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) 
+      - 
+      COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus Deducted' 
+          AND currency = 'EUR'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) AS net_bonus_eur`,
+    [userID, userID]
+  );
+
+  const nextPayResultUSD = await Qry(
+    `SELECT COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus' 
+          AND currency = 'USD'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) 
+      - 
+      COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus Deducted' 
+          AND currency = 'USD'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) AS net_bonus_usd`,
+    [userID, userID]
+  );
+
+  const commissionForEUR = (nextPayResultEUR?.net_bonus_eur || 0) * 0.4;
+  const commissionForUSD = (nextPayResultUSD?.net_bonus_usd || 0) * 0.4;
+
+  const insertQuery = `INSERT INTO next_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;
+  await Qry(insertQuery, [
+    userID,
+    commissionForUSD,
+    commissionForEUR,
+  ]);
+}
+
 // start total payment
 async function total_payment_function(userid, month,year) {
   let currentDate = new Date();
@@ -4832,5 +4891,6 @@ module.exports = {
   total_payment_function_afcm_tbl,
   formatDateTimeFromTimestamp,
   get_dashboard_affiliate_summary,
-  calculateAffiliateCommission
+  calculateAffiliateCommission,
+  next_payout_helper
 };
