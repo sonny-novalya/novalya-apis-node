@@ -452,6 +452,11 @@ const createFbNoteNew = async (req, res) => {
         return `'${escapedBackslashes}'`;
       }
 
+      if (key === 'first_name' || key === 'last_name') {
+        const escaped = String(value).replace(/'/g, "''").replace(/\\/g, '\\\\');
+        return `'${escaped}'`;
+      }
+
       return `'${value}'`;
     };
 
@@ -495,10 +500,7 @@ const createFbNoteNew = async (req, res) => {
       
       const formattedValues = fields.map((key, index) => formatSQLValue(values[index], key));
       
-      const createQuery = `
-        INSERT INTO notes (${fields.join(', ')}) 
-        VALUES (${formattedValues.join(', ')})
-      `;
+      const createQuery = `INSERT INTO notes (${fields.join(', ')}) VALUES (${formattedValues.join(', ')})`;
 
       const createResult = await Qry(createQuery);
       if (createResult) {

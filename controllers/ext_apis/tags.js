@@ -898,7 +898,7 @@ const TagsController = {
         const membersInfo = JSON.parse(members).info || [];
     
         const folderName = "facebook-crm";
-        const dateImg = Date.now();
+        // const dateImg = Date.now();
         const base64Str = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/;
     
         const taggingPromises = [];
@@ -916,9 +916,10 @@ const TagsController = {
           } = member;
     
           let imageUrl = profile_pic;
+          const dateImg = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
           if (profile_pic && base64Str.test(profile_pic) && !profile_pic.includes("novalya-assets")) {
             imageUrl = await UploadImageOnS3Bucket(profile_pic, folderName, dateImg);
-          }
+          }          
     
           for (const { tag_id, stage_id } of selected_tag_stage_ids) {
             taggingPromises.push((async () => {
