@@ -333,6 +333,32 @@ const createFbNoteNew = async (req, res) => {
     if (selected_tag_stage_ids && selected_tag_stage_ids.length > 0) {
       // const {fb_user_id, fb_alphanumeric_id, fb_user_e2ee_id, is_e2ee, fb_name} = req.body
 
+
+      // Step 1: Get all existing records for the user
+      const existingTaggedRecords = await taggedUser.findAll({
+        where: baseWhereClause
+      });
+
+      // Step 2: Build a Set of incoming tag-stage keys (for quick lookup)
+      const incomingTagStageKeys = new Set(
+        selected_tag_stage_ids.map(data => `${data.tag_id}_${data.stage_id}`)
+      );
+
+      // Step 3: Identify and delete records not in incoming payload
+      for (const record of existingTaggedRecords) {
+        const key = `${record.tag_id}_${record.stage_id}`;
+        if (!incomingTagStageKeys.has(key)) {
+          await taggedUser.destroy({ 
+            where: {
+              ...baseWhereClause,
+              tag_id: record.tag_id,
+              stage_id: record.stage_id
+            }
+          });
+        }
+      }
+
+
       const tagsRes = selected_tag_stage_ids.map(async (data) => {
         const { tag_id, stage_id } = data;
 
@@ -426,6 +452,11 @@ const createFbNoteNew = async (req, res) => {
         return `'${escapedBackslashes}'`;
       }
 
+      if (key === 'first_name' || key === 'last_name') {
+        const escaped = String(value).replace(/'/g, "''").replace(/\\/g, '\\\\');
+        return `'${escaped}'`;
+      }
+
       return `'${value}'`;
     };
 
@@ -469,10 +500,7 @@ const createFbNoteNew = async (req, res) => {
       
       const formattedValues = fields.map((key, index) => formatSQLValue(values[index], key));
       
-      const createQuery = `
-        INSERT INTO notes (${fields.join(', ')}) 
-        VALUES (${formattedValues.join(', ')})
-      `;
+      const createQuery = `INSERT INTO notes (${fields.join(', ')}) VALUES (${formattedValues.join(', ')})`;
 
       const createResult = await Qry(createQuery);
       if (createResult) {
@@ -669,10 +697,48 @@ const createInstaNoteNew = async (req, res) => {
       insta_user_id,
     };
 
+    console.log('baseWhereClause', baseWhereClause);
+    
+    console.log('selected_tag_stage_ids.length', selected_tag_stage_ids.length);
+    if(selected_tag_stage_ids.length == 0){
+
+      await instaTaggedUser.destroy({ 
+        where: {
+          ...baseWhereClause
+        }
+      });
+    }
 
     // CODE FOR ASSIGN OR EDIT TAGS FOR FB
     if (selected_tag_stage_ids && selected_tag_stage_ids.length > 0) {
       // const {insta_user_id, numeric_insta_id, insta_name, profile_pic, thread_id} = req.body
+
+      // Step 1: Get all existing records for the user
+      const existingTaggedRecords = await instaTaggedUser.findAll({
+        where: baseWhereClause
+      });
+
+      // Step 2: Build a Set of incoming tag-stage keys (for quick lookup)
+      const incomingTagStageKeys = new Set(
+        selected_tag_stage_ids.map(data => `${data.tag_id}_${data.stage_id}`)
+      );
+
+      console.log('incomingTagStageKeys', incomingTagStageKeys);
+
+      // Step 3: Identify and delete records not in incoming payload
+      for (const record of existingTaggedRecords) {
+        const key = `${record.tag_id}_${record.stage_id}`;
+        console.log('key', key);
+        if (!incomingTagStageKeys.has(key)) {
+          await instaTaggedUser.destroy({ 
+            where: {
+              ...baseWhereClause,
+              tag_id: record.tag_id,
+              stage_id: record.stage_id
+            }
+          });
+        }
+      }
 
       const tagsRes = selected_tag_stage_ids.map(async (data) => {
         const { tag_id, stage_id } = data;

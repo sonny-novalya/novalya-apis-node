@@ -23,7 +23,7 @@ exports.getAllInvoices = async (req, res) => {
     chargebee.invoice
       .list({
         limit: req.query.limit || 5,
-        "sort_by[asc]": "date",
+        "sort_by[desc]": "date",
         "customer_id[is]": selectUserResult[0].customerid
       })
       .request((error, result) => {

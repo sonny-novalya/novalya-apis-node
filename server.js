@@ -70,7 +70,7 @@ const corsOptions = {
     'http://staging-app.localhost:3001', 'https://lyriange.novalya.com', 'https://admin-lyriange.novalya.com',
     'http://lyriange.novalya.com', 'http://admin-lyriange.novalya.com', 
     'http://wcy-nuskin.novalya.com', 'http://admin-wcy-nuskin.novalya.com', 
-    'https://wcy-nuskin.novalya.com', 'https://admin-nuskin.novalya.com', 'http://nuskin.localhost:3000','http://wcy-nuskin.localhost:3000'],
+    'https://wcy-nuskin.novalya.com', 'https://admin-nuskin.novalya.com', 'http://nuskin.localhost:3000','http://wcy-nuskin.localhost:3000','https://beta.novalya.com'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'website'],
   credentials: true,

@@ -1986,6 +1986,65 @@ function getLastDateOfMonth(year, month) {
   return `${year}-${formattedMonth}-${lastDay}`;
 }
 
+//Next Payout function by cron job
+async function next_payout_helper(userID) {
+  const nextPayResultEUR = await Qry(
+    `SELECT COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus' 
+          AND currency = 'EUR'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) 
+      - 
+      COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus Deducted' 
+          AND currency = 'EUR'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) AS net_bonus_eur`,
+    [userID, userID]
+  );
+
+  const nextPayResultUSD = await Qry(
+    `SELECT COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus' 
+          AND currency = 'USD'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) 
+      - 
+      COALESCE((
+        SELECT SUM(paid_amount) 
+        FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Level 1 Bonus Deducted' 
+          AND currency = 'USD'
+          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      ), 0) AS net_bonus_usd`,
+    [userID, userID]
+  );
+
+  const commissionForEUR = (nextPayResultEUR?.net_bonus_eur || 0) * 0.4;
+  const commissionForUSD = (nextPayResultUSD?.net_bonus_usd || 0) * 0.4;
+
+  const insertQuery = `INSERT INTO next_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;
+  await Qry(insertQuery, [
+    userID,
+    commissionForUSD,
+    commissionForEUR,
+  ]);
+}
+
 // start total payment
 async function total_payment_function(userid, month,year) {
   let currentDate = new Date();
@@ -3121,6 +3180,40 @@ async function total_payment_function_afcm_tbl(userid, month, year) {
     console.log("error", error);
     return null;
   }
+}
+
+async function calculateAffiliateCommission({ auth_user_id, plan_price, createdat }) {
+  function getLevel1Rate({ month, year, unilevelRate }) {
+    return Number(year) > 2025 || (Number(year) === 2025 && Number(month) >= 5)
+      ? 40
+      : unilevelRate;
+  }
+
+  const date = new Date(createdat);
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  // Step 1: Get sponsor's total downline count
+  const downlineCountResult = await Qry(
+    `SELECT COUNT(*) AS userCount FROM usersdata 
+     WHERE sponsorid = ? 
+     AND subscription_status NOT IN ('payment_refunded', 'subscription_cancelled', 'payment_failed')
+     AND trial_status = ?`,
+    [auth_user_id, "inactive"]
+  );
+  const totalUserCount = downlineCountResult[0]?.userCount || 0;
+
+  // Step 2: Get unilevel commission rate based on downline size
+  const unilevelData = await Qry(
+    "SELECT * FROM unilevels WHERE number_of_users <= ? ORDER BY id DESC LIMIT 1",
+    [totalUserCount]
+  );
+  const unilevelRate = unilevelData[0]?.level1 || 0;
+
+  const level1Rate = getLevel1Rate({ month, year, unilevelRate });
+
+  const commission = ((Number(plan_price) || 0) / 100) * level1Rate;
+  return commission.toFixed(2);
 }
 
 // total payment function affilate payment
@@ -4798,4 +4891,6 @@ module.exports = {
   total_payment_function_afcm_tbl,
   formatDateTimeFromTimestamp,
   get_dashboard_affiliate_summary,
+  calculateAffiliateCommission,
+  next_payout_helper
 };
