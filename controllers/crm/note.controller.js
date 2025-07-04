@@ -452,6 +452,11 @@ const createFbNoteNew = async (req, res) => {
         return `'${escapedBackslashes}'`;
       }
 
+      if (key === 'first_name' || key === 'last_name') {
+        const escaped = String(value).replace(/'/g, "''").replace(/\\/g, '\\\\');
+        return `'${escaped}'`;
+      }
+
       return `'${value}'`;
     };
 
