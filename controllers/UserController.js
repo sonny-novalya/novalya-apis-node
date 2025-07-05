@@ -3129,6 +3129,57 @@ exports.payout = async (req, res) => {
       }
     }
 
+    // Include Next Month's Predicted Payout from next_payout table
+    if (kyc_status) {
+      // Check if user is paid for this month
+      const existingPayout = await Qry(
+        `SELECT id FROM transactions 
+        WHERE receiverid = ? 
+          AND type = 'Payout' 
+          AND MONTH(createdat) = MONTH(CURDATE()) 
+          AND YEAR(createdat) = YEAR(CURDATE()) 
+        LIMIT 1`,
+        [auth_user]
+      );
+
+      if (existingPayout.length === 0) {
+        const nextPayoutResult = await Qry(
+          `SELECT * FROM next_payout WHERE userid = ? 
+            AND MONTH(dat) = MONTH(CURDATE()) 
+            AND YEAR(dat) = YEAR(CURDATE()) 
+          ORDER BY id DESC LIMIT 1`,
+          [auth_user]
+        );
+
+        if (nextPayoutResult.length > 0) {
+          const np = nextPayoutResult[0];
+          const eur_bonus = parseFloat(np.amount_eur || 0);
+          const usd_bonus = parseFloat(np.amount_usd || 0);
+          const converted_usd_to_eur = usd_bonus * eur_rate;
+
+          const amount = eur_bonus + converted_usd_to_eur;
+          const fee = flat_fee;
+          const final_amount = amount - fee;
+
+          payouts.unshift({
+            id: -1,
+            approvedat: np.dat,
+            amount: amount,
+            final_amount: final_amount,
+            payoutmethod: "Bank",
+            payout_fee: fee,
+            fee: fee,
+            bank_account_title: "*******",
+            bank_account_iban: "*******",
+            bank_account_bic: "*******",
+            bank_account_country: "*******",
+            status: "Pending",
+            currency: "EUR",
+          });
+        }
+      }
+    }
+
     var final_response = {
       payouts: payouts,
       all_time_payout: all_time_payout,
