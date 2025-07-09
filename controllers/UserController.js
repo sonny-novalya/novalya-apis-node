@@ -7425,7 +7425,7 @@ exports.deleteOldMessagesCron = async (req, res) => {
 exports.cronjobbalancetransfer = async (req, res) => {
   try {
     const selectUserQuery = `SELECT * FROM usersdata WHERE usertype = ? and user_type = ?`;
-    const selectUserResult = await Qry(selectUserQuery, [
+    var selectUserResult = await Qry(selectUserQuery, [
       "user",
       "Distributor",
     ]);
@@ -7488,6 +7488,7 @@ exports.cronjobbalancetransfer = async (req, res) => {
       message: "ok",
     });
   } catch (e) {
+    console.log('error--7492', e);    
     res.status(500).json({ status: "error", message: e });
   }
 };
