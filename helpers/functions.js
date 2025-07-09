@@ -2083,6 +2083,10 @@ async function next_payout_helper(userID) {
   const commissionForEUR = (nextPayResultEUR?.net_bonus_eur || 0) * 0.4;
   const commissionForUSD = (nextPayResultUSD?.net_bonus_usd || 0) * 0.4;
 
+  console.log('commissionForEUR--2086', commissionForEUR);
+  console.log('commissionForUSD--2086', commissionForUSD);
+  
+
   const insertQuery = `INSERT INTO next_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;
   await Qry(insertQuery, [
     userID,
