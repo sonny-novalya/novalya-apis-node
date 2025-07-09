@@ -7449,10 +7449,10 @@ exports.cronjobbalancetransfer = async (req, res) => {
     let yearNumber = getYearNumber(lastMonthNumber);
 
     let x = 1;
-    selectUserResult = ['3743'];
+    selectUserResult = [{'id': '3743'}];
     for (const user of selectUserResult) {
       let userID = user.id;
-
+      console.log('userID--7455', userID); 
       let dataCommission = await total_payment_function(
         userID,
         lastMonthNumber,
