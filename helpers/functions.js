@@ -2080,8 +2080,8 @@ async function next_payout_helper(userID) {
     [userID, userID]
   );
 
-  const commissionForEUR = (nextPayResultEUR?.net_bonus_eur || 0) * 0.4;
-  const commissionForUSD = (nextPayResultUSD?.net_bonus_usd || 0) * 0.4;
+  const commissionForEUR = (nextPayResultEUR[0]?.net_bonus_eur || 0) * 0.4;
+  const commissionForUSD = (nextPayResultUSD[0]?.net_bonus_usd || 0) * 0.4;
 
   console.log('commissionForEUR--2086', commissionForEUR);
   console.log('commissionForUSD--2086', commissionForUSD);
