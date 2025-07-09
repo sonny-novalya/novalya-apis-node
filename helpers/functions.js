@@ -1988,6 +1988,52 @@ function getLastDateOfMonth(year, month) {
 
 //Next Payout function by cron job
 async function next_payout_helper(userID) {
+  // const nextPayResultEUR = await Qry(
+  //   `SELECT COALESCE((
+  //       SELECT SUM(paid_amount) 
+  //       FROM transactions 
+  //       WHERE receiverid = ? 
+  //         AND type = 'Level 1 Bonus' 
+  //         AND currency = 'EUR'
+  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+  //     ), 0) 
+  //     - 
+  //     COALESCE((
+  //       SELECT SUM(paid_amount) 
+  //       FROM transactions 
+  //       WHERE receiverid = ? 
+  //         AND type = 'Level 1 Bonus Deducted' 
+  //         AND currency = 'EUR'
+  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+  //     ), 0) AS net_bonus_eur`,
+  //   [userID, userID]
+  // );
+
+  // const nextPayResultUSD = await Qry(
+  //   `SELECT COALESCE((
+  //       SELECT SUM(paid_amount) 
+  //       FROM transactions 
+  //       WHERE receiverid = ? 
+  //         AND type = 'Level 1 Bonus' 
+  //         AND currency = 'USD'
+  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+  //     ), 0) 
+  //     - 
+  //     COALESCE((
+  //       SELECT SUM(paid_amount) 
+  //       FROM transactions 
+  //       WHERE receiverid = ? 
+  //         AND type = 'Level 1 Bonus Deducted' 
+  //         AND currency = 'USD'
+  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+  //     ), 0) AS net_bonus_usd`,
+  //   [userID, userID]
+  // );
+
   const nextPayResultEUR = await Qry(
     `SELECT COALESCE((
         SELECT SUM(paid_amount) 
@@ -1996,7 +2042,7 @@ async function next_payout_helper(userID) {
           AND type = 'Level 1 Bonus' 
           AND currency = 'EUR'
           AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
       ), 0) 
       - 
       COALESCE((
@@ -2006,7 +2052,7 @@ async function next_payout_helper(userID) {
           AND type = 'Level 1 Bonus Deducted' 
           AND currency = 'EUR'
           AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
       ), 0) AS net_bonus_eur`,
     [userID, userID]
   );
@@ -2019,7 +2065,7 @@ async function next_payout_helper(userID) {
           AND type = 'Level 1 Bonus' 
           AND currency = 'USD'
           AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
       ), 0) 
       - 
       COALESCE((
@@ -2029,7 +2075,7 @@ async function next_payout_helper(userID) {
           AND type = 'Level 1 Bonus Deducted' 
           AND currency = 'USD'
           AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
       ), 0) AS net_bonus_usd`,
     [userID, userID]
   );
