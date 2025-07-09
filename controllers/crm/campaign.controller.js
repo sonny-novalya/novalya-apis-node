@@ -12,14 +12,16 @@ const sendCampaign = async (req, res) => {
   try {
     const user_id = await getAuthUser(req, res);
 
-    const { group_id, message_id, time_interval, userIds } = req.body;
+    const { group_id, message_id, time_interval, userIds, existingConvo = 0 } = req.body;
+
+    const existingConvoInt = parseInt(existingConvo) === 1 ? 1 : 0;
 
     let campaignRecord = await campaign.findOne({ where: { user_id } });
     let isNewCampaignSetting = false;
 
     if (campaignRecord) {
       await campaign.update(
-        { group_id, message_id, time_interval },
+        { group_id, message_id, time_interval, existing_convo: existingConvoInt },
         { where: { user_id } }
       );
       campaignRecord = await campaign.findOne({ where: { user_id } }); // get updated record
@@ -29,9 +31,13 @@ const sendCampaign = async (req, res) => {
         group_id,
         message_id,
         time_interval,
+        existing_convo: existingConvoInt,
       });
       isNewCampaignSetting = true
     }
+
+    campaignRecord = campaignRecord.toJSON(); // convert Sequelize model to plain object
+    campaignRecord.existing_convo = campaignRecord.existing_convo ? 1 : 0;
 
     const newMessage = await db.Message.findOne({
       where: {

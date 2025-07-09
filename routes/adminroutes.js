@@ -2071,6 +2071,48 @@ router.post("/pendingpayout", async (req, res) => {
   }
 });
 
+router.post("/pendingpayout-old", async (req, res) => {
+  try {
+    const authUser = await adminAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
+    if (authUser) {
+      const getRequest = `SELECT id, username, firstname, lastname, email, current_balance, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, wallet_address, bank_account_address, bank_account_city, bank_account_zip_code, payout_country, outside_bank_account_title, outside_bank_account_country, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency, outside_bank_account_address, outside_bank_account_city, outside_bank_account_zip_code, outside_bank_account_street, outside_payout_country, current_balance_usd_payout, current_balance_eur_payout,current_balance_eur_lastmonth,current_balance_usd_lastmonth
+      FROM usersdata WHERE 
+      withdrawal_status = ? and (current_balance_usd_payout > ? or current_balance_eur_payout > ?) and kyc_status = ? and (bank_account_title != ? or wallet_address != ? or outside_bank_account_title != ?) and withdrawal_processing_status = ? AND subscription_status NOT IN ('payment_refunded', 'subscription_cancelled', 'payment_failed')`;
+      const requestData = await Qry(getRequest, [
+        0,
+        0,
+        0,
+        "Verified",
+        "",
+        "",
+        "",
+        0,
+      ]);
+      let flatFee = await settings_data("payout_flat_fee");
+      let per = await settings_data("payout_percentage_fee");
+      let conversion_eur_to_usd = await settings_data("conversion");
+      let conversion_usd_to_eur = await settings_data("conversion1");
+      let feeData = {
+        flat_fee: parseFloat(flatFee[0].keyvalue),
+        percentage: parseFloat(per[0].keyvalue),
+        conversion_eur_to_usd: parseFloat(conversion_eur_to_usd[0].keyvalue),
+        conversion_usd_to_eur: parseFloat(conversion_usd_to_eur[0].keyvalue),
+      };
+
+      res.json({
+        status: "success",
+        data: requestData,
+        feeData: feeData,
+      });
+    }
+  } catch (error) {
+    res.json({
+      status: "error",
+      message: "Server error occurred",
+    });
+  }
+});
+
 router.post("/approvedpayout", async (req, res) => {
   try {
     const authUser = await adminAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
