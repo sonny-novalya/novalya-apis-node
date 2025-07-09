@@ -2071,7 +2071,6 @@ router.post("/pendingpayout", async (req, res) => {
         AND YEAR(n.dat) = YEAR(CURDATE())
       WHERE 
         u.withdrawal_status = ? 
-        AND (COALESCE(n.amount_usd, 0) > ? OR COALESCE(n.amount_eur, 0) > ?) 
         AND (COALESCE(n.amount_usd, 0) + COALESCE(n.amount_eur, 0) > 30)
         AND u.kyc_status = ? 
         AND (
@@ -2084,8 +2083,6 @@ router.post("/pendingpayout", async (req, res) => {
           'payment_refunded', 'subscription_cancelled', 'payment_failed'
       )`;
       const requestData = await Qry(getRequest, [
-        0,
-        0,
         0,
         "Verified",
         "",
@@ -2195,6 +2192,204 @@ ORDER BY
 });
 
 router.post("/approvesinglepayout", async (req, res) => {
+  try {
+    const postData = req.body;
+    const userid = postData.userid;
+    const authUser = await adminAuthorization(req, res); // Assuming checkAuthorization function checks the authorization token
+    if (authUser) {
+      const selectrequestQuery = `SELECT * FROM usersdata WHERE id = ?`;
+      const selectUserResult = await Qry(selectrequestQuery, [userid]);
+
+      const updateUser = await Qry(
+        "update usersdata set withdrawal_status = ?, current_balance_usd_payout = ?, current_balance_eur_payout = ?, withdrawal_processing_status = ? where id = ?",
+        [1, 0, 0, 0, userid]
+      );
+      
+      const [payoutData] = await Qry(
+        `SELECT 
+          COALESCE(amount_usd, 0) AS amount_usd, 
+          COALESCE(amount_eur, 0) AS amount_eur 
+        FROM next_payout 
+        WHERE userid = ? 
+          AND MONTH(dat) = MONTH(CURDATE()) 
+          AND YEAR(dat) = YEAR(CURDATE())`,
+        [userid]
+      );
+
+      let usdBalance = payoutData?.amount_usd || 0;
+      let eurBalance = payoutData?.amount_eur || 0;
+
+      let conversion_usd_to_eur = await settings_data("conversion1");
+      let conversion_eur_to_usd = await settings_data("conversion");
+
+      let totalUsdBalance =
+        usdBalance + eurBalance * parseFloat(conversion_eur_to_usd[0].keyvalue);
+      let totalEurBalance =
+        eurBalance + usdBalance * parseFloat(conversion_usd_to_eur[0].keyvalue);
+
+      if (
+        selectUserResult[0].bank_account_title !== null &&
+        selectUserResult[0].wallet_address === null &&
+        selectUserResult[0].outside_bank_account_title === null
+      ) {
+        let flatFee = await settings_data("payout_flat_fee");
+        // let finalAmount =
+        //   selectUserResult[0].current_balance - parseInt(flatFee[0].keyvalue);
+        let finalAmount = totalEurBalance - parseInt(flatFee[0].keyvalue);
+
+        const insertQuery =
+          "INSERT into transactions (receiverid, senderid, amount, final_amount, payoutmethod, payout_fee, bank_account_title, bank_account_country, bank_account_iban, bank_account_bic, bank_account_address, bank_account_city, bank_account_zip_code, payout_country, approved_by, type, currency) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const updateParams = [
+          userid,
+          0,
+          totalEurBalance,
+          finalAmount,
+          "Bank",
+          parseFloat(flatFee[0].keyvalue),
+          selectUserResult[0].bank_account_title,
+          selectUserResult[0].bank_account_country,
+          selectUserResult[0].bank_account_iban,
+          selectUserResult[0].bank_account_bic,
+          selectUserResult[0].bank_account_address,
+          selectUserResult[0].bank_account_city,
+          selectUserResult[0].bank_account_zip_code,
+          selectUserResult[0].payout_country,
+          authUser.id,
+          "Payout",
+          "EUR",
+        ];
+        const updateResult = await Qry(insertQuery, updateParams);
+
+        if (updateResult.affectedRows > 0) {
+          const selectAdminQuery = `select * from usersdata where id = ?`;
+          const selectAdminResult = await Qry(selectAdminQuery, [authUser.id]);
+          logger.info(
+            `${selectAdminResult[0].username} has approved payout of amount $${finalAmount} of user ${selectUserResult[0].username}`,
+            { type: "admin" }
+          );
+
+          res.json({
+            status: "success",
+            message: "Payout has been approved successfully.",
+          });
+        } else {
+          res.json({
+            status: "error",
+            message: "Failed to approve",
+          });
+        }
+      } else if (
+        selectUserResult[0].wallet_address !== null &&
+        selectUserResult[0].bank_account_title === null &&
+        selectUserResult[0].outside_bank_account_title === null
+      ) {
+        let per = await settings_data("payout_percentage_fee");
+        let finalAmount =
+          totalUsdBalance -
+          (totalUsdBalance * parseFloat(per[0].keyvalue)) / 100;
+
+        const insertQuery =
+          "INSERT into transactions (receiverid, senderid, amount, final_amount, payoutmethod, payout_fee, wallet_address, approved_by, type, currency) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const updateParams = [
+          userid,
+          0,
+          totalUsdBalance,
+          finalAmount,
+          "Crypto",
+          parseFloat(per[0].keyvalue),
+          selectUserResult[0].wallet_address,
+          authUser.id,
+          "Payout",
+          "USD",
+        ];
+        const updateResult = await Qry(insertQuery, updateParams);
+
+        if (updateResult.affectedRows > 0) {
+          const selectAdminQuery = `select * from usersdata where id = ?`;
+          const selectAdminResult = await Qry(selectAdminQuery, [authUser.id]);
+          logger.info(
+            `${selectAdminResult[0].username} has approved payout of amount $${finalAmount} of user ${selectUserResult[0].username}`,
+            { type: "admin" }
+          );
+
+          res.json({
+            status: "success",
+            message: "Payout has been approved successfully.",
+          });
+        } else {
+          res.json({
+            status: "error",
+            message: "Failed to approve",
+          });
+        }
+      } else if (
+        selectUserResult[0].bank_account_title === null &&
+        selectUserResult[0].wallet_address === null &&
+        selectUserResult[0].outside_bank_account_title !== null
+      ) {
+        let flatFee = await settings_data("payout_flat_fee");
+        let finalAmount = totalUsdBalance - parseInt(flatFee[0].keyvalue);
+
+        const insertQuery =
+          "INSERT into transactions (receiverid, senderid, amount, final_amount, payoutmethod, payout_fee, outside_bank_account_title, outside_bank_account_country, outside_bank_account_number, outside_bank_account_swift_code, outside_bank_account_routing, outside_bank_account_currency, outside_bank_account_address, outside_bank_account_city, outside_bank_account_zip_code, outside_bank_account_street, outside_payout_country, approved_by, type, currency) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const updateParams = [
+          userid,
+          0,
+          totalUsdBalance,
+          finalAmount,
+          "Bank",
+          parseFloat(flatFee[0].keyvalue),
+          selectUserResult[0].outside_bank_account_title,
+          selectUserResult[0].outside_bank_account_country,
+          selectUserResult[0].outside_bank_account_number,
+          selectUserResult[0].outside_bank_account_swift_code,
+          selectUserResult[0].outside_bank_account_routing,
+          selectUserResult[0].outside_bank_account_currency,
+          selectUserResult[0].outside_bank_account_address,
+          selectUserResult[0].outside_bank_account_city,
+          selectUserResult[0].outside_bank_account_zip_code,
+          selectUserResult[0].outside_bank_account_street,
+          selectUserResult[0].outside_payout_country,
+          authUser.id,
+          "Payout",
+          "USD",
+        ];
+        const updateResult = await Qry(insertQuery, updateParams);
+
+        if (updateResult.affectedRows > 0) {
+          const selectAdminQuery = `select * from usersdata where id = ?`;
+          const selectAdminResult = await Qry(selectAdminQuery, [authUser.id]);
+          logger.info(
+            `${selectAdminResult[0].username} has approved payout of amount $${finalAmount} of user ${selectUserResult[0].username}`,
+            { type: "admin" }
+          );
+
+          res.json({
+            status: "success",
+            message: "Payout has been approved successfully.",
+          });
+        } else {
+          res.json({
+            status: "error",
+            message: "Failed to approve",
+          });
+        }
+      } else {
+        res.json({
+          status: "error",
+          data: "Invalid request. Please try again later.",
+        });
+      }
+    }
+  } catch (error) {
+    res.json({
+      status: "error",
+      message: "Server error occurred",
+    });
+  }
+});
+
+router.post("/approvesinglepayout-old", async (req, res) => {
   try {
     const postData = req.body;
     const userid = postData.userid;
@@ -2441,9 +2636,19 @@ router.post("/approveallpayout", async (req, res) => {
           [1, 0, 0, 0, payoutData.id]
         );
 
+        const [payoutData] = await Qry(
+          `SELECT 
+            COALESCE(amount_usd, 0) AS amount_usd, 
+            COALESCE(amount_eur, 0) AS amount_eur 
+          FROM next_payout 
+          WHERE userid = ? 
+            AND MONTH(dat) = MONTH(CURDATE()) 
+            AND YEAR(dat) = YEAR(CURDATE())`,
+          [authUser.id]
+        );
 
-        let usdBalance = payoutData.current_balance_usd_lastmonth;
-        let eurBalance = payoutData.current_balance_eur_lastmonth;
+        let usdBalance = payoutData?.amount_usd || 0;
+        let eurBalance = payoutData?.amount_eur || 0;
 
         if (usdBalance + eurBalance < 30) {
           const updateUser = await Qry(
