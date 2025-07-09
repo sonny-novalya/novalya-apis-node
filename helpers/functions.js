@@ -1988,103 +1988,49 @@ function getLastDateOfMonth(year, month) {
 
 //Next Payout function by cron job
 async function next_payout_helper(userID) {
-  // const nextPayResultEUR = await Qry(
-  //   `SELECT COALESCE((
-  //       SELECT SUM(paid_amount) 
-  //       FROM transactions 
-  //       WHERE receiverid = ? 
-  //         AND type = 'Level 1 Bonus' 
-  //         AND currency = 'EUR'
-  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-  //     ), 0) 
-  //     - 
-  //     COALESCE((
-  //       SELECT SUM(paid_amount) 
-  //       FROM transactions 
-  //       WHERE receiverid = ? 
-  //         AND type = 'Level 1 Bonus Deducted' 
-  //         AND currency = 'EUR'
-  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-  //     ), 0) AS net_bonus_eur`,
-  //   [userID, userID]
-  // );
-
-  // const nextPayResultUSD = await Qry(
-  //   `SELECT COALESCE((
-  //       SELECT SUM(paid_amount) 
-  //       FROM transactions 
-  //       WHERE receiverid = ? 
-  //         AND type = 'Level 1 Bonus' 
-  //         AND currency = 'USD'
-  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-  //     ), 0) 
-  //     - 
-  //     COALESCE((
-  //       SELECT SUM(paid_amount) 
-  //       FROM transactions 
-  //       WHERE receiverid = ? 
-  //         AND type = 'Level 1 Bonus Deducted' 
-  //         AND currency = 'USD'
-  //         AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-  //         AND createdat <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-  //     ), 0) AS net_bonus_usd`,
-  //   [userID, userID]
-  // );
+  
 
   const nextPayResultEUR = await Qry(
-    `SELECT COALESCE((
-        SELECT SUM(paid_amount) 
-        FROM transactions 
-        WHERE receiverid = ? 
-          AND type = 'Level 1 Bonus' 
-          AND currency = 'EUR'
-          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
-      ), 0) 
-      - 
-      COALESCE((
-        SELECT SUM(paid_amount) 
-        FROM transactions 
-        WHERE receiverid = ? 
-          AND type = 'Level 1 Bonus Deducted' 
-          AND currency = 'EUR'
-          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
-      ), 0) AS net_bonus_eur`,
-    [userID, userID]
+    `SELECT 
+      receiverid,
+      SUM(CASE 
+            WHEN type = 'Level 1 Bonus' THEN paid_amount 
+            WHEN type = 'Level 1 Bonus Deducted' THEN -paid_amount 
+            ELSE 0 
+          END) AS net_bonus_eur
+    FROM transactions
+    where receiverid=?
+    AND currency = 'EUR'
+      AND type IN ('Level 1 Bonus', 'Level 1 Bonus Deducted')
+      AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+      AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
+    GROUP BY receiverid;`,
+    [userID]
   );
 
   const nextPayResultUSD = await Qry(
-    `SELECT COALESCE((
-        SELECT SUM(paid_amount) 
-        FROM transactions 
-        WHERE receiverid = ? 
-          AND type = 'Level 1 Bonus' 
-          AND currency = 'USD'
-          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
-      ), 0) 
-      - 
-      COALESCE((
-        SELECT SUM(paid_amount) 
-        FROM transactions 
-        WHERE receiverid = ? 
-          AND type = 'Level 1 Bonus Deducted' 
-          AND currency = 'USD'
-          AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
-          AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
-      ), 0) AS net_bonus_usd`,
-    [userID, userID]
+    `SELECT 
+      receiverid,
+      SUM(CASE 
+            WHEN type = 'Level 1 Bonus' THEN paid_amount 
+            WHEN type = 'Level 1 Bonus Deducted' THEN -paid_amount 
+            ELSE 0 
+          END) AS net_bonus_usd
+    FROM transactions
+    where receiverid=?
+    AND currency = 'USD'
+      AND type IN ('Level 1 Bonus', 'Level 1 Bonus Deducted')
+      AND createdat >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 2 MONTH), '%Y-%m-01')
+      AND createdat <= LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 2 MONTH))
+    GROUP BY receiverid;`,
+    [userID]
   );
 
   const commissionForEUR = (nextPayResultEUR[0]?.net_bonus_eur || 0) * 0.4;
   const commissionForUSD = (nextPayResultUSD[0]?.net_bonus_usd || 0) * 0.4;
 
-  console.log('commissionForEUR--2086', commissionForEUR);
-  console.log('commissionForUSD--2086', commissionForUSD);
+  console.log('commissionForEUR--2032', commissionForEUR);
+  console.log('commissionForUSD--2033', commissionForUSD);
   
 
   const insertQuery = `INSERT INTO next_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;

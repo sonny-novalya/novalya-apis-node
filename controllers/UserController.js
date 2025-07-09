@@ -7453,26 +7453,26 @@ exports.cronjobbalancetransfer = async (req, res) => {
     for (const user of selectUserResult) {
       let userID = user.id;
       console.log('userID--7455', userID); 
-      let dataCommission = await total_payment_function(
-        userID,
-        lastMonthNumber,
-        yearNumber
-      );
-      const updateBalanceQuery = `UPDATE usersdata SET current_balance_usd_payout = current_balance_usd_payout + ?, current_balance_eur_payout = current_balance_eur_payout + ?, current_balance_usd_lastmonth = ?, current_balance_eur_lastmonth = ? WHERE id = ?`;
-      await Qry(updateBalanceQuery, [
-        dataCommission.totalPaymentUSD,
-        dataCommission.totalPaymentEUR,
-        dataCommission.totalPaymentUSD,
-        dataCommission.totalPaymentEUR,
-        userID,
-      ]);
+      // let dataCommission = await total_payment_function(
+      //   userID,
+      //   lastMonthNumber,
+      //   yearNumber
+      // );
+      // const updateBalanceQuery = `UPDATE usersdata SET current_balance_usd_payout = current_balance_usd_payout + ?, current_balance_eur_payout = current_balance_eur_payout + ?, current_balance_usd_lastmonth = ?, current_balance_eur_lastmonth = ? WHERE id = ?`;
+      // await Qry(updateBalanceQuery, [
+      //   dataCommission.totalPaymentUSD,
+      //   dataCommission.totalPaymentEUR,
+      //   dataCommission.totalPaymentUSD,
+      //   dataCommission.totalPaymentEUR,
+      //   userID,
+      // ]);
 
-      const insertQuery = `INSERT INTO balance_transfer_for_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;
-      await Qry(insertQuery, [
-        userID,
-        dataCommission.totalPaymentUSD,
-        dataCommission.totalPaymentEUR,
-      ]);
+      // const insertQuery = `INSERT INTO balance_transfer_for_payout (userid, amount_usd, amount_eur) VALUE (?, ?, ?)`;
+      // await Qry(insertQuery, [
+      //   userID,
+      //   dataCommission.totalPaymentUSD,
+      //   dataCommission.totalPaymentEUR,
+      // ]);
 
       // Adding the Next payout in "next_payout" table
       await next_payout_helper(userID);
