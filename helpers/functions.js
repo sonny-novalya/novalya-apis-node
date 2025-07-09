@@ -2158,7 +2158,7 @@ async function total_payment_function(userid, month,year) {
 
     
 
-    console.log( countQuer2[0].userCount,countQuer3[0].userCount,countQuer5[0].userCount,totalUser,"<==================2060===================>")
+    // console.log( countQuer2[0].userCount,countQuer3[0].userCount,countQuer5[0].userCount,totalUser,"<==================2060===================>")
     
 
     let unilevelData
@@ -2206,7 +2206,7 @@ async function total_payment_function(userid, month,year) {
 
     let x = 1;
 
-    console.log(resultTraLevelTPay,"<==================2115===================>")
+    // console.log(resultTraLevelTPay,"<==================2115===================>")
 
     for (const data of resultTraLevelTPay) {
       let senderid = data.senderid;
@@ -2610,11 +2610,11 @@ async function total_payment_function(userid, month,year) {
       resultBalanceAddAdminEUR[0].totalAmount -
       resultBalanceDeductAdminEUR[0].totalAmount;
 
-      console.log(totalPaymentEUR,totalPaymentUSD,totalPaymentUSD+totalPaymentEUR) , "=====>2485<======="
+      // console.log(totalPaymentEUR,totalPaymentUSD,totalPaymentUSD+totalPaymentEUR) , "=====>2485<======="
 
     totalPaymentEUR = totalPaymentEUR + eurOthers;
     totalPaymentUSD = totalPaymentUSD + usdOthers;
-    console.log(totalPaymentEUR,totalPaymentUSD,totalPaymentUSD+totalPaymentEUR) , "=====>2485<======="
+    // console.log(totalPaymentEUR,totalPaymentUSD,totalPaymentUSD+totalPaymentEUR) , "=====>2485<======="
 
     let obj = {
       totalPaymentEUR: totalPaymentEUR,
