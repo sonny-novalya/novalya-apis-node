@@ -42,6 +42,7 @@ router.post('/tag/get-insta-tagged-user/filter', checkAuthUser, InstaTagsGroupCo
 router.post('/tag/get-tagged-user-new', checkAuthUser, TagsController.getTaggedUserNew);
 
 router.post('/tag/update-user-tagged-status', checkAuthUser, TagsController.updateTaggedUserStatus);
+router.post('/tag/update-insta-user-tagged-status', checkAuthUser, TagsController.updateInstaTaggedUserStatus);
 
 // check gender
 router.get('/check-gender/:name', GroupController.checkGender);
