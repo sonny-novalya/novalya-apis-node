@@ -62,7 +62,7 @@ const sendCampaign = async (req, res) => {
           [Op.in]: userIds,  // <-- handeling the userIds array
         },
       },
-      attributes: ['user_id', 'id', 'fb_name', 'fb_user_id', 'numeric_fb_id', 'fb_user_e2ee_id', 'is_e2ee', 'tag_id', 'profile_pic']
+      attributes: ['user_id', 'id', 'fb_name', 'fb_user_id', 'numeric_fb_id', 'fb_user_e2ee_id', 'is_e2ee', 'tag_id', 'profile_pic', 'is_verified_acc']
     });
 
     return Response.resWith202(res, 'success', {
