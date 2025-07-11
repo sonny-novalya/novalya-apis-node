@@ -208,6 +208,7 @@ router.post("/binarybonuspreviousmonthrankforoctober", UserController.binarybonu
 router.post("/cronjobautocouponcsv", UserController.cronjobautocouponcsv);
 router.post("/cronjobwithdrawalstatus", UserController.cronjobwithdrawalstatus);
 router.get("/delete-old-messages-cron", UserController.deleteOldMessagesCron);
+router.post("/maintainpayoutbalance", UserController.maintainPayoutBalance);
 router.post("/cronjobbalancetransfer", UserController.cronjobbalancetransfer);
 router.post("/cronjobpendingpool", UserController.cronjobpendingpool);
 router.post("/cronjobpoolone", UserController.cronjobpoolone);

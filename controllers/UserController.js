@@ -7422,6 +7422,58 @@ exports.deleteOldMessagesCron = async (req, res) => {
   }
 }
 
+exports.maintainPayoutBalance = async (req, res) => {
+  const selectUserQuery = `SELECT * FROM usersdata WHERE usertype = ? AND user_type = ?`;
+  const selectUserResult = await Qry(selectUserQuery, ["user", "Distributor"]);
+
+  for (const user of selectUserResult) {
+    const userId = user.id;
+    const currentBalanceUsdPayout = user.current_balance_usd_payout || 0;
+    const currentBalanceEurPayout = user.current_balance_eur_payout || 0;
+
+    // Get current month's payout
+    const [nextPayoutData] = await Qry(
+      `SELECT
+          COALESCE(amount_usd, 0) AS amount_usd,
+          COALESCE(amount_eur, 0) AS amount_eur
+       FROM next_payout
+       WHERE userid = ?
+         AND MONTH(dat) = MONTH(CURDATE())
+         AND YEAR(dat) = YEAR(CURDATE())`,
+      [userId]
+    );
+    const nextPayoutUsdBalance = nextPayoutData?.amount_usd || 0;
+    const nextPayoutEurBalance = nextPayoutData?.amount_eur || 0;
+
+    // Get last month's transfer
+    const [balanceTransferPayoutData] = await Qry(
+      `SELECT
+          COALESCE(amount_usd, 0) AS amount_usd,
+          COALESCE(amount_eur, 0) AS amount_eur
+       FROM balance_transfer_for_payout
+       WHERE userid = ?
+         AND MONTH(dat) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+         AND YEAR(dat) = YEAR(CURDATE() - INTERVAL 1 MONTH)`,
+      [userId]
+    );
+    const balanceTransferUsdBalance = balanceTransferPayoutData?.amount_usd || 0;
+    const balanceTransferEurBalance = balanceTransferPayoutData?.amount_eur || 0;
+
+    const finalUsdPayoutAmount = (nextPayoutUsdBalance + balanceTransferUsdBalance) - currentBalanceUsdPayout;
+    const finalEurPayoutAmount = (nextPayoutEurBalance + balanceTransferEurBalance) - currentBalanceEurPayout;
+
+    // Update next_payout for the current month
+    await Qry(
+      `UPDATE next_final_payout
+       SET amount_usd = ?, amount_eur = ?
+       WHERE userid = ?
+         AND MONTH(dat) = MONTH(CURDATE())
+         AND YEAR(dat) = YEAR(CURDATE())`,
+      [finalUsdPayoutAmount, finalEurPayoutAmount, userId]
+    );
+  }
+}
+
 exports.cronjobbalancetransfer = async (req, res) => {
   try {
     const selectUserQuery = `SELECT * FROM usersdata WHERE usertype = ? and user_type = ?`;
