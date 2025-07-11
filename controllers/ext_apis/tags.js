@@ -1234,107 +1234,37 @@ const TagsController = {
         }
     
         await Promise.all(removePromises);
-    
-        return Response.resWith202(res, "Selected tags removed from users successfully", {});
-      } catch (error) {
-        return Response.resWith422(res, "Error during bulk remove: " + error.message);
-      }
-    }
-    
-    else if (type == "get") {
-        var final_response = [];
-        // Find the Facebook user by fb_user_id
-        try {
-          const records = await taggedUser.findAll({ where: { user_id } });
 
-          const taggedUsersWithTags = await Promise.all(
-            records.map(async (user) => {
-              const payload = user.toJSON();              // plain object
-
-              // If tag_id is a CSV string → convert to array
-              if (typeof payload.tag_id === "string" && payload.tag_id.length) {
-                const tagIds = payload.tag_id
-                  .split(",")
-                  .map((id) => id.trim())
-                  .filter(Boolean);
-
-                // Replace the string with the array
-                payload.tag_id = tagIds;
-
-                const userTags = await tags.findAll({
-                  where: { id: { [Op.in]: tagIds } },
-                });
-                payload.tags = userTags;
-              }
-
-              return payload;
-            })
-          );
-
-          return Response.resWith202(
-            res,
-            "Tagged user fetched successfully",
-            taggedUsersWithTags
-          );
-        } catch (err) {
-          return Response.resWith422(res, err.message);
-        }
-    }
-
-    else if (type === "remove") {
-      try {
-        const membersInfo = JSON.parse(req.body.members).info || [];
-        const selectedTagStageIds = req.body.selected_tag_stage_ids || [];
-    
-        const removePromises = [];
-    
+        // ✅ After deletion, sync is_primary for remaining tags
         for (const member of membersInfo) {
-          const {
-            fb_user_id,
-            fb_user_e2ee_id
-          } = member;
-    
-          for (const { tag_id, stage_id } of selectedTagStageIds) {
-            let whereClause;
-    
-            if (!fb_user_id) {
-              whereClause = {
-                user_id,
-                fb_user_e2ee_id,
-                tag_id,
-                stage_id
-              };
-            } else if (fb_user_id && fb_user_e2ee_id) {
-              whereClause = {
-                user_id,
-                tag_id,
-                stage_id,
-                [Op.or]: [
-                  { fb_user_id },
-                  { fb_user_e2ee_id }
-                ]
-              };
-            } else {
-              whereClause = {
-                user_id,
-                fb_user_id,
-                tag_id,
-                stage_id
-              };
-            }
-    
-            removePromises.push(taggedUser.destroy({ where: whereClause }));
+          const { insta_user_id } = member;
+
+          const remainingTags = await instaTaggedUser.findAll({
+            where: {
+              user_id,
+              insta_user_id
+            },
+            order: [['id', 'DESC']] // Or createdAt if preferred
+          });
+
+          if (remainingTags.length > 0) {
+            const lastRow = remainingTags[0]; // last updated/created row
+            const lastTagId = lastRow.tag_id;
+
+            // Now update all other rows with same is_primary
+            const updatePromises = remainingTags.map(tag =>
+              tag.update({ is_primary: lastTagId })
+            );
+
+            await Promise.all(updatePromises);
           }
         }
-    
-        await Promise.all(removePromises);
-    
+
         return Response.resWith202(res, "Selected tags removed from users successfully", {});
       } catch (error) {
         return Response.resWith422(res, "Error during bulk remove: " + error.message);
       }
     }
-
   
     } catch (error) {
       res.status(200).json({ status: "error", message: error.message });
