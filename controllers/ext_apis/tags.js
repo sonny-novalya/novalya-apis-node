@@ -1237,7 +1237,8 @@ const TagsController = {
         const selectedTagStageIds = req.body.selected_tag_stage_ids || [];
     
         const removePromises = [];
-    
+        const affectedUsers = new Set();
+  
         for (const member of membersInfo) {
           const {
             insta_user_id
@@ -1251,36 +1252,47 @@ const TagsController = {
               insta_user_id,
               tag_id
             };
-    
+
+            const rowsWithPrimary = await instaTaggedUser.findAll({
+              where: {
+                user_id,
+                insta_user_id,
+                is_primary: tag_id,
+                tag_id: { [Op.ne]: tag_id } // exclude same row
+              },
+              attributes: ['insta_user_id','is_primary']
+            });
+
+            if (rowsWithPrimary.length > 0) {
+              affectedUsers.add(insta_user_id);
+            }
+
             removePromises.push(instaTaggedUser.destroy({ where: whereClause }));
           }
         }
-    
         await Promise.all(removePromises);
 
         // After deletion, sync is_primary for remaining tags
-        for (const member of membersInfo) {
-          const { insta_user_id } = member;
+        if(affectedUsers.size  > 0){
 
-          const remainingTags = await instaTaggedUser.findAll({
-            where: {
-              user_id,
-              insta_user_id
-            },
-            order: [['id', 'DESC']] // Or createdAt if preferred
-          });
+          for (const insta_user_id of affectedUsers) {
+            const remainingTags = await instaTaggedUser.findAll({
+              where: { user_id, insta_user_id },
+              order: [['id', 'DESC']] // or createdAt, based on logic
+            });
 
-          if (remainingTags.length > 0) {
-            const lastRow = remainingTags[0]; // last updated/created row
-            const lastTagId = lastRow.tag_id;
+            if (remainingTags.length > 0){
 
-            // Now update all other rows with same is_primary
-            const updatePromises = remainingTags.map(tag =>
-              tag.update({ is_primary: lastTagId })
-            );
+              const newPrimaryTagId = remainingTags[0].tag_id;
 
-            await Promise.all(updatePromises);
-          }
+              // Update all rows for this user to use newPrimaryTagId as is_primary
+              const updatePromises = remainingTags.map(tag =>
+                tag.update({ is_primary: newPrimaryTagId })
+              );
+
+              await Promise.all(updatePromises);
+            }
+          }          
         }
 
         return Response.resWith202(res, "Selected tags removed from users successfully", {});
