@@ -3081,7 +3081,7 @@ exports.payout = async (req, res) => {
           payouts.unshift({
             id: 0,
             approvedat: now,
-            amount: payout_amount,
+            amount: (payout_amount).toFixed(2),
             final_amount,
             payoutmethod: payout_method,
             payout_fee,
