@@ -3058,7 +3058,7 @@ exports.payout = async (req, res) => {
       payout_amount =
         (current_balance_usd_payout || 0) * 0.88 +
         (current_balance_eur_payout || 0);
-      final_amount = payout_amount - flat_fee;
+      final_amount = (payout_amount - flat_fee).toFixed(2);
       payout_fee = flat_fee;
       status = "Pending";
       currency = "EUR";
@@ -3106,7 +3106,7 @@ exports.payout = async (req, res) => {
           for (let i = 1; i < payoutTransfers.length; i++) { //i=1 for skipping current month entry
             const transfer = payoutTransfers[i];
             payout_amount = currency == "EUR"?transfer.amount_eur + (transfer.amount_usd * eur_rate):transfer.amount_eur + (transfer.eur *usd_rate );
-            final_amount = payout_amount - flat_fee;
+            final_amount = (payout_amount - flat_fee).toFixed(2);
 
             payouts.push({
               id: i,
@@ -3165,7 +3165,7 @@ exports.payout = async (req, res) => {
             id: -1,
             approvedat: np.dat,
             amount: (amount).toFixed(2),
-            final_amount: final_amount,
+            final_amount: (final_amount).toFixed(2),
             payoutmethod: "Bank",
             payout_fee: fee,
             fee: fee,
