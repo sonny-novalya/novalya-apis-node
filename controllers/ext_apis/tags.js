@@ -931,13 +931,13 @@ const TagsController = {
                   user_id: user_id,
                   fb_user_e2ee_id: fb_user_e2ee_id,
                   tag_id,
-                  stage_id
+                  // stage_id
                 };
               } else if (fb_user_id && fb_user_e2ee_id) {
                 whereClause = {
                   user_id: user_id,
                   tag_id,
-                  stage_id,
+                  // stage_id,
                   [Op.or]: [
                     { fb_user_id },
                     { fb_user_e2ee_id }
@@ -948,7 +948,7 @@ const TagsController = {
                   user_id: user_id,
                   fb_user_id,
                   tag_id,
-                  stage_id
+                  // stage_id
                 };
               }
     
