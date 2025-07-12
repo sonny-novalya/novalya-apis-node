@@ -3111,7 +3111,7 @@ exports.payout = async (req, res) => {
             payouts.push({
               id: i,
               approvedat: transfer.dat,
-              amount: payout_amount  ,
+              amount: (payout_amount).toFixed(2),
               final_amount,
               payoutmethod: "Bank",
               payout_fee,
@@ -3164,7 +3164,7 @@ exports.payout = async (req, res) => {
           payouts.unshift({
             id: -1,
             approvedat: np.dat,
-            amount: amount,
+            amount: (amount).toFixed(2),
             final_amount: final_amount,
             payoutmethod: "Bank",
             payout_fee: fee,
