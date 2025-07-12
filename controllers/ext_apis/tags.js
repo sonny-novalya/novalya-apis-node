@@ -1073,6 +1073,29 @@ const TagsController = {
         }
     
         await Promise.all(removePromises);
+
+        for (const member of membersInfo) {
+          const { fb_user_id } = member;
+
+          const remainingTags = await taggedUser.findAll({
+            where: {
+              user_id,
+              fb_user_id
+            },
+            order: [['id', 'DESC']] 
+          });
+
+          if (remainingTags.length > 0) {
+            const lastRow = remainingTags[0]; 
+            const lastTagId = lastRow.tag_id;
+
+            const updatePromises = remainingTags.map(tag =>
+              tag.update({ is_primary: lastTagId })
+            );
+
+            await Promise.all(updatePromises);
+          }
+        }
     
         return Response.resWith202(res, "Selected tags removed from users successfully", {});
       } catch (error) {
@@ -1235,7 +1258,7 @@ const TagsController = {
     
         await Promise.all(removePromises);
 
-        // ✅ After deletion, sync is_primary for remaining tags
+        // After deletion, sync is_primary for remaining tags
         for (const member of membersInfo) {
           const { insta_user_id } = member;
 
